@@ -1,0 +1,397 @@
+{% extends 'chart.html' %}
+
+
+{% block title %}Historical Fare Search{% endblock %}
+
+
+{% block content %}
+	
+	{% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
+		
+	{% if form.errors %}
+		<p style="color: red;">
+			Please correct the error{{ form.errors|pluralize }} below.
+		</p>
+	{% endif %}
+	
+	<form action="" method="get">
+		{% csrf_token %}
+		  
+		<table>
+		<tr>
+			{% for field in form %}
+				{% if forloop.counter0 == 5 %}
+					</tr><tr>
+				{% endif %}
+			
+	            <td>{{ field.label_tag }}: {{ field }}</td>
+		    {% endfor %}
+		</tr>
+		</table>	
+		<input type="submit" name="Search">
+	</form>
+	
+	
+	{% if aggregate_stats %}
+	<table border=1>
+	<tr><td></td><td>Cash Effect</td><td>Holding Price</td><td>Locked Fare</td><td>Exercised Fare</td><td>Markup</td><td>Total Number</td><td>Percent Exercised</td></tr>
+	<tr><td>Average</td><td>{{ aggregate_stats.cash_effect_avg }}</td><td>{{ aggregate_stats.holding_price_avg }}</td><td>{{ aggregate_stats.locked_fare_avg }}</td><td>{{ aggregate_stats.exercised_fare_avg }}</td><td>{{ aggregate_stats.markup_avg }}</td><td>{{ aggregate_stats.num_options }}</td><td>{{ aggregate_stats.percent_exericsed }}</td></tr>
+	<tr><td>St. Dev.</td><td>{{ aggregate_stats.cash_effect_stdev }}</td><td>{{ aggregate_stats.holding_price_stdev }}</td><td>{{ aggregate_stats.locked_fare_stdev }}</td><td>{{ aggregate_stats.exercised_fare_stdev }}</td><td>{{ aggregate_stats.markup_stdev }}</td><td></td><td></td></tr> 
+	</table>
+	{% endif %}
+	
+	
+	<!-- option cash effect by date  -->  
+	<script type='text/javascript'>
+		var date_title = "{{ date.title }}";
+		var date_series = {{ date.series|safe }};
+		//var date_index = {{ date.index }};
+	$(function() {
+
+			window.chart = new Highcharts.StockChart({
+				chart: {
+					renderTo: 'date_chart',
+					type: 'candlestick',
+				},
+	
+				rangeSelector: {
+					selected : 1, 
+				},
+	
+				title: {
+					text : date_title
+				},
+
+				legend: {
+			    	enabled: false,
+			    	verticalAlign: 'bottom',
+			    	shadow: true
+			    },
+
+			    navigator: {
+	                top: 245,            
+		        },
+			    
+				series: date_series,
+				
+			});
+		});
+	</script>
+
+	<!-- option cash effect pivot = holding period by projection period  -->
+	<script>
+	
+	var pivot_title = "{{ pivot.title }}";
+	var pivot_series = {{ pivot.series|safe }};
+
+	$(function () {
+	    var chart;
+	    $(document).ready(function() {
+	        chart = new Highcharts.Chart({
+	            chart: {
+	                renderTo: 'pivot_chart',
+	                type: 'scatter',
+	                zoomType: 'xy'
+	            },
+	            title: {
+	                text: pivot_title
+	            },
+	            
+	            xAxis: {
+	                title: {
+	                    enabled: true,
+	                    text: 'Weeks to departure'
+	                },
+	                startOnTick: true,
+	                endOnTick: true,
+	                showLastLabel: true
+	            },
+	            yAxis: {
+	                title: {
+	                    text: 'Weeks option held before exercise'
+	                }
+	            },
+	            
+	            legend: {
+		            enabled: false,
+	                shadow: true,
+	                align: 'left',
+	                verticalAlign: 'top',
+	                floating: true,
+	                borderWidth: 1
+	            },
+	            plotOptions: {
+	            	series: {
+		                dataLabels: {
+		                    enabled: true,
+		                    formatter: function() {
+		                        return this.point.holding_price + ' / ' + this.point.cash_effect;
+		                    }
+		                }
+		            },
+	                scatter: {
+	                    marker: {
+	                        radius: 2,
+	                        states: {
+	                            hover: {
+	                                enabled: true,
+	                                
+	                            }
+	                        }
+	                    },
+	                    states: {
+	                        hover: {
+	                            marker: {
+	                                enabled: false
+	                            }
+	                        }
+	                    }
+	                }
+	            },
+
+	            
+	            series: pivot_series,
+
+	            tooltip: {
+	                formatter: function() {return ' ' +
+                    	'Count: ' + this.point.count + '<br />' +
+                    	'Avg Holding Price: ' + this.point.holding_price + '<br />' +
+	                    'Avg Cash Effect: ' + this.point.cash_effect;
+	                }
+	            },
+	        });
+	    });
+	    
+	});
+	</script>
+
+	<!-- option cash effect by projection period -->  
+	<script>
+	
+	var proj_week_title = "{{ proj_week.title }}";
+	var proj_week_series = {{ proj_week.series|safe }};
+
+	$(function () {
+	    var chart;
+	    $(document).ready(function() {
+	        chart = new Highcharts.Chart({
+	            chart: {
+	                renderTo: 'proj_week_chart',
+	                
+	                
+	            },
+	            title: {
+	                text: proj_week_title
+	            },
+	            
+	            xAxis: {
+	                title: {
+	                    enabled: true,
+	                    text: 'Weeks to departure'
+	                },
+	                startOnTick: true,
+	                endOnTick: true,
+	                showLastLabel: true
+	            },
+	            yAxis: [{
+	                title: {
+	                    text: 'Average cash effect'
+	                }
+	            	
+	            },
+	            {
+	                title: {
+	                    text: 'Percentage exercised'
+	                },
+	                opposite: true,
+	                gridLineWidth: 0,
+	            },
+	            ],
+	            
+	            legend: {
+		            enabled: false,
+	                shadow: true,
+	                align: 'left',
+	                verticalAlign: 'top',
+	                floating: true,
+	                borderWidth: 1
+	            },
+	            
+	            plotOptions: {
+	            	series: {
+		                dataLabels: {
+		                    enabled: true,
+		                    formatter: function() {
+		                        return this.point.count;
+		                    }
+		                }
+		            },
+	            },
+				
+	            
+	            series: proj_week_series,
+					
+	            tooltip: {
+	                formatter: function() {return ' ' +
+                    	'Count: ' + this.point.count + '<br />' +
+                    	'Avg Cash Effect: ' + this.point.y + '<br />' +
+                    	'Avg Holding Price: ' + this.point.holding_price;
+	                }
+	            },
+	            
+	        });
+	    });
+	    
+	});
+	</script>
+	
+	
+	
+	<!-- option cash effect by length of time option was held -->  
+	<script>
+	
+	var hold_per_title = "{{ hold_per.title }}";
+	var hold_per_series = {{ hold_per.series|safe }};
+
+	$(function () {
+	    var chart;
+	    $(document).ready(function() {
+	        chart = new Highcharts.Chart({
+	            chart: {
+	                renderTo: 'hold_per_chart',
+	            },
+	            title: {
+	                text: hold_per_title
+	            },
+	            
+	            xAxis: {
+	                title: {
+	                    enabled: true,
+	                    text: 'Weeks option held before exercise'
+	                },
+	                startOnTick: true,
+	                endOnTick: true,
+	                showLastLabel: true
+	            },
+	            yAxis: [{
+	                title: {
+	                    text: 'Average cash effect'
+	                }
+	            	
+	            },
+	            {
+	                title: {
+	                    text: 'Percentage exercised'
+	                },
+	                opposite: true,
+       
+	            },
+	            ],
+	            
+	            legend: {
+		            enabled: false,
+	                shadow: true,
+	                align: 'left',
+	                verticalAlign: 'top',
+	                floating: true,
+	                borderWidth: 1
+	            },
+	            plotOptions: {
+	            	series: {
+		                dataLabels: {
+		                    enabled: true,
+		                    formatter: function() {
+		                        return this.point.count;
+		                    }
+		                }
+		            },
+	            },
+
+	            
+	            series: hold_per_series,
+
+	            tooltip: {
+	                formatter: function() {return ' ' +
+                    	'Count: ' + this.point.count + '<br />' +
+                    	'Avg Cash Effect: ' + this.point.y + '<br />' +
+                    	'Avg Holding Price: ' + this.point.holding_price;
+	                }
+	            },
+	        });
+	    });
+	    
+	});
+	</script>
+	
+	
+	<!-- projection accuracy graph  -->
+	<script>
+	
+	var accuracy_title = "{{ accuracy.title }}";
+	var accuracy_series = {{ accuracy.series|safe }};
+	
+	for (var i = 0; i < accuracy_series.length; i++) 
+	{
+		var index = accuracy_series[i].index
+		if (index > 1)
+		{	
+			accuracy_series[i].visible = false;
+		}
+	}
+	
+	$(function () {
+	    var chart;
+	    $(document).ready(function() {
+	        chart = new Highcharts.Chart({
+	            chart: {
+	                renderTo: 'accuracy_chart',
+	                type: 'candlestick',
+	                zoomType: 'xy'
+	            },
+	            title: {
+	                text: accuracy_title
+	            },
+	            
+	            xAxis: {
+	                title: {
+	                    enabled: true,
+	                    text: 'Weeks to departure'
+	                },
+	                startOnTick: true,
+	                endOnTick: true,
+	                showLastLabel: true
+	            },
+	            yAxis: {
+	                title: {
+	                    text: 'Projection / actual fare ratio'
+	                }
+	            },
+	            
+	            legend: {
+		            enabled: true,          
+	                verticalAlign: 'bottom',
+	                floating: false,
+	                borderWidth: 1
+	            },
+	            
+	            
+	            series: accuracy_series,
+
+	            });
+	    });
+	    
+	});
+	</script>
+	
+	
+			
+	<table><tr>
+	<td><div id="hold_per_chart" style="height: 320px; margin: 0 auto; width: 500px"></div></td>
+	<td><div id="proj_week_chart" style="height: 320px; margin: 0 auto; width: 700px"></div></td>
+	</tr></table>
+	
+	
+	<div id="pivot_chart" style="min-width: 500px; height: 320px; margin: 0 auto"></div>
+    <div id="date_chart" style="height: 320px; min-width: 500px"></div>
+    <div id="accuracy_chart" style="height: 320px; min-width: 500px"></div>
+{% endblock %}

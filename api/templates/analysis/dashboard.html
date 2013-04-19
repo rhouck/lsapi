@@ -1,0 +1,343 @@
+{% extends 'chart.html' %}
+
+
+{% block title %}Dashboard{% endblock %}
+
+
+{% block content %}
+	
+	<table ><tr><td>
+		<table class="table table-condensed">
+		<tr><td>Options Outstanding</td><td>{{ current_exposure.num_options_out }}</td><td>Cash Balance</td><td>{{ cash_balance.cash_balance }}</td><td>Option Sales Open</td><td>{{ sales_gate }}</td></tr>
+		<tr><td>Expected Exposure</td><td>{{ current_exposure.current_exp_exposure }}</td><td>Additional Capacity</td><td>{{ additional_capacity.quantity }}</td><td></td><td></td></tr>
+		<tr><td>Next Expiration</td><td>{{ current_exposure.next_expiration }}</td><td>Last Change</td><td>{{ cash_balance.last_change }}</td><td></td><td></td></tr>
+		</table>
+	</td><td>
+		{% if form.errors %}
+			<p style="color: red;">
+				Please correct the error{{ form.errors|pluralize }} below.
+			</p>
+		{% endif %}
+		
+		<form action="" method="post">
+			{% csrf_token %} 
+			<table>
+			{{ form.as_table }}
+			</table>	
+			<input type="submit" name="Search">
+		</form>
+	</td></tr></table>	
+		
+	<script>
+	// cash movement graph
+	var cash_movement_series = {{ cash_movement|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.StockChart({
+            
+                chart: {
+                    renderTo: 'cash_movement_chart',
+                    type: 'area'                    
+                },
+                
+                rangeSelector: {
+                    selected: 2
+                },
+                
+                title: {
+                    text: 'Risk Pool Cash Balance'
+                },
+            
+                series: cash_movement_series,
+
+                
+
+	          	});   
+    });
+
+    // current exposure graph
+	var exposure_outlook_series = {{ exposure_outlook|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.StockChart({
+            
+                chart: {
+                    renderTo: 'current_exposure_chart',
+                    type: 'area'                    
+                },
+                
+                rangeSelector: {
+                    selected: 2
+                },
+                
+                title: {
+                    text: 'Current Expected Exposure',
+                },
+            
+                series: exposure_outlook_series,
+
+                plotOptions: {
+	            	series: {
+		                dataLabels: {
+		                    enabled: true,
+		                    formatter: function() {
+		                        return this.point.count;
+		                    }
+		                }
+		            },
+                },
+				
+				
+	          	});   
+    });    
+
+ 	// conversion graph
+	var conversion_series = {{ conversion|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.StockChart({
+            
+                chart: {
+                    renderTo: 'conversion_chart',
+                    type: 'area'                    
+                },
+                
+                rangeSelector: {
+                    selected: 2
+                },
+                
+                title: {
+                    text: 'Search conversion over time'
+                },
+                
+                series: conversion_series,
+
+
+	          	});   
+    });
+
+ 	// average cash effects graph
+	var average_cash_effects_series = {{ average_cash_effects|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.StockChart({
+            
+                chart: {
+                    renderTo: 'avg_cash_effects_chart',
+                                        
+                },
+                
+                rangeSelector: {
+                    selected: 2
+                },
+                
+                title: {
+                    text: 'Average ultimate cash effects per purchased option'
+                },
+                
+                series: average_cash_effects_series,
+
+
+	          	});   
+    });
+	
+ 	// search flexibility pie
+	var search_flex_data = {{ search_flex_chart|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.Chart({
+            
+                chart: {
+                    renderTo: 'search_flexibility_chart',
+                    type: 'pie'                    
+                },
+                
+                title: {
+                    text: 'Flexibility preference in searches'
+                },
+                
+                series: [{
+                    type: 'pie',
+                    data: search_flex_data
+                }],
+                tooltip: {
+            	    pointFormat: '{point.percentage}%',
+                	percentageDecimals: 1
+                }				
+
+	          	});   
+    });
+
+	// search hold period pie
+	var search_hold_data = {{ search_hold_chart|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.Chart({
+            
+                chart: {
+                    renderTo: 'search_hold_chart',
+                    type: 'pie'                    
+                },
+                
+                title: {
+                    text: 'Holding period preference in searches'
+                },
+                
+                series: [{
+                    type: 'pie',
+                    data: search_hold_data
+                }],
+                tooltip: {
+            	    pointFormat: '{point.percentage}%',
+                	percentageDecimals: 1
+                }	
+	          	});   
+    });
+ 	// search time to departure pie
+	var search_dep_len_data = {{ search_dep_len_chart|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.Chart({
+            
+                chart: {
+                    renderTo: 'search_dep_len_chart',
+                    type: 'pie'                    
+                },
+                
+                title: {
+                    text: 'Number weeks between search and departure'
+                },
+                
+                series: [{
+                    type: 'pie',
+                    data: search_dep_len_data
+                }],
+                tooltip: {
+            	    pointFormat: '{point.percentage}%',
+                	percentageDecimals: 1
+                }	
+	          	});   
+    });
+ 	// purchase flexibility pie
+	var purch_flex_data = {{ purch_flex_chart|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.Chart({
+            
+                chart: {
+                    renderTo: 'purch_flexibility_chart',
+                    type: 'pie'                    
+                },
+                
+                title: {
+                    text: 'Flexibility preference in purchases'
+                },
+                
+                series: [{
+                    type: 'pie',
+                    data: purch_flex_data
+                }],
+                tooltip: {
+            	    pointFormat: '{point.percentage}%',
+                	percentageDecimals: 1
+                }	
+	          	});   
+    });
+
+	// purchase hold period pie
+	var purch_hold_data = {{ purch_hold_chart|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.Chart({
+            
+                chart: {
+                    renderTo: 'purch_hold_chart',
+                    type: 'pie'                    
+                },
+                
+                title: {
+                    text: 'Holding period preference in purchases'
+                },
+                
+                series: [{
+                    type: 'pie',
+                    data: purch_hold_data
+                }],
+                tooltip: {
+            	    pointFormat: '{point.percentage}%',
+                	percentageDecimals: 1
+                }	
+	          	});   
+    });
+ 	// purchase time to departure pie
+	var purch_dep_len_data = {{ purch_dep_len_chart|safe }};
+    $(function () {
+               
+            window.chart = new Highcharts.Chart({
+            
+                chart: {
+                    renderTo: 'purch_dep_len_chart',
+                    type: 'pie'                    
+                },
+                
+                title: {
+                    text: 'Number weeks between purchase and departure'
+                },
+                
+                series: [{
+                    type: 'pie',
+                    data: purch_dep_len_data
+                }],
+                tooltip: {
+            	    pointFormat: '{point.percentage}%',
+                	percentageDecimals: 1
+                }	
+	          	});   
+    });
+    
+	</script>
+			
+	
+	<table><tr>
+	<td><div id="cash_movement_chart" style="height: 320px; min-width: 650px"></div></td>
+	<td><div id="current_exposure_chart" style="height: 320px; min-width: 650px"></div></td>
+	</tr><tr>
+	<td><div id="conversion_chart" style="height: 320px; min-width: 650px"></div></td>
+	<td><div id="avg_cash_effects_chart" style="height: 320px; min-width: 650px"></div></td>
+	</tr></table>
+	
+	<table><tr>
+	<td><div id="search_flexibility_chart" style="height: 320px; min-width: 440px"></div></td>
+	<td><div id="search_hold_chart" style="height: 320px; min-width: 440px"></div></td>
+	<td><div id="search_dep_len_chart" style="height: 320px; min-width: 440px"></div></td>
+	</tr><tr>
+	<td><div id="purch_flexibility_chart" style="height: 320px; min-width: 440px"></div></td>
+	<td><div id="purch_hold_chart" style="height: 320px; min-width: 440px"></div></td>
+	<td><div id="purch_dep_len_chart" style="height: 320px; min-width: 440px"></div></td>
+	</tr></table>
+	
+	<table border =1><tr>
+	<td><h3>Recent Purchases</h3>
+	<ul>
+	{% for contract in recent_purchases %}	    
+	    <li>
+	    {{contract.purch_date}}, {{contract.customer.last_name}}, {{contract.customer.first_name}}, {{contract.search.origin_code}}:{{contract.search.destination_code}}, Option fee: {{contract.search.holding_price}} 	 
+	    </li>
+	{% endfor %}
+	</ul></td>
+	<td><h3>Recent Exercises</h3>
+	<ul>
+	{% for contract in recent_exercises %}	    
+	    <li>
+	    {{contract.ex_date}}, {{contract.customer.last_name}}, {{contract.customer.first_name}}, {{contract.search.origin_code}}:{{contract.search.destination_code}}, Exercise fare: {{contract.ex_fare}} 	 
+	    </li>
+	{% endfor %}
+	</ul></td>
+	</tr></table>
+	
+	
+    
+    
+	
+		
+{% endblock %}
