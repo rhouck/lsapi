@@ -9,7 +9,7 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -33,7 +33,7 @@ DATABASES = {
 	'OPTIONS': { 'unix_socket' : '/opt/bitnami/mysql/tmp/mysql.sock', }            
     }
 }
-"""
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
