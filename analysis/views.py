@@ -507,7 +507,7 @@ def overlay(request, departure_trend):
 
         try:
             inputs = search_inputs(purpose='projection', start_date=cd['proj_date'], origin=cd['origin'], destination=cd['destination'], num_high_days=cd['num_high_days'], dep_time_pref=format_pref_input(cd['depart_times']), ret_time_pref=format_pref_input(cd['return_times']), stop_pref=format_pref_input(cd['nonstop']),
-                                   num_per_look_back = cd['num_per_look_back'], weight_on_imp = cd['weight_on_imp'], ensure_suf_data = cd['ensure_suf_data'], seasonality_adjust = cd['seasonality_adjust'], regressed = cd['regressed'], black_list_error=cd['black_list_error'])
+                                   num_per_look_back = cd['num_per_look_back'], weight_on_imp = cd['weight_on_imp'], ensure_suf_data = cd['ensure_suf_data'], seasonality_adjust = cd['seasonality_adjust'], regressed = cd['regressed'], black_list_error=cd['black_list_error'], depart_length_width = cd['depart_length_width'], width_of_avg = cd['width_of_avg'])
             projections = projection(inputs)
 
             db_min = db(cursorclass=MySQLdb.cursors.DictCursor, db='steadyfa_projection_prep')

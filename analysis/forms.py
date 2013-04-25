@@ -18,6 +18,8 @@ class Overlay(Projection):
     weight_on_imp = forms.FloatField(label='Imp/Hist', initial=1)
     ensure_suf_data = forms.FloatField(label='Suf Data Req', initial=.8)
     black_list_error = forms.FloatField(label='Blck Lst Err', required=False, initial=None)
+    depart_length_width = forms.IntegerField(label='Dep Len Wid', initial=1)
+    width_of_avg = forms.IntegerField(label='Wid Avg', initial=1)
     seasonality_adjust = forms.BooleanField(label='Seas.', required=False, initial=True)
     regressed = forms.BooleanField(label='Regress', required=False, initial=False)
 
