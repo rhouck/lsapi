@@ -3,13 +3,16 @@
     <title>{% block title %}Levelskies API{% endblock %}</title>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 	<link href="//static.levelskies.com/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
-	<style> body {background-color: silver;} </style>	
+	<style> body {background-color: silver;} </style>
+	<style> input[type="text"] { width:100px !important;} </style>
+	<style> input[type="password"] { width:100px !important;} </style>
+
 	{% block head %}{% endblock %}
 </head>
 <body>
     {% block nav %}
 	    <p>
-	    <a href="{% url dashboard %}">Dashboard</a> :	
+	    <a href="{% url dashboard %}">Dashboard</a> :
 	    Pricing >
 	    <a href="{% url price_single %}">Single</a> :
 	    Sales >
@@ -18,7 +21,7 @@
 	    <a href="{% url cust_signup %}">Customer Signup</a> :
 	    <a href="{% url customer_detail 1 %}">Customer History</a> :
 	    <a href="{% url platform_detail 1 %}">Platform History</a> :
-		Misc >	
+		Misc >
 	    <a href="{% url admin:index %}">Admin</a> :
 		<a href="{% url logout %}">Logout</a>
 	    </br>
@@ -30,13 +33,13 @@
 	    <a href="{% url proj_depart %}">Proj - departure window</a> :
 	    <a href="{% url proj_accuracy_abs %}">Proj accuracy - abs</a> :
 	    <a href="{% url proj_accuracy_rel %}">Proj accuracy - rel</a> :
-	    <a href="{% url sim_analysis %}">Sim Performance</a> 
-	    
-	     
+	    <a href="{% url sim_analysis %}">Sim Performance</a>
+
+
 		</p>
     {% endblock %}
     <hr>
-    
+
     {% block content %}
 	<table border = "0">
 	<tr>
@@ -83,10 +86,10 @@
 	,,,,,,,,,,,.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></td>
 	</tr>
-	</table>    
+	</table>
 	{% endblock %}
-    
-    
+
+
     {% block footer %}
     <hr>
     <p>Price Point Analytics</p>

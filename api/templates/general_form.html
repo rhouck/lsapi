@@ -2,34 +2,36 @@
 
 {% block content %}
 	{% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
-		
+
 	{% if form.errors %}
 		<p style="color: red;">
 			Please correct the error{{ form.errors|pluralize }} below.
 		</p>
 	{% endif %}
-	
+
 	<form action="" method="get">
 		{% csrf_token %}
 		<table>
 		{{ form.as_table }}
-		</table>	
+		</table>
 		<input type="submit" name="Search">
 	</form>
-	
+
 	{% if results %}
-	
+
 		{% block results %}
-			<p>Results: </p>
+			<p><b>Results:</b></p>
+
 			<ul>
-			{% for result in results %}
-				<li>{{ result }}</li>
+			{% for key, value in results.items %}
+				<li><b>{{ key }}</b>: {{ value }}</li>
 			{% endfor %}
 			</ul>
+
 		{% endblock %}
 	{% endif %}
 
-		
+
 {% endblock %}
 
-	
+
