@@ -505,59 +505,64 @@ def overlay(request, departure_trend):
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
 
-        try:
-            inputs = search_inputs(purpose='projection', start_date=cd['proj_date'], origin=cd['origin'], destination=cd['destination'], num_high_days=cd['num_high_days'], dep_time_pref=format_pref_input(cd['depart_times']), ret_time_pref=format_pref_input(cd['return_times']), stop_pref=format_pref_input(cd['nonstop']),
-                                   num_per_look_back = cd['num_per_look_back'], weight_on_imp = cd['weight_on_imp'], ensure_suf_data = cd['ensure_suf_data'], seasonality_adjust = cd['seasonality_adjust'], regressed = cd['regressed'], black_list_error=cd['black_list_error'], depart_length_width = cd['depart_length_width'], width_of_avg = cd['width_of_avg'])
-            projections = projection(inputs)
+        #try:
+        inputs = search_inputs(purpose='projection', start_date=cd['proj_date'], origin=cd['origin'], destination=cd['destination'], num_high_days=cd['num_high_days'], dep_time_pref=format_pref_input(cd['depart_times']), ret_time_pref=format_pref_input(cd['return_times']), stop_pref=format_pref_input(cd['nonstop']),
+                               num_per_look_back = cd['num_per_look_back'], weight_on_imp = cd['weight_on_imp'], ensure_suf_data = cd['ensure_suf_data'], seasonality_adjust = cd['seasonality_adjust'], regressed = cd['regressed'], black_list_error=cd['black_list_error'], depart_length_width = cd['depart_length_width'], width_of_avg = cd['width_of_avg'])
+        projections = projection(inputs)
 
-            db_min = db(cursorclass=MySQLdb.cursors.DictCursor, db='steadyfa_projection_prep')
-            latest_add_date = db_min.find_simple_sum_stat("%s%s" % (inputs.origin, inputs.destination), 'Max', 'date_collected', db_dict=True)
-            db_min.pull_mins(inputs.origin, inputs.destination, datetime.date(1900,1,1), latest_add_date, inputs.flight_type, inputs.max_trip_length, inputs.prefs.id, num_high_days=inputs.num_high_days, adj_name='graph_build_')
+        db_date = db(cursorclass=MySQLdb.cursors.DictCursor, db='steadyfa_projection_prep')
+        latest_add_date = db_date.find_simple_sum_stat("%s%s" % (inputs.origin, inputs.destination), 'Max', 'date_collected', db_dict=True)
+        db_date.db_disconnect()
 
-            series_set = []
+        db_min = db(cursorclass=MySQLdb.cursors.DictCursor, db='steadyfa_temp_tables')
+        db_min.pull_mins(inputs.origin, inputs.destination, datetime.date(1900,1,1), latest_add_date, inputs.flight_type, inputs.max_trip_length, inputs.prefs.id, num_high_days=inputs.num_high_days, adj_name='graph_build_')
 
-            if inputs.black_list_error:
-                black_list_bank = []
-                for i in projections.previous.black_list.itervalues():
-                    black_list_bank.append(i['beg_period'])
+        series_set = []
 
+        """
+        if inputs.black_list_error:
+            black_list_bank = []
+            for i in projections.previous.black_list.itervalues():
+                black_list_bank.append(i['beg_period'])
+        """
 
-            for i, j in projections.adjusted_fares[projections.type].projected.iteritems():
-                results = []
-                for k, v in j.iteritems():
-                    if isinstance(k, int) and v:
-                        try:
-                            st_dev = projections.adjusted_fares[projections.type].standard_deviations[i][k]
-                            actual = db_min.find_simple_sum_stat('graph_build_minimums', 'Avg', 'min_fare', where = {'depart_length': k*7}, greater = {'depart_date': j['beg_period']}, less = {'depart_date': (j['beg_period'] + datetime.timedelta(days = 7))}, db_dict=True)
-                            actual = float(actual)
-                            if departure_trend == 'relative':
-                                if st_dev:
-                                    vals = ((float(v)-st_dev)/actual - 1, (float(v)+st_dev)/actual - 1)
-                                else:
-                                    vals = (float(v)/actual - 1, float(v)/actual - 1)
+        for i, j in projections.adjusted_fares[projections.type].projected.iteritems():
+            results = []
+            for k, v in j.iteritems():
+                if isinstance(k, int) and v:
+                    try:
+                        st_dev = projections.adjusted_fares[projections.type].standard_deviations[i][k]
+                        actual = db_min.find_simple_sum_stat('graph_build_minimums', 'Avg', 'min_fare', where = {'depart_length': k*7}, greater = {'depart_date': j['beg_period']}, less = {'depart_date': (j['beg_period'] + datetime.timedelta(days = 7))}, db_dict=True)
+                        actual = float(actual)
+
+                        if departure_trend == 'relative':
+                            if st_dev:
+                                vals = ((float(v)-st_dev)/actual - 1, (float(v)+st_dev)/actual - 1)
                             else:
-                                if st_dev:
-                                    vals = (float(v)-st_dev-actual, float(v)+st_dev-actual)
-                                else:
-                                    vals = (float(v)-actual, float(v)-actual)
-                            date = conv_to_js_date((j['beg_period'] - datetime.timedelta(days = int(k)*7)))
-                            results.append([date, vals[0], vals[1]])
+                                vals = (float(v)/actual - 1, float(v)/actual - 1)
+                        else:
+                            if st_dev:
+                                vals = (float(v)-st_dev-actual, float(v)+st_dev-actual)
+                            else:
+                                vals = (float(v)-actual, float(v)-actual)
+                        date = conv_to_js_date((j['beg_period'] - datetime.timedelta(days = int(k)*7)))
+                        results.append([date, vals[0], vals[1]])
 
-                        except:
-                            pass
-                results = sorted(results)
+                    except:
+                        pass
+            results = sorted(results)
 
-                series = {'name': 'dep week - %s' % (j['beg_period']), 'data': results, 'tooltip': {'valueDecimals': 0}, 'depart_date': int(i)}
+            series = {'name': 'dep week - %s' % (j['beg_period']), 'data': results, 'tooltip': {'valueDecimals': 0}, 'depart_date': int(i)}
 
-                series_set.append(series)
-
-                if inputs.black_list_error:
-                    if j['beg_period'] in black_list_bank:
-                        del series_set[-1]
-
-            return render_to_response('analysis/highstock.html', {'form': form, 'title': 'Projected vs Actual fares from %s to %s as of %s' % (inputs.origin, inputs.destination, inputs.start_date), 'series': series_set, 'visible': 10, 'type': 'areasplinerange', 'plot_line': 0.001})
-        except:
-            return render_to_response('analysis/highstock.html', {'form': form, 'error_message': 'The route selected did not return any results.',}, context_instance=RequestContext(request))
+            series_set.append(series)
+            """
+            if inputs.black_list_error:
+                if j['beg_period'] in black_list_bank:
+                    del series_set[-1]
+            """
+        return render_to_response('analysis/highstock.html', {'form': form, 'title': 'Projected vs Actual fares from %s to %s as of %s' % (inputs.origin, inputs.destination, inputs.start_date), 'series': series_set, 'visible': 10, 'type': 'areasplinerange', 'plot_line': 0.001})
+        #except:
+        #    return render_to_response('analysis/highstock.html', {'form': form, 'error_message': 'The route selected did not return any results.',}, context_instance=RequestContext(request))
     else:
         return render_to_response('analysis/highstock.html', {'form': form})
 
@@ -578,7 +583,7 @@ def projections(request, format):
             projections = db_proj.sel_crit('all', 'projections', ['*'], {'route': "%s_%s" % (inputs.origin, inputs.destination), 'num_high_days': inputs.num_high_days, 'prefs': inputs.prefs.id, 'flight_type': inputs.flight_type})
 
             series_set = []
-
+            """
             black_list_bank = []
             try:
                 black_list_source = db_proj.sel_crit('all', 'black_list', ['beg_period'], {'route': "%s_%s" % (inputs.origin, inputs.destination), 'num_high_days': inputs.num_high_days, 'prefs': inputs.prefs.id, 'flight_type': inputs.flight_type})
@@ -586,7 +591,7 @@ def projections(request, format):
                     black_list_bank.append(i['beg_period'])
             except:
                 pass
-
+            """
 
             if format == "date":
                 for i in projections:
@@ -598,9 +603,10 @@ def projections(request, format):
                     results = sorted(results)
                     series = {'name': 'dep week - %s' % (i['beg_period']), 'data': results, 'tooltip': {'valueDecimals': 0}, 'depart_date': int(i['proj_week'])}
                     series_set.append(series)
+                    """
                     if i['beg_period'] in black_list_bank:
                         del series_set[-1]
-
+                    """
                 return render_to_response('analysis/highstock.html', {'form': form, 'title': 'Projected fares from %s to %s by departure date' % (inputs.origin, inputs.destination), 'series': series_set, 'visible': 20, 'type': 'spline'})
 
             else:
@@ -611,8 +617,10 @@ def projections(request, format):
                             if k not in results:
                                 results[k] = []
                             date = conv_to_js_date(i['beg_period'])
+                            """
                             if i['beg_period'] in black_list_bank:
                                 v = 0
+                            """
                             results[k].append([date, float(v)])
 
                 for k in results.iterkeys():
