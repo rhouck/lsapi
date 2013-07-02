@@ -19,11 +19,12 @@
 	    <a href="{% url purchase %}">Purchase</a> :
 	    <a href="{% url exercise %}">Exercise</a> :
 	    <a href="{% url cust_signup %}">Customer Signup</a> :
-	    <a href="{% url customer_detail 1 %}">Customer History</a> :
-	    <a href="{% url platform_detail 1 %}">Platform History</a> :
+	    <a href="{% url customer_list %}">Customer History</a> :
+	    <a href="{% url platform_list %}">Platform History</a> :
 		Misc >
 	    <a href="{% url admin:index %}">Admin</a> :
-		<a href="{% url logout %}">Logout</a>
+			<a href="{% url rep_data_status %}">Check Replicated Data</a> :
+			<a href="{% url logout %}">Logout</a>
 	    </br>
 	    Analysis >
 	    <a href="{% url hist_date %}">Hist fare - date</a> :

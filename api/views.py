@@ -2,7 +2,8 @@ import datetime
 import time
 from django.utils.timezone import utc
 import sys
-from random import randint
+from random import randint, choice
+import string
 import json
 
 from django.template.loader import get_template
@@ -21,11 +22,10 @@ from django.contrib.auth.views import login
 from forms import *
 
 # this path contains all simualtion and valuation models and scripts
-sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-12.1/www/SFmodel/analysis')
+sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localweb/projects/analysis')
 sys.path.insert(1, '/home/humbert/analysis')
 sys.path.insert(2, '/home/develop/analysis')
 sys.path.insert(3, '/home/bitnami/analysis')
-
 
 
 def conv_to_js_date(date):
@@ -46,9 +46,19 @@ def gen_search_display(request, build, clean):
     else:
         return render_to_response('general_form.html', build, context_instance=RequestContext(request))
 
+def gen_alphanum_key():
+    key = ''
+    for i in range(6):
+        key += choice(string.lowercase + string.uppercase + string.digits)
+    return key
+
 
 def hello(request):
-    return HttpResponse(request.path)
+    url = "https://www.google.com/"
+    ex = {'url': url}
+    return HttpResponse(json.dumps(ex), mimetype="application/json")
+    #return HttpResponse(request.path)
+
 
 @login_required()
 def splash(request):

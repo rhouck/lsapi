@@ -8,7 +8,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-                       
+
     # Uncomment the admin/doc line below to enable admin documentation:
     #url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls), name='admin'),
@@ -16,10 +16,10 @@ urlpatterns = patterns('',
     url(r'^$', splash),
     url(r'^accounts/login/$', login_view, name='login'),
     url(r'^accounts/logout/$', logout_view, name='logout'),
-    
+
     # 'pricing' app urls
     url(r'^pricing/', include('pricing.urls')),
-    
+
     # 'sales' app urls
     url(r'^sales/', include('sales.urls')),
 
@@ -27,4 +27,4 @@ urlpatterns = patterns('',
     url(r'^analysis/', include('analysis.urls')),
 
 )
-    
+

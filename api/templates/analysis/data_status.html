@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Replicated Data Status{% endblock %}
+
+{% block content %}
+
+  <h3>Model DB</h3>
+  <table class="table table-bordered">
+  <tr><td>Table Name</td><td>Update Time</td><td>Row Count</td></tr>
+  {% for item in model %}
+      <tr><td>{{item.table_name}}</td><td>{{item.update_time}}</td><td>{{item.num_rows}}</td></tr>
+  {% endfor %}
+  </table>
+
+  <h3>Projection Prep</h3>
+  <table class="table table-bordered">
+  <tr><td>Table Name</td><td>Update Time</td><td>Row Count</td></tr>
+  {% for item in proj_prep %}
+      <tr><td>{{item.table_name}}</td><td>{{item.update_time}}</td><td>{{item.num_rows}}</td></tr>
+  {% endfor %}
+  </table>
+
+
+{% endblock %}

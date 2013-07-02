@@ -4,35 +4,35 @@ from django.contrib import admin
 
 
 class ContractAdmin(admin.ModelAdmin):
-    
+
     list_display = ('purch_date', 'ex_fare', 'get_exp_date', 'get_holding_price', 'get_locked_fare', 'outstanding')
     """
     fieldsets = [
                 (None, {'fields': ('platform', 'customer', 'purch_date', 'exp_date', 'option_price', 'locked_fare', 'ex_fare')}),
                 ]
     """
-    
+
     #list_filter = ['get_exp_date']
     #date_hierarchy = 'get_exp_date'
-    
+
     def get_exp_date(self, obj):
         return (obj.search.exp_date)
     get_exp_date.short_description = 'expiration date'
-    
-    
+
+
     def get_holding_price(self, obj):
         return (obj.search.holding_price)
     get_holding_price.short_description = 'holding price'
-    
+
     def get_locked_fare(self, obj):
         return (obj.search.locked_fare)
     get_locked_fare.short_description = 'locked fare'
-        
+
     def has_add_permission(self, request):
         return False
     #def has_change_permission(self, request):
     #    return False
-    
+
 admin.site.register(Contract, ContractAdmin)
 
 
@@ -55,10 +55,10 @@ admin.site.register(Platform, PlatformAdmin)
 
 class OpenAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
-        return False
+        return True
     def has_delete_permission(self, request, obj=None):
         return False
-    
+
     #def has_change_permission(self, request):
     #    return False
 admin.site.register(Open, OpenAdmin)

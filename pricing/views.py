@@ -1,7 +1,6 @@
 import datetime
 import sys
 from random import randint
-
 from django.template.loader import get_template
 from django.template import Context
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -13,15 +12,17 @@ from django.core.urlresolvers import reverse
 from forms import *
 from analysis.models import Search_history
 from sales.models import Open
-from api.views import current_time_aware, gen_search_display
+from api.views import current_time_aware, gen_search_display, gen_alphanum_key
 
 from functions import *
 from gen_price import *
 from mult_search import *
 from search_summary import *
 
+
 def hello(request):
     return HttpResponse("Hello")
+
 
 def select_geography(hub):
     """
@@ -35,6 +36,7 @@ def select_geography(hub):
     else:
         geography = ""
     return geography
+
 
 def price_edu_combo(view, clean=False):
     def gen_price_edu_combo(request, clean):
@@ -163,11 +165,12 @@ def price_edu_combo(view, clean=False):
                                                                holding_price=pricing_results_full['output']['holding_price'], locked_fare=pricing_results_full['output']['locked_fare'], buffer=pricing_results_full['buffer'], correl_coef=pricing_results_full['correl_coef'], cycles=pricing_results_full['cycles'], expected_risk=pricing_results_full['expected_risk'], lockin_per=pricing_results_full['lockin_per'], markup=pricing_results_full['markup'], round_to=pricing_results_full['round_to'], wtp=pricing_results_full['wtp'], wtpx=pricing_results_full['wtpx'], max_trip_length=pricing_results_full['max_trip_length'], exp_date=exp_date,
                                                                first_week_avg_proj_fare = first_week_avg_fare, first_week_max_proj_fare = first_week_max_fare, second_week_avg_proj_fare = second_week_avg_fare, second_week_max_proj_fare = second_week_max_fare,
                                                                first_week_avg_proj_st_dev = first_week_avg_st_dev, first_week_max_proj_st_dev = first_week_max_st_dev, second_week_avg_proj_st_dev = second_week_avg_st_dev, second_week_max_proj_st_dev = second_week_max_st_dev,
-                                                               open_status = open_status.get_status(), total_flexibility=total_flexibility, time_to_departure=time_to_departure, geography=pricing_results_full['geography'])
+                                                               open_status = open_status.get_status(), total_flexibility=total_flexibility, time_to_departure=time_to_departure, geography=pricing_results_full['geography'], key=gen_alphanum_key())
                                 search_params.save()
-                                search_id = search_params.id
+                                search_key = search_params.key
+
                             except:
-                                search_id = None
+                                search_key = None
 
                         else:
                             geography = select_geography(cd['origin_code'])
@@ -182,20 +185,20 @@ def price_edu_combo(view, clean=False):
                                 search_params.save()
                             except:
                                 pass
-                            search_id = None
+                            search_key = None
                     else:
-                        search_id = None
+                        search_key = None
 
-                    # voucher format conversion
+                    # deposit format conversion
                     pricing_results['refund_value'] = pricing_results['locked_fare']
                     if pricing_results['holding_price'] and pricing_results['locked_fare']:
-                        pricing_results['voucher_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
+                        pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
                     else:
-                        pricing_results['voucher_value'] = ''
+                        pricing_results['deposit_value'] = ''
                     del pricing_results['holding_price']
                     del pricing_results['locked_fare']
 
-                    combined_results = [{'pricing_results': pricing_results, 'context': cust_edu_results, 'inputs': inputs, 'id': search_id}]
+                    combined_results = [{'pricing_results': pricing_results, 'context': cust_edu_results, 'inputs': inputs, 'key': search_key}]
                     if changed_prefs:
                         combined_results[0]['changed_prefs'] = changed_prefs
                 else:
@@ -225,7 +228,8 @@ def conv_holding_to_lockin(inputs):
     @todo: find a better way to handle the 'depart_date1' input, it currently is not ensuring proper date format
     """
 
-    start = current_time_aware().date()
+    #start = current_time_aware().date()
+    start = datetime.date(2013,3,10)
     """
     if inputs['holding_per']:
         holding_per = int(inputs['holding_per'])
@@ -240,74 +244,3 @@ def conv_holding_to_lockin(inputs):
     #lockin_per = ((departure - expiry).days / 7.0)
 
     return lockin_per
-
-
-"""
-def search_summary(view, clean=False):
-    def search_summary_build(request, clean):
-            if (request.GET):
-                form = search_summary_inputs(request.GET)
-                if form.is_valid():
-                    cd = form.cleaned_data
-
-                    inputs = search_inputs(purpose='projection', origin=cd['origin_code'], destination=cd['destination_code'], flight_type=cd['search_type'], dep_time_pref=format_pref_input(cd['depart_times']), ret_time_pref=format_pref_input(cd['return_times']), stop_pref=format_pref_input(cd['nonstop']))
-                    example = aggregate_search_summaries(inputs)
-                    results = [example.display_single_search()]
-                else:
-                    results = None
-            else:
-                form = search_summary_inputs()
-                results = None
-            build = {'form': form, 'results': results}
-            return view(request, build, clean)
-
-    return search_summary_build
-
-
-
-def gen_price(view, clean=False):
-    def gen_price_build(request, clean):
-            if (request.GET):
-                form = gen_price_single(request.GET)
-                if form.is_valid():
-                    cd = form.cleaned_data
-
-                    lockin_per = conv_holding_to_lockin(cd)
-
-                    inputs = search_inputs(purpose='simulation', source = '', origin=cd['origin_code'], destination=cd['destination_code'], lockin_per=lockin_per, d_date1=cd['depart_date1'], d_date2=cd['depart_date2'], r_date1=cd['return_date1'], r_date2=cd['return_date2'], flight_type=cd['search_type'], dep_time_pref=format_pref_input(cd['depart_times']), ret_time_pref=format_pref_input(cd['return_times']), stop_pref=format_pref_input(cd['nonstop']))
-                    example = simulation(inputs)
-                    results = [example.return_simulation()]
-                else:
-                    results = None
-            else:
-                form = gen_price_single()
-                results = None
-            build = {'form': form, 'results': results}
-            return view(request, build, clean)
-
-    return gen_price_build
-
-
-def gen_mult_price(view, clean=False):
-    def gen_mult_price_build(request, clean):
-            if (request.GET):
-                form = gen_price_multiple(request.GET)
-                if form.is_valid():
-                    cd = form.cleaned_data
-
-                    lockin_per = conv_holding_to_lockin(cd)
-
-                    inputs = search_inputs(purpose='simulation', source = '', origin=cd['origin_code'], destination=cd['destination_code'], lockin_per=lockin_per, d_date1=cd['depart_date1'], r_date1=cd['return_date1'], flight_type=cd['search_type'], dep_time_pref=format_pref_input(cd['depart_times']), ret_time_pref=format_pref_input(cd['return_times']), stop_pref=format_pref_input(cd['nonstop']))
-                    example = multi_simulation(inputs)
-                    results = example.fill_sliders(progress=False, formatted=True)
-                else:
-                    results = None
-            else:
-                form = gen_price_multiple()
-                results = None
-            build = {'form': form, 'results': results}
-            return view(request, build, clean)
-
-    return gen_mult_price_build
-
-"""

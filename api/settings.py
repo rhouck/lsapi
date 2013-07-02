@@ -12,13 +12,13 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', 
-        'NAME': 'api_api', 
-        'USER': 'root',    
-        'PASSWORD': 'bitnami', 
-        'HOST': '',            
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'api_api',
+        'USER': 'root',
+        'PASSWORD': 'bitnami',
+        'HOST': '',
         'PORT': '',
-	'OPTIONS': { 'unix_socket' : '/opt/bitnami/mysql/tmp/mysql.sock', }            
+	'OPTIONS': { 'unix_socket' : '/opt/bitnami/mysql/tmp/mysql.sock', }
     }
 }
 
@@ -125,14 +125,14 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admindocs',
-    #'django.contrib.redirects',
-    
+    'django.contrib.redirects',
+
     # API development below
     #'tastypie',
     'pricing',
     'sales',
     'analysis',
-    
+
 )
 
 # A sample logging configuration. The only tangible logging

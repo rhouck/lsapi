@@ -20,6 +20,9 @@ class Overlay(Projection):
     black_list_error = forms.FloatField(label='Blck Lst Err', required=False, initial=None)
     depart_length_width = forms.IntegerField(label='Dep Len Wid', initial=1)
     width_of_avg = forms.IntegerField(label='Wid Avg', initial=1)
+    num_wks_proj_out = forms.IntegerField(label='Proj Dist', initial=20)
+    final_proj_week = forms.IntegerField(label='Final Proj Wk', initial=1)
+    first_proj_week = forms.IntegerField(label='First Proj Wk', initial=20)
     seasonality_adjust = forms.BooleanField(label='Seas.', required=False, initial=True)
     regressed = forms.BooleanField(label='Regress', required=False, initial=False)
 

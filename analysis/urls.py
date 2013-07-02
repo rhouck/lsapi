@@ -4,7 +4,7 @@ from django.core.context_processors import csrf
 from analysis.views import *
 
 urlpatterns = patterns('',
-                       
+
     url(r'^hello/$', hello),
     url(r'^historical/date/$', historical, {'departure_trend': None}, name='hist_date'),
     url(r'^historical/trend/absolute/$', historical, {'departure_trend': 'absolute'}, name='hist_trend_abs'),
@@ -15,7 +15,8 @@ urlpatterns = patterns('',
     url(r'^projection/overlay/relative/$', overlay, {'departure_trend': 'relative'}, name='proj_accuracy_rel'),
     url(r'^simulation/sales/$', simulation_sales, name='sim_analysis'),
     url(r'^exposure/$', exposure, name='dashboard'),
-    
+    url(r'^status/$', replicated_db_status, name='rep_data_status'),
+
 
 )
-    
+
