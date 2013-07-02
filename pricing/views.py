@@ -230,7 +230,7 @@ def conv_holding_to_lockin(inputs):
     """
 
     #start = current_time_aware().date()
-    start = datetime.date(2013,3,10)
+    start = datetime.date(2013,3,20)
     """
     if inputs['holding_per']:
         holding_per = int(inputs['holding_per'])
