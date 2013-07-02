@@ -190,6 +190,7 @@ def price_edu_combo(view, clean=False):
                         search_key = None
 
                     # deposit format conversion
+                    """
                     pricing_results['refund_value'] = pricing_results['locked_fare']
                     if pricing_results['holding_price'] and pricing_results['locked_fare']:
                         pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
@@ -197,7 +198,7 @@ def price_edu_combo(view, clean=False):
                         pricing_results['deposit_value'] = ''
                     del pricing_results['holding_price']
                     del pricing_results['locked_fare']
-
+                    """
                     combined_results = [{'pricing_results': pricing_results, 'context': cust_edu_results, 'inputs': inputs, 'key': search_key}]
                     if changed_prefs:
                         combined_results[0]['changed_prefs'] = changed_prefs
