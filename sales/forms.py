@@ -11,14 +11,20 @@ class Exercise_option(forms.Form):
 
 class Customer_login(forms.Form):
     email = forms.EmailField()
-    #password = forms.CharField(widget=forms.PasswordInput())
+    password = forms.CharField(widget=forms.PasswordInput())
 
 
 class Customer_signup(Customer_login):
-    first_name = forms.CharField(required=False)
-    last_name = forms.CharField(required=False)
+    first_name = forms.CharField()
+    last_name = forms.CharField()
+    phone = forms.CharField()
+    address = forms.CharField()
+    city= forms.CharField()
+    state_prov = forms.CharField()
+    zip_code = forms.CharField()
+    country = forms.CharField()
 
-
-class Purchase_option(Customer_signup):
-    org_name = forms.CharField(label='Platform')
-    search_key = forms.CharField(label='Key')
+class Purchase_option(forms.Form):
+    platform_key = forms.CharField(label='Platform Key')
+    search_key = forms.CharField(label='Search Key')
+    cust_key = forms.CharField(label='Customer Key')

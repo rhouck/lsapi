@@ -11,7 +11,7 @@ class gen_price_multiple(forms.Form):
     depart_times = forms.IntegerField()
     return_times = forms.IntegerField()
     nonstop = forms.IntegerField()
-    
+
 class gen_price_single(gen_price_multiple):
     depart_date2 = forms.DateField()
     return_date2 = forms.DateField()
@@ -24,7 +24,7 @@ class search_summary_inputs(forms.Form):
     depart_times = forms.IntegerField()
     return_times = forms.IntegerField()
     nonstop = forms.IntegerField()
-    
+
 class full_option_info(forms.Form):
     origin_code = forms.CharField(required=False)
     destination_code = forms.CharField(required=False)
@@ -36,5 +36,4 @@ class full_option_info(forms.Form):
     search_type = forms.CharField()
     depart_times = forms.IntegerField()
     return_times = forms.IntegerField()
-    nonstop = forms.IntegerField()    
-    
+    nonstop = forms.IntegerField()

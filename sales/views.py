@@ -79,6 +79,28 @@ def find_open_contracts(request, slug, slug_2=None):
     return gen_search_display(request, {'results': bank}, True)
 
 
+def find_cust_id(request):
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    inputs = request.GET if request.GET else None
+    form = Customer_login(inputs)
+    build = {'form': form, 'cust_title': "Find ID"}
+    if (inputs) and form.is_valid():
+        cd = form.cleaned_data
+        try:
+            find_cust = Customer.objects.get(email=cd['email'], password=cd['password'])
+            build['results'] = {'success': True, 'key': find_cust.key}
+        except:
+            build['error_message'] = 'The customer is not registered in the system.'
+            build['results'] = {'success': False, 'error': 'The customer is not registered in the system.'}
+    return gen_search_display(request, build, clean)
+
+
+
+
 def customer_login(request):
     if request.user.is_authenticated():
         clean = False
@@ -116,7 +138,7 @@ def customer_signup(request):
         try:
             find_cust = Customer.objects.get(email=cd['email'])
             message = 'The email address is already registered in the system.'
-
+            """
             # updated name information if given
             if cd['first_name'] or cd['last_name']:
                 if find_cust.first_name != cd['first_name']:
@@ -126,19 +148,23 @@ def customer_signup(request):
                     find_cust.last_name = cd['last_name']
                     message += "Updated last name."
                 find_cust.save()
-
+            """
             build['error_message'] = message
-            build['results'] = {'success': False, 'key': find_cust.key, 'message': message}
+            build['results'] = {'success': False, 'message': message} # , 'key': find_cust.key
         except:
             cust_key = gen_alphanum_key()
-            new_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], reg_date=current_time_aware().date(), key=cust_key)
+            new_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], password=cd['password'], phone=cd['phone'], address=cd['address'], city=cd['city'], state_prov=cd['state_prov'], zip_code=cd['zip_code'], country=cd['country'], reg_date=current_time_aware().date(), key=cust_key)
             new_cust.save()
-            build['results'] = {'success': True, 'first_name': cd['first_name'], 'last_name': cd['last_name'], 'email': cd['email'], 'key': cust_key}
-
+            build['results'] = dict({'success': True}.items() + new_cust.__dict__.items())
+            del build['results']['password']
+            del build['results']['reg_date']
+            del build['results']['_state']
+            del build['results']['id']
     return gen_search_display(request, build, clean)
 
 
 def purchase_option(request):
+
     if request.user.is_authenticated():
         clean = False
     else:
@@ -151,7 +177,7 @@ def purchase_option(request):
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
         try:
-
+            """
             #if customer email not in system, create account
             try:
                 find_cust = Customer.objects.get(email=cd['email'])
@@ -166,9 +192,11 @@ def purchase_option(request):
                 cust_key = gen_alphanum_key()
                 find_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], reg_date=current_time_aware().date(), key=cust_key)
                 find_cust.save()
+            """
 
-            find_org = Platform.objects.get(org_name=cd['org_name'])
+            find_org = Platform.objects.get(key=cd['platform_key'])
             find_search = Search_history.objects.get(key=cd['search_key'])
+            find_cust = Customer.objects.get(key=cd['cust_key'])
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
@@ -198,8 +226,8 @@ def purchase_option(request):
         else:
             new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
             new_contract.save()
-            purchased_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-            build['results'] = {'success': True, 'key': cd['search_key'], 'email': cd['email'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'purchased': purchased_url}
+            confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
+            build['results'] = {'success': True, 'search_key': cd['search_key'], 'customer_key': cd['cust_key'], 'platform_key': cd['platform_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url}
 
             # augment cash reserve with option price and update option inventory capacity
             try:

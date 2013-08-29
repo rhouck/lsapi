@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+
+{% block title %}Fare Changes{% endblock %}
+
+{% block content %}
+
+
+{% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
+
+  {% if form.errors %}
+    <p style="color: red;">
+      Please correct the error{{ form.errors|pluralize }} below.
+    </p>
+  {% endif %}
+
+  <form action="" method="get">
+    {% csrf_token %}
+    <table>
+    {{ form.as_table }}
+    </table>
+    <input type="submit" name="Search">
+  </form>
+
+
+<div class="row-fluid">
+  {% for split in res %}
+  <div class="span12" id='hist_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+  <div class="span12" id='scat_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+  <div class="span12" id='abs_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+
+{% block footer %}
+
+	{% for split in res %}
+
+    <script>
+    // histogram
+    var bins = {{ split.bins }};
+    var freq = {{ split.freq }};
+    var norm_fit = {{ split.norm_fit }};
+    var nonp_fit = {{ split.nonp_fit }};
+    var chart_index = {{ split.index }};
+    var proj_length = {{ split.proj_length }};
+
+        $('#hist_'+ chart_index).highcharts({
+            chart: {
+
+            },
+            title: {
+                text: 'Freuquency of price changes'
+            },
+            subtitle : {
+            text : 'Price changes occur over periods between ' + proj_length[0] + ' and '
+                    +  proj_length[1] + ' days'
+          },
+            xAxis: {
+                title: {
+                      text: 'Relative change in price'
+                  },
+                categories: bins,
+            },
+            yAxis: {
+                title: {
+                    text: 'Frquency'
+                }
+            },
+            plotOptions: {
+                series: {
+                    marker: {
+                        enabled: false
+                    }
+                }
+            },
+            tooltip: {
+               formatter: function() {
+                  return 'Ratio change: ' + this.x + '<br>' +
+                          '<b>'+ this.series.name +' </b>: '+ Math.round(this.y) + '%';
+               }
+            },
+            legend: {enabled: false},
+            series: [{
+                type: 'column',
+                name: 'Actual',
+                data: freq
+                },
+                {
+                  name: 'Normal fit',
+                  type: 'spline',
+                  data: norm_fit,
+                },
+                {
+                  name: 'Non-parametric fit',
+                  type: 'spline',
+                  data: nonp_fit,
+                } ,
+            ]
+        });
+
+    // price change scatter chart
+    var scat_data = {{ split.scat }};
+
+      // Create the chart
+      $('#scat_'+ chart_index).highcharts('StockChart', {
+          rangeSelector : {
+            selected : 2
+          },
+
+          title : {
+            text : 'Change in price by date'
+          },
+          subtitle : {
+            text : 'Price changes occur over periods between ' + proj_length[0] + ' and '
+                    +  proj_length[1] + ' days'
+          },
+          series : [{
+            color: 'rgba(246,248,38, .25)',
+            data : scat_data,
+            lineWidth : 0,
+            marker : {
+              enabled : true,
+              radius : 2
+            },
+            tooltip: {
+              valueDecimals: 2
+            }
+          }]
+        });
+
+    // abs val scatter chart
+    var beg_data = {{ split.beg }};
+    var end_data = {{ split.end }};
+
+      // Create the chart
+      $('#abs_'+ chart_index).highcharts('StockChart', {
+          rangeSelector : {
+            selected : 2
+          },
+
+          title : {
+            text : 'Beginning and ending fares by date'
+          },
+          subtitle : {
+            text : 'Price changes occur over periods between ' + proj_length[0] + ' and '
+                    +  proj_length[1] + ' days'
+          },
+          series : [{
+            name: 'Beg price',
+            color: 'rgba(119, 152, 191, .25)',
+            data : beg_data,
+            lineWidth : 0,
+            marker : {
+              enabled : true,
+              radius : 2
+            },
+            tooltip: {
+              valueDecimals: 2
+            }
+          },{
+            name: 'End price',
+            color: 'rgba(223, 83, 83, .25)',
+            data : end_data,
+            lineWidth : 0,
+            marker : {
+              enabled : true,
+              radius : 2
+            },
+            tooltip: {
+              valueDecimals: 2
+            }
+          }
+          ]
+        });
+
+
+    </script>
+
+    {% endfor %}
+
+
+
+
+{% endblock %}

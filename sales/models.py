@@ -18,12 +18,18 @@ class Platform(models.Model):
 
 
 class Customer(models.Model):
+    key = models.CharField(max_length=10)
     first_name = models.CharField(max_length=200, blank=True, null=True)
     last_name = models.CharField(max_length=200, blank=True, null=True)
     email = models.EmailField(max_length=75)
-    #password = models.CharField(max_length=200)
+    password = models.CharField(max_length=200)
     reg_date = models.DateField('date registered')
-    key = models.CharField(max_length=10)
+    phone = models.CharField(max_length=20)
+    address = models.CharField(max_length=50)
+    city = models.CharField(max_length=60)
+    state_prov = models.CharField('state / province', max_length=30)
+    zip_code = models.CharField(max_length=50)
+    country = models.CharField(max_length=50)
 
     def __unicode__(self):
         if self.first_name and self.last_name:

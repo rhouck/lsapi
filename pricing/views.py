@@ -20,6 +20,8 @@ from mult_search import *
 from search_summary import *
 
 
+# start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
+
 def hello(request):
     return HttpResponse("Hello")
 
@@ -43,6 +45,27 @@ def price_edu_combo(view, clean=False):
         if not clean and not request.user.is_authenticated():
             return HttpResponseRedirect(reverse('login'))
         else:
+            if (request.GET):
+                form = full_option_info(request.GET)
+                if form.is_valid():
+                    cd = form.cleaned_data
+
+                    search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'], search_date = current_time_aware(),
+                                                   holding_price=25, locked_fare=500, buffer=0, correl_coef=1, cycles=500, expected_risk=20, lockin_per=2, markup=0.05, round_to=5, wtp=0, wtpx=0, max_trip_length=6, exp_date=(datetime.datetime.now().date()+datetime.timedelta(weeks=3)),
+                                                   first_week_avg_proj_fare = 500, first_week_max_proj_fare = 500, second_week_avg_proj_fare = 500, second_week_max_proj_fare = 500,
+                                                   first_week_avg_proj_st_dev = 20, first_week_max_proj_st_dev = 20, second_week_avg_proj_st_dev = 20, second_week_max_proj_st_dev = 20,
+                                                   open_status = True, total_flexibility=5, time_to_departure=15, geography='us', key=gen_alphanum_key())
+                    search_params.save()
+                    search_key = search_params.key
+                    inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 0,"search_type": "rt","holding_per": 2,"return_times": 0,"nonstop": 0}
+                    combined_results = {'pricing_results': {'dates': "2013612, 2013612, 2013620, 2013622",'deposit_value': 1900,'error': {0: "No error"},'refund_value': 1862}, 'context': 'this flight gets expensive fast', 'inputs': inputs, 'key': search_key}
+                    build = {'form': form, 'results': combined_results}
+                    return view(request, build, clean)
+
+
+
+
+            """
             if (request.GET):
                 form = full_option_info(request.GET)
                 if form.is_valid():
@@ -71,14 +94,15 @@ def price_edu_combo(view, clean=False):
                             nonstop = pricing_results['changed_prefs']['nonstop']
 
                             # reformat 'changed prefs' to match preferences inputs style
-                            """
-                            del pricing_results['changed_prefs']['airline']
-                            for k, v in pricing_results['changed_prefs'].iteritems():
-                                if not v:
-                                    pricing_results['changed_prefs'][k] = 0
-                                else:
-                                    pricing_results['changed_prefs'][k] = v[0]
-                            """
+
+
+                            #del pricing_results['changed_prefs']['airline']
+                            #for k, v in pricing_results['changed_prefs'].iteritems():
+                            #    if not v:
+                            #        pricing_results['changed_prefs'][k] = 0
+                            #    else:
+                            #        pricing_results['changed_prefs'][k] = v[0]
+
 
                             changed_prefs = pricing_results.pop('changed_prefs')
                             del changed_prefs['airline']
@@ -169,6 +193,7 @@ def price_edu_combo(view, clean=False):
                                 search_params.save()
                                 search_key = search_params.key
 
+
                             except:
                                 search_key = None
 
@@ -190,7 +215,6 @@ def price_edu_combo(view, clean=False):
                         search_key = None
 
                     # deposit format conversion
-                    """
                     pricing_results['refund_value'] = pricing_results['locked_fare']
                     if pricing_results['holding_price'] and pricing_results['locked_fare']:
                         pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
@@ -198,7 +222,7 @@ def price_edu_combo(view, clean=False):
                         pricing_results['deposit_value'] = ''
                     del pricing_results['holding_price']
                     del pricing_results['locked_fare']
-                    """
+
                     combined_results = [{'pricing_results': pricing_results, 'context': cust_edu_results, 'inputs': inputs, 'key': search_key}]
                     if changed_prefs:
                         combined_results[0]['changed_prefs'] = changed_prefs
@@ -209,7 +233,7 @@ def price_edu_combo(view, clean=False):
                 combined_results = None
             build = {'form': form, 'results': combined_results}
             return view(request, build, clean)
-
+            """
     return gen_price_edu_combo
 
 
@@ -229,8 +253,8 @@ def conv_holding_to_lockin(inputs):
     @todo: find a better way to handle the 'depart_date1' input, it currently is not ensuring proper date format
     """
 
-    #start = current_time_aware().date()
-    start = datetime.date(2013,3,20)
+    start = current_time_aware().date()
+
     """
     if inputs['holding_per']:
         holding_per = int(inputs['holding_per'])
