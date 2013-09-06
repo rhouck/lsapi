@@ -2,15 +2,16 @@ from sales.models import Platform, Customer, Contract, Open
 
 from django.contrib import admin
 
+from django.http import HttpResponse
 
 class ContractAdmin(admin.ModelAdmin):
 
     list_display = ('purch_date', 'ex_fare', 'get_exp_date', 'get_holding_price', 'get_locked_fare', 'outstanding')
-    """
-    fieldsets = [
-                (None, {'fields': ('platform', 'customer', 'purch_date', 'exp_date', 'option_price', 'locked_fare', 'ex_fare')}),
-                ]
-    """
+
+    #fieldsets = [
+    #            (None, {'fields': ('platform', 'customer', 'purch_date', 'exp_date', 'option_price', 'locked_fare', 'ex_fare')}),
+    #            ]
+
 
     #list_filter = ['get_exp_date']
     #date_hierarchy = 'get_exp_date'
@@ -40,16 +41,20 @@ class ContractInline(admin.TabularInline):
     model = Contract
     extra = 0
 
-
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('last_name', 'first_name')
     inlines = [ContractInline]
 admin.site.register(Customer, CustomerAdmin)
 
 
+class CustomerInline(admin.TabularInline):
+    model = Customer
+    extra = 0
+    #inlines = [ContractInline]
+
 class PlatformAdmin(admin.ModelAdmin):
     list_display = ('org_name', 'web_site')
-    inlines = [ContractInline]
+    inlines = [CustomerInline]
 admin.site.register(Platform, PlatformAdmin)
 
 

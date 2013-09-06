@@ -17,6 +17,13 @@ from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
 
+class CustomerContact(DetailView):
+    context_object_name = "detail"
+    #template_name='sales/detail.html'
+    def get_object(self):
+        return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
+
+
 class CustomerList(ListView):
     model = Customer
     context_object_name = "items"
@@ -50,12 +57,15 @@ class PlatSpecCustDetail(DetailView):
 
 def find_open_contracts(request, slug, slug_2=None):
     cust = get_object_or_404(Customer, key__iexact=slug)
+    contracts = Contract.objects.filter(customer__id__iexact=cust.id)
+    """
     if slug_2:
         plat = get_object_or_404(Platform, key__iexact=slug_2)
         contracts = Contract.objects.filter(customer__id__iexact=cust.id, platform__id__iexact=plat.id)
+
     else:
         contracts = Contract.objects.filter(customer__id__iexact=cust.id)
-
+    """
     bank = {}
     for index, i in enumerate(contracts):
         if i.outstanding():
@@ -64,7 +74,7 @@ def find_open_contracts(request, slug, slug_2=None):
             bank[index]['refund'] = "link to refund"
             bank[index]['desc'] =  {
                                     'key': i.search.key,
-                                    'platform': i.platform.org_name,
+                                    #'platform': i.platform.org_name,
                                     'origin_code': i.search.origin_code,
                                     'destination_code': i.search.destination_code,
                                     'exp_date': conv_to_js_date(i.search.exp_date),
@@ -95,7 +105,7 @@ def find_cust_id(request):
             build['results'] = {'success': True, 'key': find_cust.key}
         except:
             build['error_message'] = 'The customer is not registered in the system.'
-            build['results'] = {'success': False, 'error': 'The customer is not registered in the system.'}
+            build['results'] = {'success': False, 'message': 'The customer is not registered in the system.'}
     return gen_search_display(request, build, clean)
 
 
@@ -113,7 +123,7 @@ def customer_login(request):
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
         try:
-            find_cust = Customer.objects.get(email=cd['email'])
+            find_cust = Customer.objects.get(email=cd['email'], password=cd['password'], platform_key=cd['platform_key'])
             if clean:
                 return HttpResponseRedirect(reverse('open_contracts', kwargs={'slug': find_cust.key}))
             else:
@@ -135,31 +145,41 @@ def customer_signup(request):
     build = {'form': form, 'cust_title': "Customer Signup"}
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
+
         try:
-            find_cust = Customer.objects.get(email=cd['email'])
-            message = 'The email address is already registered in the system.'
-            """
-            # updated name information if given
-            if cd['first_name'] or cd['last_name']:
-                if find_cust.first_name != cd['first_name']:
-                    find_cust.first_name = cd['first_name']
-                    message += "Updated first name."
-                if find_cust.last_name != cd['last_name']:
-                    find_cust.last_name = cd['last_name']
-                    message += "Updated last name."
-                find_cust.save()
-            """
-            build['error_message'] = message
-            build['results'] = {'success': False, 'message': message} # , 'key': find_cust.key
-        except:
-            cust_key = gen_alphanum_key()
-            new_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], password=cd['password'], phone=cd['phone'], address=cd['address'], city=cd['city'], state_prov=cd['state_prov'], zip_code=cd['zip_code'], country=cd['country'], reg_date=current_time_aware().date(), key=cust_key)
-            new_cust.save()
-            build['results'] = dict({'success': True}.items() + new_cust.__dict__.items())
-            del build['results']['password']
-            del build['results']['reg_date']
-            del build['results']['_state']
-            del build['results']['id']
+            find_org = Platform.objects.get(key=cd['platform_key'])
+        except (Platform.DoesNotExist):
+            build['error_message'] = 'The platform name is not valid.'
+            build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
+        else:
+            try:
+                find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
+                message = 'The email address is already registered in the system with this platform.'
+                """
+                # updated name information if given
+                if cd['first_name'] or cd['last_name']:
+                    if find_cust.first_name != cd['first_name']:
+                        find_cust.first_name = cd['first_name']
+                        message += "Updated first name."
+                    if find_cust.last_name != cd['last_name']:
+                        find_cust.last_name = cd['last_name']
+                        message += "Updated last name."
+                    find_cust.save()
+                """
+                build['error_message'] = message
+                build['results'] = {'success': False, 'message': message} # , 'key': find_cust.key
+            except:
+                cust_key = gen_alphanum_key()
+                new_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], password=cd['password'], platform=find_org, phone=cd['phone'], address=cd['address'], city=cd['city'], state_prov=cd['state_prov'], zip_code=cd['zip_code'], country=cd['country'], reg_date=current_time_aware().date(), key=cust_key)
+                new_cust.save()
+                build['results'] = dict({'success': True}.items() + new_cust.__dict__.items())
+                del build['results']['_platform_cache']
+                del build['results']['platform_id']
+                del build['results']['password']
+                del build['results']['reg_date']
+                del build['results']['_state']
+                del build['results']['id']
+
     return gen_search_display(request, build, clean)
 
 
@@ -194,7 +214,7 @@ def purchase_option(request):
                 find_cust.save()
             """
 
-            find_org = Platform.objects.get(key=cd['platform_key'])
+            #find_org = Platform.objects.get(key=cd['platform_key'])
             find_search = Search_history.objects.get(key=cd['search_key'])
             find_cust = Customer.objects.get(key=cd['cust_key'])
 
@@ -214,9 +234,9 @@ def purchase_option(request):
             if find_search.error or not find_search.get_status() or expired:
                 raise Exception
 
-        except (Platform.DoesNotExist):
-            build['error_message'] = 'The platform name is not valid.'
-            build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
+        #except (Platform.DoesNotExist):
+        #    build['error_message'] = 'The platform name is not valid.'
+        #    build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
         except (Search_history.DoesNotExist):
             build['error_message'] = 'The option id entered is not valid.'
             build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
@@ -224,10 +244,11 @@ def purchase_option(request):
             build['error_message'] = 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'
             build['results'] = {'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}
         else:
-            new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
+            #new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
+            new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search)
             new_contract.save()
             confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-            build['results'] = {'success': True, 'search_key': cd['search_key'], 'customer_key': cd['cust_key'], 'platform_key': cd['platform_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url}
+            build['results'] = {'success': True, 'search_key': cd['search_key'], 'customer_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url}
 
             # augment cash reserve with option price and update option inventory capacity
             try:

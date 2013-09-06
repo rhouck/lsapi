@@ -103,6 +103,10 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # custom middleware
+    #'django.middleware.custom.django-crossdomainxhr-middleware',
+    'middleware.cdxhr.XsSharing'
 )
 
 ROOT_URLCONF = 'api.urls'
@@ -166,3 +170,7 @@ LOGGING = {
         },
     }
 }
+
+# cross domain xhr settings
+XS_SHARING_ALLOWED_ORIGINS = "http://127.0.0.1:8000"
+XS_SHARING_ALLOWED_METHODS = ['POST','GET','OPTIONS', 'PUT', 'DELETE']

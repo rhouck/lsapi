@@ -11,7 +11,7 @@ class Platform(models.Model):
     contact_name = models.CharField(max_length=200)
     contact_email = models.EmailField(max_length=75)
     reg_date = models.DateField('date registered')
-    key = models.CharField(max_length=10)
+    key = models.CharField(max_length=10, blank=True, null=True)
 
     def __unicode__(self):
         return self.org_name
@@ -30,6 +30,7 @@ class Customer(models.Model):
     state_prov = models.CharField('state / province', max_length=30)
     zip_code = models.CharField(max_length=50)
     country = models.CharField(max_length=50)
+    platform = models.ForeignKey(Platform)
 
     def __unicode__(self):
         if self.first_name and self.last_name:
@@ -40,10 +41,10 @@ class Customer(models.Model):
 
 
 class Contract(models.Model):
-    platform = models.ForeignKey(Platform)
+    #platform = models.ForeignKey(Platform)
     customer = models.ForeignKey(Customer)
     purch_date = models.DateTimeField('date / time purchased')
-    search = models.OneToOneField('analysis.Search_history', primary_key=True)
+    search = models.OneToOneField('analysis.Search_history') # , primary_key=True
     ex_fare = models.FloatField('exercised fare', blank=True, null=True)
     ex_date = models.DateTimeField('date / time exercised', blank=True, null=True)
 
@@ -55,7 +56,8 @@ class Contract(models.Model):
     outstanding.short_description = 'Still open and valid?'
 
     def __unicode__(self):
-        uni_name = '%s - %s - %s' % (self.purch_date, self.platform, self.customer)
+        #uni_name = '%s - %s - %s' % (self.purch_date, self.customer.platform, self.customer)
+        uni_name = '%s - %s' % (self.purch_date, self.customer)
         return uni_name
 
 

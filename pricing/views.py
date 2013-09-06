@@ -42,6 +42,7 @@ def select_geography(hub):
 
 def price_edu_combo(view, clean=False):
     def gen_price_edu_combo(request, clean):
+
         if not clean and not request.user.is_authenticated():
             return HttpResponseRedirect(reverse('login'))
         else:
@@ -61,8 +62,13 @@ def price_edu_combo(view, clean=False):
                     combined_results = {'pricing_results': {'dates': "2013612, 2013612, 2013620, 2013622",'deposit_value': 1900,'error': {0: "No error"},'refund_value': 1862}, 'context': 'this flight gets expensive fast', 'inputs': inputs, 'key': search_key}
                     build = {'form': form, 'results': combined_results}
                     return view(request, build, clean)
-
-
+                else:
+                    return HttpResponse('not valid form')
+            else:
+                form = full_option_info()
+                combined_results = None
+                build = {'form': form, 'results': combined_results}
+                return view(request, build, clean)
 
 
             """
