@@ -4,6 +4,7 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 import datetime
 import socket
+import json
 
 from api.views import current_time_aware, conv_to_js_date, gen_alphanum_key, gen_search_display
 from sales.models import *
@@ -17,11 +18,6 @@ from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
 
-class CustomerContact(DetailView):
-    context_object_name = "detail"
-    #template_name='sales/detail.html'
-    def get_object(self):
-        return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
 
 
 class CustomerList(ListView):
@@ -53,6 +49,44 @@ class PlatSpecCustDetail(DetailView):
     template_name='sales/detail.html'
     def get_object(self):
         return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
+
+
+def customer_info(request, slug):
+
+    inputs = request.GET if request.GET else None
+    request.GET = None
+
+    if inputs:
+        try:
+            del inputs['platform_key']
+        except:
+            pass
+
+        cust = get_object_or_404(Customer, key__iexact=slug, password__iexact=inputs['password'])
+        for key, value in inputs.items():
+            setattr(cust, key, value)
+        cust.save()
+        cust_dict = cust.__dict__
+        cust_dict['update'] = True
+
+    else:
+        cust = get_object_or_404(Customer, key__iexact=slug)
+        cust_dict = cust.__dict__
+        cust_dict['update'] = False
+
+    del cust_dict['_state']
+    del cust_dict['platform_id']
+    del cust_dict['reg_date']
+    del cust_dict['key']
+    del cust_dict['id']
+
+    try:
+        del cust_dict['csrfmiddlewaretoken']
+        del cust_dict['Search']
+    except:
+        pass
+
+    return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
 
 
 def find_open_contracts(request, slug, slug_2=None):
@@ -313,3 +347,5 @@ def exercise_option(request):
                     pass
 
     return gen_search_display(request, build, clean)
+
+

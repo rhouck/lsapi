@@ -18,6 +18,6 @@ urlpatterns = patterns('',
     url(r'^platform/$', login_required(PlatformList.as_view()), name='platform_list'),
     url(r'^platform/(?P<slug>[-\w]{6})/$', PlatformDetail.as_view(), name='platform_detail'),
     url(r'^platform/(?P<slug_2>[-\w]{6})/customer/(?P<slug>[-\w]{6})/$', find_open_contracts, name='platform_specific_customer_detail'),
-    url(r'^customer/contact/(?P<slug>[-\w]{6})/$', CustomerContact.as_view(), name='customer_contact'),
+    url(r'^customer/info/(?P<slug>[-\w]{6})/$', customer_info, name='customer_info'),
 
 )
