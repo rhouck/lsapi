@@ -8,9 +8,10 @@ from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
+from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
-from analysis.models import Search_history
+from pricing.models import Search_history
 from sales.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key
 
@@ -19,11 +20,33 @@ from gen_price import *
 from mult_search import *
 from search_summary import *
 
+from api.views import conv_to_js_date
 
 # start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
 
 def hello(request):
     return HttpResponse("Hello")
+
+
+
+def search_info(request, slug):
+
+    search = get_object_or_404(Search_history, key__iexact=slug)
+    search_dict = search.__dict__
+
+    for k, v in search_dict.iteritems():
+        if isinstance(v,datetime.date):
+            search_dict[k] = conv_to_js_date(v)
+
+    del search_dict['_state']
+    del search_dict['open_status']
+    #del search_dict['key']
+    del search_dict['id']
+
+    return HttpResponse(json.dumps(search_dict), mimetype="application/json")
+
+
+
 
 
 def select_geography(hub):
@@ -51,11 +74,9 @@ def price_edu_combo(view, clean=False):
                 if form.is_valid():
                     cd = form.cleaned_data
 
-                    search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'], search_date = current_time_aware(),
-                                                   holding_price=25, locked_fare=500, buffer=0, correl_coef=1, cycles=500, expected_risk=20, lockin_per=2, markup=0.05, round_to=5, wtp=0, wtpx=0, max_trip_length=6, exp_date=(datetime.datetime.now().date()+datetime.timedelta(weeks=3)),
-                                                   first_week_avg_proj_fare = 500, first_week_max_proj_fare = 500, second_week_avg_proj_fare = 500, second_week_max_proj_fare = 500,
-                                                   first_week_avg_proj_st_dev = 20, first_week_max_proj_st_dev = 20, second_week_avg_proj_st_dev = 20, second_week_max_proj_st_dev = 20,
-                                                   open_status = True, total_flexibility=5, time_to_departure=15, geography='us', key=gen_alphanum_key())
+                    search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'],
+                                                   holding_price=25, locked_fare=500, exp_date=(datetime.datetime.now().date()+datetime.timedelta(weeks=3)),
+                                                   search_date = current_time_aware(), open_status = True, key=gen_alphanum_key())
                     search_params.save()
                     search_key = search_params.key
                     inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 0,"search_type": "rt","holding_per": 2,"return_times": 0,"nonstop": 0}

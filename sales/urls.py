@@ -20,4 +20,5 @@ urlpatterns = patterns('',
     url(r'^platform/(?P<slug_2>[-\w]{6})/customer/(?P<slug>[-\w]{6})/$', find_open_contracts, name='platform_specific_customer_detail'),
     url(r'^customer/info/(?P<slug>[-\w]{6})/$', customer_info, name='customer_info'),
 
+
 )

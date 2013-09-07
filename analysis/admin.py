@@ -1,14 +1,6 @@
-from analysis.models import Search_history, Cash_reserve, Additional_capacity
+from analysis.models import Cash_reserve, Additional_capacity
 from django.contrib import admin
 
-
-
-class Search_historyAdmin(admin.ModelAdmin):
-    def has_add_permission(self, request):
-        return False
-    #def has_change_permission(self, request):
-    #    return False
-admin.site.register(Search_history, Search_historyAdmin)
 
 
 class Cash_reserveAdmin(admin.ModelAdmin):

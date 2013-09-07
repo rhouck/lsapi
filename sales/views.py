@@ -10,7 +10,8 @@ from api.views import current_time_aware, conv_to_js_date, gen_alphanum_key, gen
 from sales.models import *
 from forms import *
 
-from analysis.models import Cash_reserve, Search_history, Additional_capacity
+from analysis.models import Cash_reserve, Additional_capacity
+from pricing.models import Search_history
 from api.views import gen_search_display
 
 from django.contrib.auth.decorators import login_required
@@ -51,6 +52,7 @@ class PlatSpecCustDetail(DetailView):
         return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
 
 
+
 def customer_info(request, slug):
 
     inputs = request.GET if request.GET else None
@@ -87,6 +89,8 @@ def customer_info(request, slug):
         pass
 
     return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
+
+
 
 
 def find_open_contracts(request, slug, slug_2=None):
@@ -184,7 +188,7 @@ def customer_signup(request):
             find_org = Platform.objects.get(key=cd['platform_key'])
         except (Platform.DoesNotExist):
             build['error_message'] = 'The platform name is not valid.'
-            build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
+            build['results'] = {'success': False, 'message': 'The platform name is not valid.'}
         else:
             try:
                 find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
@@ -225,6 +229,8 @@ def purchase_option(request):
         clean = True
 
     inputs = request.GET if request.GET else None
+
+
     form = Purchase_option(inputs)
     build = {'form': form, 'cust_title': "Purchase option"}
 
@@ -250,7 +256,7 @@ def purchase_option(request):
 
             #find_org = Platform.objects.get(key=cd['platform_key'])
             find_search = Search_history.objects.get(key=cd['search_key'])
-            find_cust = Customer.objects.get(key=cd['cust_key'])
+            find_cust = Customer.objects.get(key__iexact=cd['cust_key']) # , platform__iexact=cd['platform']
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
