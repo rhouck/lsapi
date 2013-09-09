@@ -2,11 +2,9 @@ from django import forms
 
 
 class Exercise_option(forms.Form):
-    cust_email = forms.EmailField()
-    cust_password = forms.CharField(widget=forms.PasswordInput())
-    org_name = forms.CharField(label='Platform')
-    search_key = forms.CharField(label='Key')
-    exercise_fare = forms.FloatField()
+    cust_key = forms.CharField()
+    search_key = forms.CharField()
+    exercise = forms.BooleanField(required=False)
 
 
 class Customer_login(forms.Form):

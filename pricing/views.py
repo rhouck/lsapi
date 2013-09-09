@@ -32,18 +32,28 @@ def hello(request):
 def search_info(request, slug):
 
     search = get_object_or_404(Search_history, key__iexact=slug)
-    search_dict = search.__dict__
 
-    for k, v in search_dict.iteritems():
-        if isinstance(v,datetime.date):
-            search_dict[k] = conv_to_js_date(v)
+    purch_date_time = current_time_aware()
+    search_date_date = search.search_date
+    expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 10) else False
 
-    del search_dict['_state']
-    del search_dict['open_status']
-    #del search_dict['key']
-    del search_dict['id']
+    if expired:
 
-    return HttpResponse(json.dumps(search_dict), mimetype="application/json")
+        return HttpResponse(json.dumps({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), mimetype="application/json")
+    else:
+
+        search_dict = search.__dict__
+
+        for k, v in search_dict.iteritems():
+            if isinstance(v,datetime.date):
+                search_dict[k] = conv_to_js_date(v)
+
+        del search_dict['_state']
+        del search_dict['open_status']
+        #del search_dict['key']
+        del search_dict['id']
+
+        return HttpResponse(json.dumps(search_dict), mimetype="application/json")
 
 
 

@@ -48,9 +48,9 @@ class Contract(models.Model):
     ex_fare = models.FloatField('exercised fare', blank=True, null=True)
     ex_date = models.DateTimeField('date / time exercised', blank=True, null=True)
 
-
     def outstanding(self):
-        return self.search.exp_date >= current_time_aware().date() and not self.ex_fare
+        return self.search.exp_date >= current_time_aware().date() and not self.ex_date
+
     outstanding.admin_order_field = 'search__exp_date'
     outstanding.boolean = True
     outstanding.short_description = 'Still open and valid?'

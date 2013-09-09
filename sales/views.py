@@ -288,7 +288,7 @@ def purchase_option(request):
             new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search)
             new_contract.save()
             confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-            build['results'] = {'success': True, 'search_key': cd['search_key'], 'customer_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url}
+            build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url}
 
             # augment cash reserve with option price and update option inventory capacity
             try:
@@ -307,6 +307,9 @@ def purchase_option(request):
 
 
 def exercise_option(request):
+
+    # find a way to calculate exericse fare
+
     if request.user.is_authenticated():
         clean = False
     else:
@@ -314,17 +317,18 @@ def exercise_option(request):
 
     inputs = request.GET if request.GET else None
     form = Exercise_option(inputs)
-    build = {'form': form, 'cust_title': "Exercise option"}
+    build = {'form': form}
 
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
         try:
-            find_cust = Customer.objects.get(email=cd['cust_email'], password=cd['cust_password'])
-            find_org = Platform.objects.get(org_name=cd['org_name'])
-            find_contract = Contract.objects.get(platform=find_org, customer=find_cust, search__key=cd['search_key'])
-        except (KeyError, Customer.DoesNotExist, Platform.DoesNotExist, Contract.DoesNotExist):
-            build['error_message'] = 'The login/password, platform name, and transaction id combination is not valid.'
-            build['results'] = {'success': False, 'error': 'The login/password, platform name, and transaction id combination is not valid.'}
+
+            find_cust = Customer.objects.get(key__iexact=cd['cust_key'])
+            find_contract = Contract.objects.get(customer=find_cust, search__key=cd['search_key'])
+
+        except (KeyError, Customer.DoesNotExist, Contract.DoesNotExist):
+            build['error_message'] = 'The user id and/or transaction id is not valid.'
+            build['results'] = {'success': False, 'error': 'The user id and/or transaction id is not valid.'}
 
         else:
             if not find_contract.outstanding():
@@ -332,11 +336,16 @@ def exercise_option(request):
                 build['results'] = {'success': False, 'error': 'The contract selected is either expired or already exercised.'}
 
             else:
-                find_contract.ex_fare = cd['exercise_fare']
+                if cd['exercise']:
+                    current_fare = 500
+                    find_contract.ex_fare = current_fare
+                else:
+                    find_contract.ex_fare = None
+
                 exercise_date_time = current_time_aware()
                 find_contract.ex_date = exercise_date_time
                 find_contract.save()
-                build['results'] = {'success': True, 'key': cd['search_key'], 'cust_email': cd['cust_email'], 'exercise_fare': cd['exercise_fare'], 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
+                build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'exercise_fare': find_contract.ex_fare, 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
                 # augment cash reserve with option price
                 try:
                     if find_contract.ex_fare > find_contract.search.locked_fare:
@@ -351,6 +360,9 @@ def exercise_option(request):
                         capacity.save()
                 except:
                     pass
+    else:
+        build['error_message'] = 'Inputs not valid.'
+        build['results'] = {'success': False, 'error': 'Inputs not valid.'}
 
     return gen_search_display(request, build, clean)
 
