@@ -57,6 +57,8 @@
                     </div>
                     <div class="span10">
                         <!--Body content-->
+                        <!-- consider dropping sidebar bloc, added for registration app but may not be needed -->
+                        {% block sidebar %} {% endblock %}
                         {% block content %}
 												<table border = "0">
 												<tr>

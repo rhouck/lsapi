@@ -64,7 +64,8 @@ def customer_info(request, slug):
         except:
             pass
 
-        cust = get_object_or_404(Customer, key__iexact=slug, password__iexact=inputs['password'])
+        #cust = get_object_or_404(Customer, key__iexact=slug, password__iexact=inputs['password'])
+        cust = get_object_or_404(Customer, key__iexact=slug)
         for key, value in inputs.items():
             setattr(cust, key, value)
         cust.save()
@@ -139,7 +140,9 @@ def find_cust_id(request):
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
         try:
-            find_cust = Customer.objects.get(email=cd['email'], password=cd['password'])
+            find_org = Platform.objects.get(key=cd['platform_key'])
+            find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
+            #find_cust = Customer.objects.get(email=cd['email'], platform=cd['password'])
             build['results'] = {'success': True, 'key': find_cust.key}
         except:
             build['error_message'] = 'The customer is not registered in the system.'
@@ -161,7 +164,9 @@ def customer_login(request):
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
         try:
-            find_cust = Customer.objects.get(email=cd['email'], password=cd['password'], platform_key=cd['platform_key'])
+            find_org = Platform.objects.get(key=cd['platform_key'])
+            find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
+            #find_cust = Customer.objects.get(email=cd['email'], password=cd['password'], platform_key=cd['platform_key'])
             if clean:
                 return HttpResponseRedirect(reverse('open_contracts', kwargs={'slug': find_cust.key}))
             else:
@@ -173,6 +178,7 @@ def customer_login(request):
 
 
 def customer_signup(request):
+
     if request.user.is_authenticated():
         clean = False
     else:
@@ -193,27 +199,22 @@ def customer_signup(request):
             try:
                 find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
                 message = 'The email address is already registered in the system with this platform.'
-                """
-                # updated name information if given
-                if cd['first_name'] or cd['last_name']:
-                    if find_cust.first_name != cd['first_name']:
-                        find_cust.first_name = cd['first_name']
-                        message += "Updated first name."
-                    if find_cust.last_name != cd['last_name']:
-                        find_cust.last_name = cd['last_name']
-                        message += "Updated last name."
-                    find_cust.save()
-                """
                 build['error_message'] = message
                 build['results'] = {'success': False, 'message': message} # , 'key': find_cust.key
             except:
                 cust_key = gen_alphanum_key()
-                new_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], password=cd['password'], platform=find_org, phone=cd['phone'], address=cd['address'], city=cd['city'], state_prov=cd['state_prov'], zip_code=cd['zip_code'], country=cd['country'], reg_date=current_time_aware().date(), key=cust_key)
+                field_inps = cd
+                field_inps['reg_date'] = current_time_aware().date()
+                field_inps['key'] = cust_key
+                field_inps['platform'] = find_org
+                del field_inps['platform_key']
+                new_cust = Customer(**field_inps)
+                #new_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], password=cd['password'], platform=find_org, phone=cd['phone'], address=cd['address'], city=cd['city'], state_prov=cd['state_prov'], zip_code=cd['zip_code'], country=cd['country'], reg_date=current_time_aware().date(), key=cust_key)
                 new_cust.save()
+
                 build['results'] = dict({'success': True}.items() + new_cust.__dict__.items())
                 del build['results']['_platform_cache']
                 del build['results']['platform_id']
-                del build['results']['password']
                 del build['results']['reg_date']
                 del build['results']['_state']
                 del build['results']['id']

@@ -28,6 +28,15 @@ sys.path.insert(2, '/home/develop/analysis')
 sys.path.insert(3, '/home/bitnami/analysis')
 
 
+
+"""
+from django.core.mail import send_mail
+def practice_mail(request):
+
+    send_mail('Auto message from Level Skies', 'Here is an auto generated message sent just to annoy you while testing.', 'levelskiestest@gmail.com',
+        ['ryanchouck@gmail.com', 'bcollins.audio@gmail.com'], fail_silently=False)
+    return HttpResponse("success i think")
+"""
 def conv_to_js_date(date):
     return 1000 * time.mktime(date.timetuple())
 

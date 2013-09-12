@@ -9,18 +9,18 @@ class Exercise_option(forms.Form):
 
 class Customer_login(forms.Form):
     email = forms.EmailField()
-    password = forms.CharField(widget=forms.PasswordInput())
+    #password = forms.CharField(widget=forms.PasswordInput())
     platform_key = forms.CharField(label='Platform Key')
 
 class Customer_signup(Customer_login):
-    first_name = forms.CharField()
-    last_name = forms.CharField()
-    phone = forms.CharField()
-    address = forms.CharField()
-    city = forms.CharField()
-    state_prov = forms.CharField()
-    zip_code = forms.CharField()
-    country = forms.CharField()
+    first_name = forms.CharField(required=False)
+    last_name = forms.CharField(required=False)
+    phone = forms.CharField(required=False)
+    address = forms.CharField(required=False)
+    city = forms.CharField(required=False)
+    state_prov = forms.CharField(required=False)
+    zip_code = forms.CharField(required=False)
+    country = forms.CharField(required=False)
 
 class Purchase_option(forms.Form):
     #platform_key = forms.CharField(label='Platform Key')

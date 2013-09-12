@@ -42,7 +42,7 @@ class ContractInline(admin.TabularInline):
     extra = 0
 
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('last_name', 'first_name')
+    list_display = ('platform', 'email', 'last_name', 'first_name')
     inlines = [ContractInline]
 admin.site.register(Customer, CustomerAdmin)
 
