@@ -43,7 +43,7 @@ def conv_to_js_date(date):
 def current_time_aware():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
 
-def gen_search_display(request, build, clean):
+def gen_search_display(request, build, clean, method=None):
     if 'results' in build:
         if type(build['results']) is list:
             build['results'] = build['results'][0]
@@ -53,7 +53,10 @@ def gen_search_display(request, build, clean):
         else:
             return render_to_response('blank.html')
     else:
-        return render_to_response('general_form.html', build, context_instance=RequestContext(request))
+        if method == 'post':
+            return render_to_response('general_form_post.html', build, context_instance=RequestContext(request))
+        else:
+            return render_to_response('general_form.html', build, context_instance=RequestContext(request))
 
 def gen_alphanum_key():
     key = ''

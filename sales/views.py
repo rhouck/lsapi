@@ -18,6 +18,81 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
+from quix.pay.gateway.authorizenet import AimGateway
+from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
+
+
+def run_authnet_trans(amt, action, card_info, cust_info=None, address=None):
+
+    gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
+    gateway.use_test_mode = True
+    # gateway.use_test_url = True
+    # use gateway.authorize() for an "authorize only" transaction
+
+    # number, month, year, first_name, last_name, code
+    card = CreditCard(**card_info)
+    if cust_info:
+        address = Address(**address)
+        customer = AuthCustomer(**cust_info)
+        customer.billing_address = address
+        customer.shipping_address = address
+        response = gateway.sale(str(amt), card, customer=customer)
+    else:
+        response = gateway.sale(str(amt), card)
+
+    if response.status == response.APPROVED:
+        # this is where you store data from the response object into
+        # your models. The response.trans_id would be used to capture,
+        # void, or credit the sale later.
+
+        success = True
+        status = "Authorize Request: %s</br>Transaction %s = %s: %s" % (gateway.get_last_request().url,response.trans_id,
+                                           response.status_strings[response.status],
+                                           response.message)
+    else:
+        success = False
+        status = "%s - %s" % (response.status_strings[response.status],
+            response.message)
+        #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([status])
+    return {'success': success, 'status': status}
+
+
+def test_trans(request):
+
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    if request.GET:
+        form = PaymentForm(request.GET)
+        if form.is_valid():
+            cd = form.cleaned_data
+            #return HttpResponse(cd)
+            card = {}
+            for i in ('first_name', 'last_name', 'number','month','year','code'):
+                card[i] = cd[i]
+
+            address = {}
+            for i in ('first_name', 'last_name', 'phone', 'address1', 'city', 'state_province', 'country', 'postal_code'):
+                address[i] = cd[i]
+
+            cust_info = {}
+            for i in ('email',):
+                cust_info[i] = cd[i]
+
+            response = run_authnet_trans(123, 'action', card, address=address, cust_info=cust_info)
+            if response['success']:
+                return HttpResponse(response['status'])
+            else:
+                form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
+                return gen_search_display(request, {'form': form}, clean)
+    else:
+        form = PaymentForm()
+        build = {'form': form}
+    return gen_search_display(request, build, clean)
+
+
 
 
 
@@ -151,7 +226,6 @@ def find_cust_id(request):
 
 
 
-
 def customer_login(request):
     if request.user.is_authenticated():
         clean = False
@@ -229,7 +303,7 @@ def purchase_option(request):
     else:
         clean = True
 
-    inputs = request.GET if request.GET else None
+    inputs = request.POST if request.POST else None
 
 
     form = Purchase_option(inputs)
@@ -238,22 +312,6 @@ def purchase_option(request):
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
         try:
-            """
-            #if customer email not in system, create account
-            try:
-                find_cust = Customer.objects.get(email=cd['email'])
-                # updated name information if given
-                if cd['first_name'] or cd['last_name']:
-                    if find_cust.first_name != cd['first_name']:
-                        find_cust.first_name = cd['first_name']
-                    if find_cust.last_name != cd['last_name']:
-                        find_cust.last_name = cd['last_name']
-                    find_cust.save()
-            except (Customer.DoesNotExist):
-                cust_key = gen_alphanum_key()
-                find_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], reg_date=current_time_aware().date(), key=cust_key)
-                find_cust.save()
-            """
 
             #find_org = Platform.objects.get(key=cd['platform_key'])
             find_search = Search_history.objects.get(key=cd['search_key'])
@@ -285,26 +343,50 @@ def purchase_option(request):
             build['error_message'] = 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'
             build['results'] = {'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}
         else:
-            #new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
-            new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search)
-            new_contract.save()
-            confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-            build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url}
 
-            # augment cash reserve with option price and update option inventory capacity
+            # run credit card
+            amount = find_search.locked_fare + find_search.holding_price
+            card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+            cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
+            address = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'phone': find_cust.phone, 'address1': find_cust.address, 'city': find_cust.city, 'state_province': find_cust.state_prov, 'country': find_cust.country, 'postal_code': find_cust.zip_code}
             try:
-                latest_change = Cash_reserve.objects.latest('action_date')
-                new_balance = latest_change.cash_balance + new_contract.search.holding_price
-                add_cash = Cash_reserve(action_date=current_time_aware(), transaction=new_contract, cash_change=new_contract.search.holding_price, cash_balance=new_balance)
-                add_cash.save()
+                for i in (card_info, cust_info, address):
+                    for v in i.itervalues():
+                        if v == "":
+                            raise Exception
+            except (Exception):
+                build['error_message'] = 'Not all of the required customer information is available.'
+                build['results'] = {'success': False, 'error': 'Not all of the required customer information is available.'}
 
-                capacity = Additional_capacity.objects.get(pk=1)
-                capacity.recalc_capacity(new_balance)
-                capacity.save()
-            except:
-                pass
+            else:
 
-    return gen_search_display(request, build, clean)
+                response = run_authnet_trans(amount, 'sale', card_info, address=address, cust_info=cust_info)
+
+                if response['success']:
+
+                    #new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
+                    new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search)
+                    new_contract.save()
+                    confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
+                    build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status']}
+
+                    # augment cash reserve with option price and update option inventory capacity
+                    try:
+                        latest_change = Cash_reserve.objects.latest('action_date')
+                        new_balance = latest_change.cash_balance + new_contract.search.holding_price
+                        add_cash = Cash_reserve(action_date=current_time_aware(), transaction=new_contract, cash_change=new_contract.search.holding_price, cash_balance=new_balance)
+                        add_cash.save()
+
+                        capacity = Additional_capacity.objects.get(pk=1)
+                        capacity.recalc_capacity(new_balance)
+                        capacity.save()
+                    except:
+                        pass
+
+                else:
+                    form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
+
+    return gen_search_display(request, build, clean, method='post')
 
 
 def exercise_option(request):
