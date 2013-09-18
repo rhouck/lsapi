@@ -22,7 +22,7 @@ from quix.pay.gateway.authorizenet import AimGateway
 from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
 
 
-def run_authnet_trans(amt, action, card_info, cust_info=None, address=None):
+def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
     gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
     gateway.use_test_mode = True
@@ -31,14 +31,17 @@ def run_authnet_trans(amt, action, card_info, cust_info=None, address=None):
 
     # number, month, year, first_name, last_name, code
     card = CreditCard(**card_info)
-    if cust_info:
-        address = Address(**address)
-        customer = AuthCustomer(**cust_info)
-        customer.billing_address = address
-        customer.shipping_address = address
-        response = gateway.sale(str(amt), card, customer=customer)
+    if not trans_id:
+        if cust_info:
+            address = Address(**address)
+            customer = AuthCustomer(**cust_info)
+            customer.billing_address = address
+            customer.shipping_address = address
+            response = gateway.sale(str(amt), card, customer=customer)
+        else:
+            response = gateway.sale(str(amt), card)
     else:
-        response = gateway.sale(str(amt), card)
+        response = gateway.credit(str(trans_id), str(amt), card)
 
     if response.status == response.APPROVED:
         # this is where you store data from the response object into
@@ -54,7 +57,7 @@ def run_authnet_trans(amt, action, card_info, cust_info=None, address=None):
         status = "%s - %s" % (response.status_strings[response.status],
             response.message)
         #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([status])
-    return {'success': success, 'status': status}
+    return {'success': success, 'status': status, 'trans_id': response.trans_id}
 
 
 def test_trans(request):
@@ -81,7 +84,7 @@ def test_trans(request):
             for i in ('email',):
                 cust_info[i] = cd[i]
 
-            response = run_authnet_trans(123, 'action', card, address=address, cust_info=cust_info)
+            response = run_authnet_trans(123, card, address=address, cust_info=cust_info)
             if response['success']:
                 return HttpResponse(response['status'])
             else:
@@ -131,6 +134,10 @@ class PlatSpecCustDetail(DetailView):
 def customer_info(request, slug):
 
     inputs = request.GET if request.GET else None
+
+    if not request.user.is_authenticated():
+        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+
     request.GET = None
 
     if inputs:
@@ -169,17 +176,15 @@ def customer_info(request, slug):
 
 
 
-def find_open_contracts(request, slug, slug_2=None):
+def find_open_contracts(request, slug):
+
+    if not request.user.is_authenticated():
+        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+
+
     cust = get_object_or_404(Customer, key__iexact=slug)
     contracts = Contract.objects.filter(customer__id__iexact=cust.id)
-    """
-    if slug_2:
-        plat = get_object_or_404(Platform, key__iexact=slug_2)
-        contracts = Contract.objects.filter(customer__id__iexact=cust.id, platform__id__iexact=plat.id)
 
-    else:
-        contracts = Contract.objects.filter(customer__id__iexact=cust.id)
-    """
     bank = {}
     for index, i in enumerate(contracts):
         if i.outstanding():
@@ -259,6 +264,10 @@ def customer_signup(request):
         clean = True
 
     inputs = request.GET if request.GET else None
+    if clean:
+        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+
+
     form = Customer_signup(inputs)
     build = {'form': form, 'cust_title': "Customer Signup"}
     if (inputs) and form.is_valid():
@@ -303,7 +312,9 @@ def purchase_option(request):
     else:
         clean = True
 
-    inputs = request.POST if request.POST else None
+    inputs = request.GET if request.GET else None
+    if clean:
+        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
 
 
     form = Purchase_option(inputs)
@@ -348,7 +359,7 @@ def purchase_option(request):
             amount = find_search.locked_fare + find_search.holding_price
             card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
             cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
-            address = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'phone': find_cust.phone, 'address1': find_cust.address, 'city': find_cust.city, 'state_province': find_cust.state_prov, 'country': find_cust.country, 'postal_code': find_cust.zip_code}
+            address = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'phone': find_cust.phone, 'address1': find_cust.address1, 'city': find_cust.city, 'state_province': find_cust.state_province, 'country': find_cust.country, 'postal_code': find_cust.postal_code}
             try:
                 for i in (card_info, cust_info, address):
                     for v in i.itervalues():
@@ -360,12 +371,12 @@ def purchase_option(request):
 
             else:
 
-                response = run_authnet_trans(amount, 'sale', card_info, address=address, cust_info=cust_info)
+                response = run_authnet_trans(amount, card_info, address=address, cust_info=cust_info)
 
                 if response['success']:
 
                     #new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
-                    new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search)
+                    new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search, gateway_id=response['trans_id'])
                     new_contract.save()
                     confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
                     build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status']}
@@ -385,8 +396,10 @@ def purchase_option(request):
 
                 else:
                     form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
+                    #build['error_message'] = response['status']
+                    build['results'] = {'success': False, 'error': response['status']}
 
-    return gen_search_display(request, build, clean, method='post')
+    return gen_search_display(request, build, clean, method='get')
 
 
 def exercise_option(request):
@@ -399,6 +412,10 @@ def exercise_option(request):
         clean = True
 
     inputs = request.GET if request.GET else None
+    if clean:
+        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+
+
     form = Exercise_option(inputs)
     build = {'form': form}
 
@@ -420,9 +437,19 @@ def exercise_option(request):
 
             else:
                 if cd['exercise']:
+                    # if option is converted into airline ticket
                     current_fare = 500
                     find_contract.ex_fare = current_fare
                 else:
+                    # if option is refunded
+                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+                    response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
+                    if not response['success']:
+                        form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
+                        #build['error_message'] = response['status']
+                        build['results'] = {'success': False, 'error': response['status']}
+                        return gen_search_display(request, build, clean)
+
                     find_contract.ex_fare = None
 
                 exercise_date_time = current_time_aware()
@@ -443,9 +470,9 @@ def exercise_option(request):
                         capacity.save()
                 except:
                     pass
-    else:
-        build['error_message'] = 'Inputs not valid.'
-        build['results'] = {'success': False, 'error': 'Inputs not valid.'}
+    #else:
+    #    build['error_message'] = 'Inputs not valid.'
+    #    build['results'] = {'success': False, 'error': 'Inputs not valid.'}
 
     return gen_search_display(request, build, clean)
 

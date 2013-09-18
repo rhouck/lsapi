@@ -12,7 +12,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
 from pricing.models import Search_history
-from sales.models import Open
+from sales.models import Open, Platform
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key
 
 from functions import *
@@ -80,6 +80,9 @@ def price_edu_combo(view, clean=False):
             return HttpResponseRedirect(reverse('login'))
         else:
             if (request.GET):
+                if clean:
+                    platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+
                 form = full_option_info(request.GET)
                 if form.is_valid():
                     cd = form.cleaned_data

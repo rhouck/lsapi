@@ -26,10 +26,10 @@ class Customer(models.Model):
     first_name = models.CharField(max_length=200, blank=True, null=True)
     last_name = models.CharField(max_length=200, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
-    address = models.CharField(max_length=50, blank=True, null=True)
+    address1 = models.CharField(max_length=50, blank=True, null=True)
     city = models.CharField(max_length=60, blank=True, null=True)
-    state_prov = models.CharField('state / province', max_length=30, blank=True, null=True)
-    zip_code = models.CharField(max_length=50, blank=True, null=True)
+    state_province = models.CharField('state / province', max_length=30, blank=True, null=True)
+    postal_code = models.CharField(max_length=50, blank=True, null=True)
     country = models.CharField(max_length=50, blank=True, null=True)
 
 
@@ -48,6 +48,7 @@ class Contract(models.Model):
     search = models.OneToOneField('pricing.Search_history') # , primary_key=True
     ex_fare = models.FloatField('exercised fare', blank=True, null=True)
     ex_date = models.DateTimeField('date / time exercised', blank=True, null=True)
+    gateway_id = models.CharField(max_length=20, blank=True, null=True)
 
     def outstanding(self):
         return self.search.exp_date >= current_time_aware().date() and not self.ex_date
