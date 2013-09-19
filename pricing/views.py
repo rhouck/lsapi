@@ -24,36 +24,50 @@ from api.views import conv_to_js_date
 
 # start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
 
-def hello(request):
-    return HttpResponse("Hello")
+def refund_format_conversion(pricing_results):
+    pricing_results['refund_value'] = pricing_results['locked_fare']
+    if pricing_results['holding_price'] and pricing_results['locked_fare']:
+        pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
+    else:
+        pricing_results['deposit_value'] = ''
+    del pricing_results['holding_price']
+    del pricing_results['locked_fare']
+    return pricing_results
 
 
+def search_info(request, slug, all=False):
 
-def search_info(request, slug):
+    if not request.user.is_authenticated():
+        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
 
     search = get_object_or_404(Search_history, key__iexact=slug)
 
     purch_date_time = current_time_aware()
     search_date_date = search.search_date
-    expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 10) else False
 
-    if expired:
+    if not all:
+        expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 10) else False
+        if expired:
+            return HttpResponse(json.dumps({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), mimetype="application/json")
 
-        return HttpResponse(json.dumps({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), mimetype="application/json")
-    else:
+    search_dict = search.__dict__
 
-        search_dict = search.__dict__
+    for k, v in search_dict.iteritems():
+        if isinstance(v,datetime.date):
+            search_dict[k] = conv_to_js_date(v)
 
-        for k, v in search_dict.iteritems():
-            if isinstance(v,datetime.date):
-                search_dict[k] = conv_to_js_date(v)
+    del search_dict['_state']
+    del search_dict['open_status']
+    del search_dict['id']
+    del search_dict['search_type']
+    del search_dict['holding_per']
+    del search_dict['error']
 
-        del search_dict['_state']
-        del search_dict['open_status']
-        #del search_dict['key']
-        del search_dict['id']
+    # convert to refund system
+    search_dict = refund_format_conversion(search_dict)
 
-        return HttpResponse(json.dumps(search_dict), mimetype="application/json")
+    search_dict['success'] = True
+    return HttpResponse(json.dumps(search_dict), mimetype="application/json")
 
 
 
@@ -92,7 +106,7 @@ def price_edu_combo(view, clean=False):
                                                    search_date = current_time_aware(), open_status = True, key=gen_alphanum_key())
                     search_params.save()
                     search_key = search_params.key
-                    inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 0,"search_type": "rt","holding_per": 2,"return_times": 0,"nonstop": 0}
+                    inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_time": 'morning',"search_type": "rt","decision_time": 2,"return_time": 'evening',"convenience": 'best options', "airlines": "major"}
                     combined_results = {'pricing_results': {'dates': "2013612, 2013612, 2013620, 2013622",'deposit_value': 1900,'error': {0: "No error"},'refund_value': 1862}, 'context': 'this flight gets expensive fast', 'inputs': inputs, 'key': search_key}
                     build = {'form': form, 'results': combined_results}
                     return view(request, build, clean)
@@ -255,13 +269,16 @@ def price_edu_combo(view, clean=False):
                         search_key = None
 
                     # deposit format conversion
-                    pricing_results['refund_value'] = pricing_results['locked_fare']
-                    if pricing_results['holding_price'] and pricing_results['locked_fare']:
-                        pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
-                    else:
-                        pricing_results['deposit_value'] = ''
-                    del pricing_results['holding_price']
-                    del pricing_results['locked_fare']
+                    pricing_results = refund_format_conversion(pricing_results)
+
+                    #pricing_results['refund_value'] = pricing_results['locked_fare']
+                    #if pricing_results['holding_price'] and pricing_results['locked_fare']:
+                    #    pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
+                    #else:
+                    #    pricing_results['deposit_value'] = ''
+                    #del pricing_results['holding_price']
+                    #del pricing_results['locked_fare']
+
 
                     combined_results = [{'pricing_results': pricing_results, 'context': cust_edu_results, 'inputs': inputs, 'key': search_key}]
                     if changed_prefs:

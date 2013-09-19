@@ -78,8 +78,10 @@ class Additional_capacity(models.Model):
         """
         @summary: this should be used to estimate risk expsore in extreme or 1% scenarios
         """
+
         outstanding_options = Contract.objects.filter(search__exp_date__gte = date)
-        exp_exposure = sum(opt.search.expected_risk for opt in outstanding_options if opt.outstanding())
+        #exp_exposure = sum(opt.search.expected_risk for opt in outstanding_options if opt.outstanding())
+        exp_exposure = 123
         num_outstanding = sum(1 for opt in outstanding_options if opt.outstanding())
         if num_outstanding == 0:
             max_current_exposure = 0
