@@ -2,7 +2,7 @@
 import os
 import sys
 
-path = '/home/projects/beta.levelskies.com'
+path = '/home/projects/api.levelskies.net'
 if path not in sys.path:
     sys.path.append(path)
 
