@@ -1,5 +1,3 @@
-from settings import *
-
 
 DEBUG = TEMPLATE_DEBUG = True
 
@@ -9,20 +7,20 @@ SITE_ID = 1
 XS_SHARING_ALLOWED_ORIGINS = 'http://beta.levelskies.com'
 XS_SHARING_ALLOWED_METHODS = ['get','post']
 
-if host == live:
-    ADMINS = (
-        ('sys admin', 'sysadmin@levelskies.com'),
-    )
 
-    MANAGERS = ADMINS
+ADMINS = (
+    ('sys admin', 'sysadmin@levelskies.com'),
+)
 
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'api',
-            'USER': 'api',
-            'PASSWORD': 'buttwatercruises',
-            'HOST': 'localhost',
-            'PORT': ''
-        }
+MANAGERS = ADMINS
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'api',
+        'USER': 'api',
+        'PASSWORD': 'buttwatercruises',
+        'HOST': 'localhost',
+        'PORT': ''
     }
+}
