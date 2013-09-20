@@ -21,7 +21,7 @@ if host == live:
             'NAME': 'api',
             'USER': 'api',
             'PASSWORD': 'buttwatercruises',
-            'HOST': '',
+            'HOST': '127.0.0.1',
             'PORT': ''
         }
     }
