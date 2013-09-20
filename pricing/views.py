@@ -15,7 +15,10 @@ from pricing.models import Search_history
 from sales.models import Open, Platform
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key
 
-from functions import *
+try:
+    from functions import *
+except:
+    pass
 from gen_price import *
 from mult_search import *
 from search_summary import *
