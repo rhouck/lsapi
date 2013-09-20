@@ -16,10 +16,8 @@ from analysis.models import *
 from sales.models import *
 from api.views import current_time_aware, conv_to_js_date
 
-try:
-    from projection import *
-except:
-    pass
+from projection import *
+
 
 
 def hello(request):
