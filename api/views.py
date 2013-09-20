@@ -26,6 +26,7 @@ sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localw
 sys.path.insert(1, '/home/humbert/analysis')
 sys.path.insert(2, '/home/develop/analysis')
 sys.path.insert(3, '/home/bitnami/analysis')
+sys.path.insert(4, '/home/projects/api')
 
 
 

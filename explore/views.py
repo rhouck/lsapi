@@ -7,7 +7,7 @@ from django.template import RequestContext
 
 
 from api.views import current_time_aware, conv_to_js_date
-from analysis_imports.view_data import *
+from view_data import *
 from forms import *
 
 def hello(request):
