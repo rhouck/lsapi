@@ -16,10 +16,10 @@ from sales.models import Open, Platform
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key
 
 
-from functions import *
-from gen_price import *
-from mult_search import *
-from search_summary import *
+from analysis_imports.functions import *
+from analysis_imports.gen_price import *
+from analysis_imports.mult_search import *
+from analysis_imports.search_summary import *
 
 
 
