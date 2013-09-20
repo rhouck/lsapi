@@ -17,11 +17,12 @@ from api.views import current_time_aware, gen_search_display, gen_alphanum_key
 
 try:
     from functions import *
+    from gen_price import *
+    from mult_search import *
+    from search_summary import *
 except:
     pass
-from gen_price import *
-from mult_search import *
-from search_summary import *
+
 
 from api.views import conv_to_js_date
 
