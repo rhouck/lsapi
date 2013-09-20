@@ -1,7 +1,7 @@
 from settings import *
 
 
-DEBUG = TEMPLATE_DEBUG = False
+DEBUG = TEMPLATE_DEBUG = True
 
 SITE_ID = 1
 
@@ -22,7 +22,7 @@ if host == live:
             'NAME': 'api',
             'USER': 'api',
             'PASSWORD': 'buttwatercruises',
-            'HOST': '127.0.0.1',
+            'HOST': 'localhost',
             'PORT': ''
         }
     }
