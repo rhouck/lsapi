@@ -7,7 +7,6 @@ SITE_ID = 1
 #XS_SHARING_ALLOWED_ORIGINS = 'http://beta.levelskies.com'
 #XS_SHARING_ALLOWED_METHODS = ['get','post']
 
-
 ADMINS = (
     ('sys admin', 'sysadmin@levelskies.com'),
 )
