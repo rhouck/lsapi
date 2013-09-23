@@ -4,7 +4,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
 from django.template import RequestContext
-
+import sys
 sys.path.insert(0, '/home/projects/api')
 from api.views import current_time_aware, conv_to_js_date
 from view_data import *
