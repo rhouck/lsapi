@@ -14,17 +14,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'api',
-        'USER': 'api',
-        'PASSWORD': 'Ziggity_0*9bomb',
-        'HOST': '10.55.83.134',
-        'PORT': ''
-    }
-}
-"""
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -36,7 +26,6 @@ DATABASES = {
 	'OPTIONS': { 'unix_socket' : '/opt/bitnami/mysql/tmp/mysql.sock', }
     }
 }
-"""
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
