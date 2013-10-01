@@ -200,9 +200,13 @@ def find_open_contracts(request, slug):
                                     'purch_date': conv_to_js_date(i.purch_date),
                                     'depart_times': i.search.depart_times,
                                     'return_times': i.search.return_times,
-                                    'nonstop': i.search.nonstop,
+                                    'convenience': i.search.nonstop,
                                     'deposit': i.search.locked_fare + i.search.holding_price,
                                     'refund_value': i.search.locked_fare,
+                                    'depart_date_1': conv_to_js_date(i.search.depart_date1),
+                                    'return_date_1': conv_to_js_date(i.search.return_date1),
+                                    'depart_date_2': conv_to_js_date(i.search.depart_date2),
+                                    'return_date_2': conv_to_js_date(i.search.return_date2),
                                     }
 
     return gen_search_display(request, {'results': bank}, True)
