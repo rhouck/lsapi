@@ -70,16 +70,6 @@ def search_info(request, slug, all=False):
     search_dict = refund_format_conversion(search_dict)
 
     search_dict['success'] = True
-
-    # temporary fix to terms in contract object
-    search_dict['depart_times'] = 'morning'
-    search_dict['return_times'] = 'evening'
-    search_dict['airlines'] = 'major'
-    search_dict['convenience'] = 'best options'
-    del search_dict['nonstop']
-
-
-
     return HttpResponse(json.dumps(search_dict), mimetype="application/json")
 
 
@@ -119,8 +109,10 @@ def price_edu_combo(view, clean=False):
                                                    search_date = current_time_aware(), open_status = True, key=gen_alphanum_key())
                     search_params.save()
                     search_key = search_params.key
+
                     inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 'morning',"search_type": "rt","decision_time": 2,"return_times": 'evening',"convenience": 'best options', "airlines": "major"}
                     combined_results = {'success': True, 'pricing_results': {'dates': "2013612, 2013612, 2013620, 2013622",'deposit_value': 1900,'error': {0: "No error"},'refund_value': 1862}, 'context': 'this flight gets expensive fast', 'inputs': inputs, 'key': search_key}
+
                     build = {'form': form, 'results': combined_results}
                     return view(request, build, clean)
                 else:
