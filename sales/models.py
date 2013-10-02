@@ -31,7 +31,12 @@ class Customer(models.Model):
     state_province = models.CharField('state / province', max_length=30, blank=True, null=True)
     postal_code = models.CharField(max_length=50, blank=True, null=True)
     country = models.CharField(max_length=50, blank=True, null=True)
-
+    # billing information
+    billing_address1 = models.CharField(max_length=50, blank=True, null=True)
+    billing_city = models.CharField(max_length=60, blank=True, null=True)
+    billing_state_province = models.CharField('state / province', max_length=30, blank=True, null=True)
+    billing_postal_code = models.CharField(max_length=50, blank=True, null=True)
+    billing_country = models.CharField(max_length=50, blank=True, null=True)
 
     def __unicode__(self):
         if self.first_name and self.last_name:
