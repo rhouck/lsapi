@@ -21,8 +21,6 @@ from django.views.generic import DetailView, ListView
 from quix.pay.gateway.authorizenet import AimGateway
 from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
 
-from api.utils import *
-
 def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
     gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
