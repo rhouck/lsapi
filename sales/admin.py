@@ -1,4 +1,4 @@
-from sales.models import Platform, Customer, Contract, Open
+from sales.models import Platform, Customer, Contract, Open, Staging
 
 from django.contrib import admin
 
@@ -68,3 +68,9 @@ class OpenAdmin(admin.ModelAdmin):
     #    return False
 admin.site.register(Open, OpenAdmin)
 
+
+class StagingAdmin(admin.ModelAdmin):
+    list_display = ('contract',)
+    def has_add_permission(self, request):
+        return False
+admin.site.register(Staging, StagingAdmin)

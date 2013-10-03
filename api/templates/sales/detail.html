@@ -10,7 +10,7 @@
   {% for contract in detail.contract_set.all %}
       {% if contract.outstanding %}
         <li>
-        Key: {{contract.search.key}}, Purchase: {{contract}}, Expiration: {{contract.search.exp_date}}, Option price: {{contract.search.holding_price}}, Locked Fare: {{contract.search.locked_fare}}, Exercised Fare: {{contract.ex_fare}}
+        Key: {{contract.search.key}}, Purchase: {{contract}}, Expiration: {{contract.search.exp_date}}, Option price: {{contract.search.holding_price}}, Locked Fare: {{contract.search.locked_fare}}, Exercised Fare: {{contract.ex_fare}}, <a href="{% url add_to_staging 'exercise' contract.search.key %}">Exercise</a>, <a href="{% url add_to_staging 'refund' contract.search.key %}">Refund</a>
         </li>
     {% endif %}
   {% endfor %}

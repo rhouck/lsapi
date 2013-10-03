@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+  {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
+
+  <h2>{{ detail.contract.customer }}</h2>
+  <h4>{{ detail.contract.search.origin_code }} to {{ detail.contract.search.destination_code }}</h4>
+  <p>Dep: {{ detail.contract.search.depart_date1 }} - {{ detail.contract.search.depart_date2 }}</p>
+  <p>Ret: {{ detail.contract.search.return_date1 }} - {{ detail.contract.search.return_date2 }}</p>
+  </br>
+  {% if detail.exercise %}
+    <h2>Exercise</h2>
+  {% else %}
+    <h2>Refund</h2>
+  {% endif %}
+  <p>Customer Contact:</p>
+  <ul>
+    <li>{{ detail.contract.customer.first_name }}</li>
+    <li>{{ detail.contract.customer.last_name }}</li>
+    <li>{{ detail.contract.customer.email }}</li>
+    <li>{{ detail.contract.customer.phone }}</li>
+  </ul>
+
+  <p>Locked Fare:</p>
+  <ul>
+    <li>Locked Fare: {{ detail.contract.search.deposit_value }}</li>
+    <li>Refund Value: {{ detail.contract.search.locked_fare }}</li>
+    <li>From: {{ detail.contract.search.origin_code }}</li>
+    <li>To: {{ detail.contract.search.destination_code }}</li>
+    <li>Departure Time: {{ detail.contract.search.depart_times }}</li>
+    <li>Return Time: {{ detail.contract.search.return_times }}</li>
+    <li>Convenience: {{ detail.contract.search.nonstop }}</li>
+    <li>Airlines: {{ detail.contract.search.airlines }}</li>
+  </ul>
+  {% if detail.exercise %}
+    <p>Purchase Details:</p>
+    <ul>
+      <li>Selected Departure: {{ detail.dep_date }}</li>
+      <li>Selected Return:    {{ detail.ret_date }}</li>
+      <li>Notes: {{ detail.notes }}</li>
+    </ul>
+  {% else %}
+    <p>Card Info:</p>
+    <ul>
+      <li>CC - Last Four Digits: {{ detail.contract.customer.cc_last_four }}</li>
+      <li>Expiration Month: {{ detail.contract.customer.cc_exp_month }}</li>
+      <li>Expiration Year:  {{ detail.contract.customer.cc_exp_year }}</li>
+    </ul>
+  {% endif %}
+
+  <form action="" method="post">
+    {% csrf_token %}
+    {% if detail.exercise %}
+      <table>
+        {{ form.as_table }}
+      </table>
+    {% endif %}
+    <input type="submit" name="Search">
+  </form>
+
+{% endblock %}
+
+

@@ -37,6 +37,11 @@ class Customer(models.Model):
     billing_state_province = models.CharField('state / province', max_length=30, blank=True, null=True)
     billing_postal_code = models.CharField(max_length=50, blank=True, null=True)
     billing_country = models.CharField(max_length=50, blank=True, null=True)
+    # non-sensitive credit card info
+    cc_last_four = models.IntegerField(max_length=4, blank=True, null=True)
+    cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
+    cc_exp_year = models.IntegerField(max_length=4, blank=True, null=True)
+
 
     def __unicode__(self):
         if self.first_name and self.last_name:
@@ -54,6 +59,9 @@ class Contract(models.Model):
     ex_fare = models.FloatField('exercised fare', blank=True, null=True)
     ex_date = models.DateTimeField('date / time exercised', blank=True, null=True)
     gateway_id = models.CharField(max_length=20, blank=True, null=True)
+    dep_date = models.DateField('depart date', blank=True, null=True)
+    ret_date = models.DateField('return date', blank=True, null=True)
+    flight_choice = models.TextField(blank=True, null=True)
 
     def outstanding(self):
         return self.search.exp_date >= current_time_aware().date() and not self.ex_date
@@ -64,7 +72,7 @@ class Contract(models.Model):
 
     def __unicode__(self):
         #uni_name = '%s - %s - %s' % (self.purch_date, self.customer.platform, self.customer)
-        uni_name = '%s - %s' % (self.purch_date, self.customer)
+        uni_name = '%s - %s - %s' % (self.customer, self.customer.platform, self.purch_date.strftime('%b %d, %Y'))
         return uni_name
 
 
@@ -76,3 +84,16 @@ class Open(models.Model):
 
     def __unicode__(self):
         return str(self.status)
+
+
+class Staging(models.Model):
+    contract = models.ForeignKey(Contract)
+    notes = models.TextField(blank=True, null=True)
+    flight_choice = models.TextField(blank=True, null=True)
+    exercise = models.BooleanField(blank=True)
+    dep_date = models.DateField('depart date', blank=True, null=True)
+    ret_date = models.DateField('return date', blank=True, null=True)
+
+    def __unicode__(self):
+        uni_name = '%s - Exercise: %s' % (self.contract, self.exercise)
+        return uni_name

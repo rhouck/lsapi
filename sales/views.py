@@ -21,6 +21,7 @@ from django.views.generic import DetailView, ListView
 from quix.pay.gateway.authorizenet import AimGateway
 from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
 
+from api.utils import *
 
 def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
@@ -85,9 +86,11 @@ def test_trans(request):
                 cust_info[i] = cd[i]
 
             response = run_authnet_trans(123, card, address=address, cust_info=cust_info)
+
             if response['success']:
                 return HttpResponse(response['status'])
             else:
+
                 form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
                 return gen_search_display(request, {'form': form}, clean)
     else:
@@ -363,11 +366,11 @@ def purchase_option(request):
             amount = find_search.locked_fare + find_search.holding_price
             card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
             cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
-            address = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'phone': find_cust.phone, 'address1': find_cust.address1, 'city': find_cust.city, 'state_province': find_cust.state_province, 'country': find_cust.country, 'postal_code': find_cust.postal_code}
+            address = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'phone': find_cust.phone, 'address1': find_cust.billing_address1, 'city': find_cust.billing_city, 'state_province': find_cust.billing_state_province, 'country': find_cust.billing_country, 'postal_code': find_cust.billing_postal_code}
             try:
                 for i in (card_info, cust_info, address):
                     for v in i.itervalues():
-                        if v == "":
+                        if v == "" or v is None:
                             raise Exception
             except (Exception):
                 build['error_message'] = 'Not all of the required customer information is available.'
@@ -378,6 +381,12 @@ def purchase_option(request):
                 response = run_authnet_trans(amount, card_info, address=address, cust_info=cust_info)
 
                 if response['success']:
+
+                    # save non-sensitive cc data
+                    find_cust.cc_last_four = cd['number'][-4:]
+                    find_cust.cc_exp_month = cd['month']
+                    find_cust.cc_exp_year = cd['year']
+                    find_cust.save()
 
                     #new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
                     new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search, gateway_id=response['trans_id'])
@@ -406,19 +415,23 @@ def purchase_option(request):
     return gen_search_display(request, build, clean, method='get')
 
 
+@login_required()
 def exercise_option(request):
 
     # find a way to calculate exericse fare
-
+    """
     if request.user.is_authenticated():
         clean = False
     else:
         clean = True
+    """
+    clean = True
 
     inputs = request.GET if request.GET else None
+    """
     if clean:
         platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
-
+    """
 
     form = Exercise_option(inputs)
     build = {'form': form}
@@ -446,7 +459,8 @@ def exercise_option(request):
                     find_contract.ex_fare = current_fare
                 else:
                     # if option is refunded
-                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+                    #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_cust.cc_last_four, 'month': find_cust.cc_exp_month, 'year': find_cust.cc_exp_month}
                     response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
                     if not response['success']:
                         form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
@@ -481,3 +495,59 @@ def exercise_option(request):
     return gen_search_display(request, build, clean)
 
 
+
+# staging views
+
+@login_required()
+def add_to_staging(request, action, slug):
+
+    find_contract = get_object_or_404(Contract, search__key__iexact=slug)
+
+    try:
+        find_stage = Staging.objects.get(contract=find_contract)
+        return HttpResponse("already staged")
+    except (Staging.DoesNotExist):
+        exercise = True if action == 'exercise' else False
+        staged_cont = Staging(contract=find_contract, exercise=exercise)
+        staged_cont.save()
+        return HttpResponseRedirect(reverse('staged_item', kwargs={'slug': slug}))
+
+
+
+class StagingList(ListView):
+    model = Staging
+    context_object_name = "items"
+    template_name='sales/staging_list.html'
+    paginate_by = 100
+
+
+def staged_item(request, slug):
+    find_contract = get_object_or_404(Contract, search__key__iexact=slug)
+    find_stage = get_object_or_404(Staging, contract=find_contract)
+
+    inputs = request.POST if request.POST else None
+    build = {}
+    build['detail'] = find_stage
+
+    if find_stage.exercise:
+        form = StagingForm(inputs)
+        build['form'] = form
+
+    if inputs:
+        api_vars = {'cust_key': find_contract.customer.key, 'search_key': slug}
+        if find_stage.exercise:
+            if form.is_valid():
+                api_vars['exercise'] = True
+                cd = form.cleaned_data
+                api_vars.update(cd.items())
+
+                info = call_api(api_vars,'/sales/exercise/')
+                try:
+                    return HttpResponse("%s - %s" % (info['success'], info['error']))
+                except:
+                    return HttpResponse(info)
+            else:
+                build['error_message'] = "Form not valid"
+        else:
+            api_vars['exercise'] = False
+    return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))

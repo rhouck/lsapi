@@ -60,3 +60,6 @@ class Search_history(models.Model):
 
     def __unicode__(self):
         return "%s - %s:%s" % (self.search_date, self.origin_code, self.destination_code)
+
+    def deposit_value(self):
+        return self.locked_fare + self.holding_price

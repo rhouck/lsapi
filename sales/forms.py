@@ -16,7 +16,12 @@ class Customer_signup(Customer_login):
     state_province = forms.CharField(label="state / province", required=False)
     postal_code = forms.CharField(required=False)
     country = forms.CharField(required=False)
-
+    # billing information
+    billing_address1 = forms.CharField(required=False)
+    billing_city = forms.CharField(required=False)
+    billing_state_province = forms.CharField(label="state / province", required=False)
+    billing_postal_code = forms.CharField(required=False)
+    billing_country = forms.CharField(required=False)
 
 class PaymentForm(Customer_signup):
     #first_name = forms.CharField(max_length=50)
@@ -40,7 +45,12 @@ class Exercise_option(forms.Form):
     cust_key = forms.CharField()
     search_key = forms.CharField()
     exercise = forms.BooleanField(required=False)
-    number = forms.CharField(max_length=16, label="card number", required=False)
-    month = forms.CharField(max_length=2, label="expiration month", required=False)
-    year = forms.CharField(max_length=4, label="expiration year", required=False)
-    code = forms.CharField(max_length=4, label="security code", required=False)
+    #number = forms.CharField(max_length=16, label="card number", required=False)
+    #month = forms.CharField(max_length=2, label="expiration month", required=False)
+    #year = forms.CharField(max_length=4, label="expiration year", required=False)
+    #code = forms.CharField(max_length=4, label="security code", required=False)
+
+
+class StagingForm(forms.Form):
+    fare = forms.IntegerField()
+    flight_choice = forms.CharField(required=False)
