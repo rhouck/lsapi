@@ -415,103 +415,114 @@ def purchase_option(request):
     return gen_search_display(request, build, clean, method='get')
 
 
-@login_required()
-def exercise_option(request):
 
-    # find a way to calculate exericse fare
-    """
-    if request.user.is_authenticated():
-        clean = False
+def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, ret_date=None, flight_choice=None):
+
+    build = {}
+
+    try:
+
+        find_cust = Customer.objects.get(key__iexact=cust_key)
+        find_contract = Contract.objects.get(customer=find_cust, search__key=search_key)
+
+    except (KeyError, Customer.DoesNotExist, Contract.DoesNotExist):
+        build['error_message'] = 'The user id and/or transaction id is not valid.'
+        build['results'] = {'success': False, 'error': 'The user id and/or transaction id is not valid.'}
+
     else:
-        clean = True
-    """
-    clean = True
-
-    inputs = request.GET if request.GET else None
-    """
-    if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
-    """
-
-    form = Exercise_option(inputs)
-    build = {'form': form}
-
-    if (inputs) and form.is_valid():
-        cd = form.cleaned_data
-        try:
-
-            find_cust = Customer.objects.get(key__iexact=cd['cust_key'])
-            find_contract = Contract.objects.get(customer=find_cust, search__key=cd['search_key'])
-
-        except (KeyError, Customer.DoesNotExist, Contract.DoesNotExist):
-            build['error_message'] = 'The user id and/or transaction id is not valid.'
-            build['results'] = {'success': False, 'error': 'The user id and/or transaction id is not valid.'}
+        if not find_contract.outstanding():
+            build['error_message'] = 'The contract selected is either expired or already exercised.'
+            build['results'] = {'success': False, 'error': 'The contract selected is either expired or already exercised.'}
 
         else:
-            if not find_contract.outstanding():
-                build['error_message'] = 'The contract selected is either expired or already exercised.'
-                build['results'] = {'success': False, 'error': 'The contract selected is either expired or already exercised.'}
-
+            if exercise:
+                # if option is converted into airline ticket
+                find_contract.ex_fare = fare
+                find_contract.dep_date = dep_date
+                find_contract.ret_date = ret_date
+                find_contract.flight_choice = flight_choice
             else:
-                if cd['exercise']:
-                    # if option is converted into airline ticket
-                    current_fare = 500
-                    find_contract.ex_fare = current_fare
-                else:
-                    # if option is refunded
-                    #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
-                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_cust.cc_last_four, 'month': find_cust.cc_exp_month, 'year': find_cust.cc_exp_month}
-                    response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
-                    if not response['success']:
-                        form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
-                        #build['error_message'] = response['status']
-                        build['results'] = {'success': False, 'error': response['status']}
-                        return gen_search_display(request, build, clean)
+                # if option is refunded
+                #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+                card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_cust.cc_last_four, 'month': find_cust.cc_exp_month, 'year': find_cust.cc_exp_month}
+                response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
+                if not response['success']:
+                    #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
+                    #build['error_message'] = response['status']
+                    build['results'] = {'success': False, 'error': response['status']}
+                    return build
+                    #return gen_search_display(request, build, clean)
 
-                    find_contract.ex_fare = None
+                find_contract.ex_fare = None
+                find_contract.dep_date = None
+                find_contract.ret_date = None
+                find_contract.flight_choice = None
 
-                exercise_date_time = current_time_aware()
-                find_contract.ex_date = exercise_date_time
-                find_contract.save()
-                build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'exercise_fare': find_contract.ex_fare, 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
-                # augment cash reserve with option price
-                try:
-                    if find_contract.ex_fare > find_contract.search.locked_fare:
-                        effect = find_contract.search.locked_fare - find_contract.ex_fare
-                        latest_change = Cash_reserve.objects.latest('action_date')
-                        new_balance = latest_change.cash_balance + effect
-                        add_cash = Cash_reserve(action_date=current_time_aware(), transaction=find_contract, cash_change=effect, cash_balance=new_balance)
-                        add_cash.save()
 
-                        capacity = Additional_capacity.objects.get(pk=1)
-                        capacity.recalc_capacity(new_balance)
-                        capacity.save()
-                except:
-                    pass
-    #else:
-    #    build['error_message'] = 'Inputs not valid.'
-    #    build['results'] = {'success': False, 'error': 'Inputs not valid.'}
+            exercise_date_time = current_time_aware()
+            find_contract.ex_date = exercise_date_time
+            find_contract.save()
+            build['results'] = {'success': True, 'search_key': search_key, 'cust_key': cust_key, 'exercise_fare': find_contract.ex_fare, 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
+            # augment cash reserve with option price
+            try:
+                if find_contract.ex_fare > find_contract.search.locked_fare:
+                    effect = find_contract.search.locked_fare - find_contract.ex_fare
+                    latest_change = Cash_reserve.objects.latest('action_date')
+                    new_balance = latest_change.cash_balance + effect
+                    add_cash = Cash_reserve(action_date=current_time_aware(), transaction=find_contract, cash_change=effect, cash_balance=new_balance)
+                    add_cash.save()
 
-    return gen_search_display(request, build, clean)
+                    capacity = Additional_capacity.objects.get(pk=1)
+                    capacity.recalc_capacity(new_balance)
+                    capacity.save()
+            except:
+                pass
+
+    return build
+    #return gen_search_display(request, build, clean)
 
 
 
 # staging views
 
-@login_required()
 def add_to_staging(request, action, slug):
+
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    if clean:
+        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
 
     find_contract = get_object_or_404(Contract, search__key__iexact=slug)
 
+
     try:
         find_stage = Staging.objects.get(contract=find_contract)
-        return HttpResponse("already staged")
+        return HttpResponse({'success': False, 'error': 'Already staged'})
     except (Staging.DoesNotExist):
+
         exercise = True if action == 'exercise' else False
         staged_cont = Staging(contract=find_contract, exercise=exercise)
-        staged_cont.save()
-        return HttpResponseRedirect(reverse('staged_item', kwargs={'slug': slug}))
 
+        inputs = request.GET if request.GET else None
+        form = StagingForm(inputs)
+
+        if form.is_valid():
+            cd = form.cleaned_data
+            for i in ('notes', 'flight_choice', 'dep_date', 'ret_date'):
+                staged_cont[i] = cd[i]
+
+        staged_cont.save()
+
+        if clean:
+            return HttpResponse({'success': True})
+        else:
+            return HttpResponseRedirect(reverse('staged_item', kwargs={'slug': slug}))
+
+    except Exception as err:
+        return HttpResponse({'success': False, 'error': '%s' % (err)})
 
 
 class StagingList(ListView):
@@ -522,6 +533,7 @@ class StagingList(ListView):
 
 
 def staged_item(request, slug):
+
     find_contract = get_object_or_404(Contract, search__key__iexact=slug)
     find_stage = get_object_or_404(Staging, contract=find_contract)
 
@@ -534,20 +546,23 @@ def staged_item(request, slug):
         build['form'] = form
 
     if inputs:
-        api_vars = {'cust_key': find_contract.customer.key, 'search_key': slug}
         if find_stage.exercise:
             if form.is_valid():
-                api_vars['exercise'] = True
                 cd = form.cleaned_data
-                api_vars.update(cd.items())
-
-                info = call_api(api_vars,'/sales/exercise/')
-                try:
-                    return HttpResponse("%s - %s" % (info['success'], info['error']))
-                except:
-                    return HttpResponse(info)
+                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'])
+                if not response['results']['success']:
+                    build['error_message'] = response['results']['error']
+                else:
+                    find_stage.delete()
+                    return HttpResponseRedirect(reverse('staging_view'))
             else:
                 build['error_message'] = "Form not valid"
         else:
-            api_vars['exercise'] = False
+            response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=None)
+            if not response['results']['success']:
+                    build['error_message'] = response['results']['error']
+            else:
+                find_stage.delete()
+                return HttpResponseRedirect(reverse('staging_view'))
+
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))

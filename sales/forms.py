@@ -40,7 +40,7 @@ class Purchase_option(forms.Form):
     year = forms.CharField(max_length=4, label="expiration year")
     code = forms.CharField(max_length=4, label="security code")
 
-
+"""
 class Exercise_option(forms.Form):
     cust_key = forms.CharField()
     search_key = forms.CharField()
@@ -49,8 +49,10 @@ class Exercise_option(forms.Form):
     #month = forms.CharField(max_length=2, label="expiration month", required=False)
     #year = forms.CharField(max_length=4, label="expiration year", required=False)
     #code = forms.CharField(max_length=4, label="security code", required=False)
-
+"""
 
 class StagingForm(forms.Form):
     fare = forms.IntegerField()
     flight_choice = forms.CharField(required=False)
+    dep_date = forms.DateField()
+    ret_date = forms.DateField()
