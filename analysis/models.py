@@ -2,7 +2,7 @@ import math
 
 from django.db import models
 from django.db.models import Min
-from sales.models import Open, Contract
+from sales.models import Contract
 from api.views import current_time_aware, conv_to_js_date
 
 """
@@ -23,6 +23,14 @@ def calc_exposure_by_date(date=current_time_aware()):
     return {'expected_exposure': exp_exposure, 'max_current_exposure': max_current_exposure, 'num_outstanding': num_outstanding, 'js_date': js_date, 'next_expiration': next_expiration}
 """
 
+class Open(models.Model):
+    status = models.BooleanField()
+
+    def get_status(self):
+        return bool(self.status)
+
+    def __unicode__(self):
+        return str(self.status)
 
 
 
@@ -95,3 +103,5 @@ class Additional_capacity(models.Model):
 
     def __unicode__(self):
         return str(self.quantity)
+
+

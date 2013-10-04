@@ -76,16 +76,6 @@ class Contract(models.Model):
         return uni_name
 
 
-class Open(models.Model):
-    status = models.BooleanField()
-
-    def get_status(self):
-        return bool(self.status)
-
-    def __unicode__(self):
-        return str(self.status)
-
-
 class Staging(models.Model):
     contract = models.ForeignKey(Contract)
     notes = models.TextField(blank=True, null=True)

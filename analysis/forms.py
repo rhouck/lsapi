@@ -1,6 +1,6 @@
 from django import forms
 
-from sales.models import Open
+from models import Open
 
 
 class Projection(forms.Form):

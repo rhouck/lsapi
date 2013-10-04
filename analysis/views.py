@@ -53,6 +53,7 @@ def exposure(request):
     form = Dashboard_current(inputs)
     capacity = Additional_capacity.objects.get(pk=1)
     sales_gate = Open.objects.get(pk=1)
+
     now = current_time_aware()
 
     display_time_frame_wks = 5
@@ -73,9 +74,12 @@ def exposure(request):
             capacity.save()
 
         if cd['change_status']:
+
             if sales_gate.status == True:
                 sales_gate.status = False
+
             else:
+                #return HttpResponse('dont change')
                 if capacity.quantity != 0:
                     sales_gate.status = True
             sales_gate.save()

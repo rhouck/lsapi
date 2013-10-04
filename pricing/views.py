@@ -12,7 +12,8 @@ from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
 from pricing.models import Search_history
-from sales.models import Open, Platform
+from sales.models import Platform
+from analysis.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key
 
 

@@ -1,4 +1,4 @@
-from sales.models import Platform, Customer, Contract, Open, Staging
+from sales.models import Platform, Customer, Contract, Staging
 
 from django.contrib import admin
 
@@ -56,17 +56,6 @@ class PlatformAdmin(admin.ModelAdmin):
     list_display = ('org_name', 'web_site')
     inlines = [CustomerInline]
 admin.site.register(Platform, PlatformAdmin)
-
-
-class OpenAdmin(admin.ModelAdmin):
-    def has_add_permission(self, request):
-        return True
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    #def has_change_permission(self, request):
-    #    return False
-admin.site.register(Open, OpenAdmin)
 
 
 class StagingAdmin(admin.ModelAdmin):
