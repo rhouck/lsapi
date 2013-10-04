@@ -545,6 +545,12 @@ def staged_item(request, slug):
     find_stage = get_object_or_404(Staging, contract=find_contract)
 
     inputs = request.POST if request.POST else None
+
+    if inputs:
+        if 'remove' in inputs:
+            find_stage.delete()
+            return HttpResponseRedirect(reverse('staging_view'))
+
     build = {}
     build['detail'] = find_stage
 
@@ -552,29 +558,25 @@ def staged_item(request, slug):
 
         if inputs:
             form = StagingForm(inputs)
-            #return HttpResponse("inputs: %s" % (inputs))
         else:
             data = {'dep_date': find_stage.dep_date, 'ret_date': find_stage.ret_date}
-            #return HttpResponse("default: %s" % (find_stage.dep_date))
             form = StagingForm(initial=data)
 
-        """
-        if not inputs:
-            form.dep_date = find_stage.dep_date
-            form.ret_date = find_stage.ret_date
-        """
         build['form'] = form
 
     if inputs:
         if find_stage.exercise:
             if form.is_valid():
                 cd = form.cleaned_data
-                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'])
-                if not response['results']['success']:
-                    build['error_message'] = response['results']['error']
+                if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
+                    build['error_message'] = 'Selected travel dates not within locked fare range'
                 else:
-                    find_stage.delete()
-                    return HttpResponseRedirect(reverse('staging_view'))
+                    response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'])
+                    if not response['results']['success']:
+                        build['error_message'] = response['results']['error']
+                    else:
+                        find_stage.delete()
+                        return HttpResponseRedirect(reverse('staging_view'))
             else:
                 build['error_message'] = "Form not valid"
         else:
