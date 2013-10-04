@@ -51,8 +51,15 @@ class Exercise_option(forms.Form):
     #code = forms.CharField(max_length=4, label="security code", required=False)
 """
 
-class StagingForm(forms.Form):
-    fare = forms.IntegerField()
+class AddToStagingForm(forms.Form):
     flight_choice = forms.CharField(required=False)
+    notes = forms.CharField(required=False)
     dep_date = forms.DateField()
     ret_date = forms.DateField()
+
+
+class StagingForm(forms.Form):
+    fare = forms.IntegerField()
+    dep_date = forms.DateField()
+    ret_date = forms.DateField()
+    flight_choice = forms.CharField(required=False)

@@ -498,29 +498,38 @@ def add_to_staging(request, action, slug):
 
     try:
         find_stage = Staging.objects.get(contract=find_contract)
-        return HttpResponse({'success': False, 'error': 'Already staged'})
+        return HttpResponse(json.dumps({'success': False, 'error': 'Already staged'}), mimetype="application/json")
     except (Staging.DoesNotExist):
 
         exercise = True if action == 'exercise' else False
         staged_cont = Staging(contract=find_contract, exercise=exercise)
 
         inputs = request.GET if request.GET else None
-        form = StagingForm(inputs)
+        form = AddToStagingForm(inputs)
 
         if form.is_valid():
             cd = form.cleaned_data
-            for i in ('notes', 'flight_choice', 'dep_date', 'ret_date'):
-                staged_cont[i] = cd[i]
+            if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
+                return HttpResponse(json.dumps({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
+
+            if 'dep_date' in cd:
+                staged_cont.dep_date = cd['dep_date']
+            if 'ret_date' in cd:
+                staged_cont.ret_date = cd['ret_date']
+            if 'notes' in cd:
+                staged_cont.notes = cd['notes']
+            if 'flight_choice' in cd:
+                staged_cont.flight_choice = cd['flight_choice']
 
         staged_cont.save()
 
         if clean:
-            return HttpResponse({'success': True})
+            return HttpResponse(json.dumps({'success': True}), mimetype="application/json")
         else:
             return HttpResponseRedirect(reverse('staged_item', kwargs={'slug': slug}))
 
     except Exception as err:
-        return HttpResponse({'success': False, 'error': '%s' % (err)})
+        return HttpResponse(json.dumps({'success': False, 'error': '%s' % (err)}), mimetype="application/json")
 
 
 class StagingList(ListView):
@@ -540,7 +549,20 @@ def staged_item(request, slug):
     build['detail'] = find_stage
 
     if find_stage.exercise:
-        form = StagingForm(inputs)
+
+        if inputs:
+            form = StagingForm(inputs)
+            #return HttpResponse("inputs: %s" % (inputs))
+        else:
+            data = {'dep_date': find_stage.dep_date, 'ret_date': find_stage.ret_date}
+            #return HttpResponse("default: %s" % (find_stage.dep_date))
+            form = StagingForm(initial=data)
+
+        """
+        if not inputs:
+            form.dep_date = find_stage.dep_date
+            form.ret_date = find_stage.ret_date
+        """
         build['form'] = form
 
     if inputs:
@@ -562,5 +584,6 @@ def staged_item(request, slug):
             else:
                 find_stage.delete()
                 return HttpResponseRedirect(reverse('staging_view'))
+
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))
