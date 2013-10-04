@@ -44,9 +44,9 @@
   {% else %}
     <p>Card Info:</p>
     <ul>
-      <li>CC - Last Four Digits: {{ detail.contract.customer.cc_last_four }}</li>
-      <li>Expiration Month: {{ detail.contract.customer.cc_exp_month }}</li>
-      <li>Expiration Year:  {{ detail.contract.customer.cc_exp_year }}</li>
+      <li>CC - Last Four Digits: {{ detail.contract.cc_last_four }}</li>
+      <li>Expiration Month: {{ detail.contract.cc_exp_month }}</li>
+      <li>Expiration Year:  {{ detail.contract.cc_exp_year }}</li>
     </ul>
   {% endif %}
 

@@ -380,14 +380,11 @@ def purchase_option(request):
 
                 if response['success']:
 
-                    # save non-sensitive cc data
-                    find_cust.cc_last_four = cd['number'][-4:]
-                    find_cust.cc_exp_month = cd['month']
-                    find_cust.cc_exp_year = cd['year']
-                    find_cust.save()
-
-                    #new_contract = Contract(platform=find_org, customer=find_cust, purch_date=purch_date_time, search=find_search)
                     new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search, gateway_id=response['trans_id'])
+                    # save non-sensitive cc data
+                    new_contract.cc_last_four = cd['number'][-4:]
+                    new_contract.cc_exp_month = cd['month']
+                    new_contract.cc_exp_year = cd['year']
                     new_contract.save()
                     confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
                     build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status']}
@@ -442,7 +439,7 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
             else:
                 # if option is refunded
                 #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
-                card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_cust.cc_last_four, 'month': find_cust.cc_exp_month, 'year': find_cust.cc_exp_month}
+                card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_contract.cc_last_four, 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_month}
                 response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
                 if not response['success']:
                     #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])

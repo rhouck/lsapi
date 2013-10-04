@@ -37,10 +37,6 @@ class Customer(models.Model):
     billing_state_province = models.CharField('state / province', max_length=30, blank=True, null=True)
     billing_postal_code = models.CharField(max_length=50, blank=True, null=True)
     billing_country = models.CharField(max_length=50, blank=True, null=True)
-    # non-sensitive credit card info
-    cc_last_four = models.IntegerField(max_length=4, blank=True, null=True)
-    cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
-    cc_exp_year = models.IntegerField(max_length=4, blank=True, null=True)
 
 
     def __unicode__(self):
@@ -62,6 +58,10 @@ class Contract(models.Model):
     dep_date = models.DateField('depart date', blank=True, null=True)
     ret_date = models.DateField('return date', blank=True, null=True)
     flight_choice = models.TextField(blank=True, null=True)
+    # non-sensitive credit card info
+    cc_last_four = models.IntegerField(max_length=4, blank=True, null=True)
+    cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
+    cc_exp_year = models.IntegerField(max_length=4, blank=True, null=True)
 
     def outstanding(self):
         return self.search.exp_date >= current_time_aware().date() and not self.ex_date
