@@ -58,8 +58,11 @@ class AddToStagingForm(forms.Form):
     ret_date = forms.DateField()
 
 
-class StagingForm(forms.Form):
+class ExerStagingForm(forms.Form):
     fare = forms.IntegerField()
     dep_date = forms.DateField()
     ret_date = forms.DateField()
     flight_choice = forms.CharField(required=False)
+
+class RefundStagingForm(forms.Form):
+    notes = forms.CharField(required=False)

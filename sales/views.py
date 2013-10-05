@@ -413,7 +413,7 @@ def purchase_option(request):
 
 
 
-def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, ret_date=None, flight_choice=None):
+def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, ret_date=None, flight_choice=None, use_gateway=True):
 
     build = {}
 
@@ -440,9 +440,12 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
                 find_contract.flight_choice = flight_choice
             else:
                 # if option is refunded
-                #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
-                card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_contract.cc_last_four, 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_month}
-                response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
+                if use_gateway:
+                    #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_contract.cc_last_four, 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_month}
+                    response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
+                else:
+                    response = {'success': True}
                 if not response['success']:
                     #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
                     #build['error_message'] = response['status']
@@ -453,7 +456,7 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
                 find_contract.ex_fare = None
                 find_contract.dep_date = None
                 find_contract.ret_date = None
-                find_contract.flight_choice = None
+                find_contract.flight_choice = flight_choice
 
 
             exercise_date_time = current_time_aware()
@@ -545,26 +548,36 @@ def staged_item(request, slug):
 
     inputs = request.POST if request.POST else None
 
-    if inputs:
-        if 'remove' in inputs:
-            find_stage.delete()
-            return HttpResponseRedirect(reverse('staging_view'))
-
     build = {}
     build['detail'] = find_stage
 
     if find_stage.exercise:
 
         if inputs:
-            form = StagingForm(inputs)
+            form = ExerStagingForm(inputs)
         else:
             data = {'dep_date': find_stage.dep_date, 'ret_date': find_stage.ret_date}
             form = StagingForm(initial=data)
 
-        build['form'] = form
+    else:
+        form = RefundStagingForm(inputs)
+        if form.is_valid():
+            cd = form.cleaned_data
+
+    build['form'] = form
+
 
     if inputs:
-        if find_stage.exercise:
+
+        # remove or force close the contract
+        if 'remove' in inputs or 'force_close' in inputs:
+            find_stage.delete()
+            if 'force_close' in inputs:
+                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'], use_gateway=False)
+            return HttpResponseRedirect(reverse('staging_view'))
+
+        # exercise the contract
+        elif find_stage.exercise:
             if form.is_valid():
                 cd = form.cleaned_data
                 if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
@@ -578,8 +591,10 @@ def staged_item(request, slug):
                         return HttpResponseRedirect(reverse('staging_view'))
             else:
                 build['error_message'] = "Form not valid"
+
+        # refund the contract
         else:
-            response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=None)
+            response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'])
             if not response['results']['success']:
                     build['error_message'] = response['results']['error']
             else:
