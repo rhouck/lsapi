@@ -190,7 +190,7 @@ def find_open_contracts(request, slug):
 
     bank = {}
     for index, i in enumerate(contracts):
-        if i.outstanding():
+        if i.outstanding() and not i.staged():
             bank[index] = {}
             bank[index]['redeem'] = "link to purchase"
             bank[index]['refund'] = "link to refund"
