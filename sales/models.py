@@ -47,6 +47,8 @@ class Customer(models.Model):
         return tag
 
 
+
+
 class Contract(models.Model):
     #platform = models.ForeignKey(Platform)
     customer = models.ForeignKey(Customer)
@@ -65,13 +67,23 @@ class Contract(models.Model):
 
     def outstanding(self):
         return self.search.exp_date >= current_time_aware().date() and not self.ex_date
-
     outstanding.admin_order_field = 'search__exp_date'
     outstanding.boolean = True
-    outstanding.short_description = 'Still open and valid?'
+    outstanding.short_description = 'Open and not expired'
+
+
+    def staged(self):
+        try:
+            find_staged = Staging.objects.get(contract=self.id)
+            val = True
+        except:
+            val = False
+        return val
+    staged.boolean = True
+    staged.short_description = 'In staging'
+
 
     def __unicode__(self):
-        #uni_name = '%s - %s - %s' % (self.purch_date, self.customer.platform, self.customer)
         uni_name = '%s - %s - %s' % (self.customer, self.customer.platform, self.purch_date.strftime('%b %d, %Y'))
         return uni_name
 

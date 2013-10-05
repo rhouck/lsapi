@@ -5,12 +5,9 @@
   {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
 
   <h1>{{ detail }}</h1>
-
-
   <h3>Open Contracts</h3>
   <ul>
-
-
+  {% for customer in platform.customer_set.all %}
     {% for contract in customer.contract_set.all %}
         {% if contract.outstanding %}
           <li>
@@ -23,29 +20,23 @@
           </li>
       {% endif %}
     {% endfor %}
-
-
+  {% endfor %}
   </ul>
-
-
 
   <h3>Closed Contracts</h3>
   <ul>
-
-  {% for contract in customer.contract_set.all %}
-      {% if not contract.outstanding %}
-        <li>
-        Key: {{contract.search.key}}, Purchase: {{contract}}, Expiration: {{contract.search.exp_date}}, Option price: {{contract.search.holding_price}}, Locked Fare: {{contract.search.locked_fare}}, Exercised Fare: {{contract.ex_fare}},
-        {% if contract.staged %}
-          <a style="color: red;" href="{% url staged_item contract.search.key %}">Staged</a>
-        {% endif %}
-        </li>
-    {% endif %}
+  {% for customer in platform.customer_set.all %}
+    {% for contract in customer.contract_set.all %}
+        {% if not contract.outstanding %}
+          <li>
+          Key: {{contract.search.key}}, Purchase: {{contract}}, Expiration: {{contract.search.exp_date}}, Option price: {{contract.search.holding_price}}, Locked Fare: {{contract.search.locked_fare}}, Exercised Fare: {{contract.ex_fare}},
+          {% if contract.staged %}
+            <a style="color: red;" href="{% url staged_item contract.search.key %}">Staged</a>
+          {% endif %}
+          </li>
+      {% endif %}
+    {% endfor %}
   {% endfor %}
-
-
   </ul>
 
 {% endblock %}
-
-

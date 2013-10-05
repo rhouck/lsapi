@@ -6,7 +6,7 @@ from django.http import HttpResponse
 
 class ContractAdmin(admin.ModelAdmin):
 
-    list_display = ('purch_date', 'ex_fare', 'get_exp_date', 'get_holding_price', 'get_locked_fare', 'outstanding')
+    list_display = ('purch_date', 'ex_fare', 'get_exp_date', 'get_holding_price', 'get_locked_fare', 'outstanding', 'staged')
 
     #fieldsets = [
     #            (None, {'fields': ('platform', 'customer', 'purch_date', 'exp_date', 'option_price', 'locked_fare', 'ex_fare')}),

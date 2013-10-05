@@ -113,16 +113,18 @@ class PlatformList(ListView):
     paginate_by = 100
 
 class CustomerDetail(DetailView):
-    context_object_name = "detail"
+    context_object_name = "customer"
     template_name='sales/detail.html'
     def get_object(self):
         return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
 
 class PlatformDetail(DetailView):
-    context_object_name = "detail"
-    template_name='sales/detail.html'
+    context_object_name = "platform"
+    template_name='sales/detail_plat.html'
+
     def get_object(self):
         return get_object_or_404(Platform, key__iexact=self.kwargs['slug'])
+
 
 class PlatSpecCustDetail(DetailView):
     context_object_name = "detail"
@@ -586,3 +588,21 @@ def staged_item(request, slug):
 
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))
+
+
+def staging_sweep(request):
+    cont_list = []
+    full_set = Contract.objects.filter(ex_date=None)
+
+    for i in full_set:
+        if not i.outstanding() and not i.staged():
+            staged_cont = Staging(contract=i, exercise=False, notes="Forced staging upon expiration")
+            staged_cont.save()
+            cont_list.append(i)
+
+    if not cont_list:
+        message = "No contracts to stage"
+    else:
+        message = "Staged %s contracts" % (len(cont_list))
+
+    return render_to_response('sales/sweep.html', {'items': cont_list, 'message': message}, context_instance=RequestContext(request))

@@ -44,6 +44,9 @@
   {% else %}
     <p>Card Info:</p>
     <ul>
+      {% if detail.notes %}
+        <li>Notes: {{ detail.notes }}</li>
+      {% endif %}
       <li>CC - Last Four Digits: {{ detail.contract.cc_last_four }}</li>
       <li>Expiration Month: {{ detail.contract.cc_exp_month }}</li>
       <li>Expiration Year:  {{ detail.contract.cc_exp_year }}</li>

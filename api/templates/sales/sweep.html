@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Directory{% endblock %}
+
+{% block content %}
+
+  <p>{{ message }}</p>
+	<ul>
+	{% for item in items %}
+
+    <li>
+      <a href="{% url staged_item item.search.key %}">{{ item }}, {{ item.outstanding }}, {{ item.staged }}</a>
+    </li>
+
+	{% endfor %}
+	</ul>
+
+
+{% endblock %}
