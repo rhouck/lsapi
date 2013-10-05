@@ -1,0 +1,487 @@
+@import 'compass/css3';
+@import 'bootstrap';
+@import 'helpers';
+
+* {
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: url('images/gridBg.png') 0 0 repeat;
+}
+
+html, body {
+  height: 100%;
+}
+
+.page-wrap {
+  min-height: 100%;
+  margin-bottom: -70px;
+
+  &:after {
+    content: "";
+    display: block;
+  }
+}
+
+.colophon, .page-wrap:after {
+  height: 70px;
+}
+
+// Masthead
+
+#masthead {
+  margin-bottom: 55px;
+}
+
+.logo {
+  padding-top: 15px;
+}
+
+.tagline {
+  padding-top: 16px;
+
+  > * {
+    padding-right: 62px;
+  }
+
+  h2 {
+    color: $color-text-light;
+    font-family: $font-league-regular;
+    font-size: 62px;
+    clear: right;
+    text-align: right;
+    padding-top: 15px;
+    margin-top: 0;
+
+    span {
+      color: $color-text;
+    }
+  }
+
+  .btn {
+    font-size: 16px;
+  }
+}
+
+// Main Form
+
+.form-container {
+  margin-bottom: 180px;
+}
+
+form {
+  h3 {
+    text-transform: lowercase;
+    color: $color-text;
+  }
+}
+
+h1, h2, h3 {
+  font-family: $font-museo-700;
+}
+
+h3 em {
+  font-style: normal;
+  color: #444;
+  font-family: $font-museo-300;
+  font-size: 14px;
+}
+
+input:focus,
+input.form-control:focus {
+  background: #fdfdfd;
+  border-color: $color-highlight2;
+  @include box-shadow(none);
+}
+
+// Styled Select Elements
+
+.styled-select {
+  overflow: hidden;
+  position: relative;
+  height: 50px;
+  margin-bottom: 30px;
+  @include border-radius(5px);
+
+  &.dropdown {
+    overflow: visible;
+  }
+
+  select {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    color: white;
+    font-family: $font-museo-700;
+    font-size: 24px;
+    width: 100%; height: 50px;
+    line-height: 1;
+    margin-bottom: 0;
+    padding-left: 60px;
+    position: relative;
+    outline: none;
+    text-overflow: ellipsis;
+    z-index: 12;
+    -webkit-appearance: none;
+    -moz-appearance: window;
+  }
+
+  .select-label {
+    color: white;
+    font-family: $font-museo-700;
+    font-size: 24px;
+    line-height: 50px;
+    padding-left: 60px;
+  }
+
+  .arrow {
+    background: url('images/arrow-sprite.png') no-repeat 0 0;
+    display: block;
+    width: 12px; height: 8px;
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    margin-top: -4px;
+  }
+
+  .icon {
+    background: url('images/icon-sprite.png') no-repeat 0 0;
+    display: block;
+    width: 20px; height: 30px;
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    margin-top: -15px;
+  }
+
+  &.select-location {
+    background-color: $color-highlight1;
+  }
+
+  &.select-date {
+    background-color: $color-highlight2;
+
+    .icon {
+      background-position: -53px 0;
+      width: 24px; height: 24px;
+      margin-top: -12px;
+    }
+  }
+
+  &.select-time {
+    background-color: $color-highlight3;
+
+    .icon {
+      background-position: 0 -34px;
+      width: 24px; height: 24px;
+      margin-top: -12px;
+    }
+  }
+
+  &.active {
+    .arrow {
+      background-position: 0 bottom;
+    }
+  }
+}
+
+.hint {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  margin-left: 4px;
+  background: url("images/icon-hint.png") 0 -16px no-repeat;
+  margin-bottom: -2px;
+
+  .dropdown-header & {
+    float: right;
+    background-position: 0 0;
+    margin-bottom: 0;
+  }
+}
+
+.tooltip {  
+
+  .tooltip-inner {
+    background-color: white;
+    text-transform: none;
+    color: $color-text;
+    font-size: 14px;
+    padding: 0.5em 1em;
+    @include box-shadow(5px 5px 0 fade(black,20%));
+  }
+
+  &.top .tooltip-arrow {
+    border-top-color: white;
+
+    &:after {
+      content: "";
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-color: transparent;
+      border-style: solid;
+      border-width: 5px 5px 0;
+      border-top-color: fade(black,20%);
+    }
+  }
+}
+
+.select-options {
+  background-color: $color-neutral;
+
+  &.open {
+    background-color: $color-neutral-dark;
+
+    .arrow {
+      background-position: 0 bottom;
+    }
+  }
+
+  .dropdown-menu {
+    background-color: fade($color-neutral-dark,90%);
+    @include box-shadow(none);
+    border: 0 none;
+    padding: 0 0 19px;
+    margin-top: 11px;
+
+    &:after {
+      content: "";
+      position: absolute;
+      width: 0;
+      height: 0;
+      top: -7px;
+      right: 12px;
+      border-color: transparent;
+      border-style: solid;
+      border-width: 0 8px 7px;
+      border-bottom-color: fade($color-neutral-dark,90%);
+    }
+
+    [role=presentation] {
+      padding: 0 20px;
+    }
+
+    .dropdown-header {
+      color: white;
+      padding-top: 18px;
+      text-transform: uppercase;
+      font-family: $font-museo-500;
+      padding-left: 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-pills {
+      font-family: $font-museo-500;
+      font-size: 16px;
+
+      label {
+        color: white;
+        padding-top: 2px;
+      }
+
+      input[type=radio] {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        opacity: 0;
+        margin: 0;
+      }
+
+      .active label {
+        color: $color-text-light;
+      }
+    }
+
+    .btn-group {
+      .btn {
+        @include box-shadow(2px 0 0 fade(black,20%) inset);
+        &.active,
+        &:first-child {
+          @include box-shadow(none);
+        }
+
+        &.active:hover {
+          color: inherit;
+        }
+
+        &:hover {
+          color: $color-text-light;
+        }
+      }
+    }
+  }
+  
+  .icon {
+    background-position: -24px 0;
+    width: 25px; height: 25px;
+    margin-top: -12px;
+  }
+}
+
+.f-radio {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background: url("images/radio-sprite.png") 0 0 no-repeat;
+  margin-right: 4px;
+  vertical-align: middle;
+  cursor: pointer;
+
+  &.checked {
+    background-position: 0 -20px;
+  }
+
+  input {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
+.form-actions.primary {
+  margin-top: 30px;
+  text-align: center;
+
+  .btn-lg {
+    @include inline-block;
+    height: 75px;
+    line-height: 75px;
+    padding: 0 62px;
+  }
+}
+
+// Date picker related styles
+.select-date {
+  input {
+    background: none;
+    border: 0;
+    color: white;
+    font-family: $font-museo-700;
+    font-size: 24px;
+    height: 50px;
+    margin: 0 0 0 60px;
+    position: relative;
+    z-index: 12;
+  }
+
+  input:focus {
+    outline: none;
+  }
+
+  ::-webkit-input-placeholder { color: white; }
+  :-moz-placeholder { color: white; }
+  ::-moz-placeholder { color: white; }
+  :-ms-input-placeholder { color: white; }
+}
+
+.ui-datepicker {
+  background: #fff;
+}
+
+// Sliders
+
+.flexibility-wrap {
+  margin-bottom: 30px;
+
+  .slide-value {
+    color: black;
+    display: block;
+    font-family: $font-museo-500;
+    font-size: 13px;
+  }
+
+  .slide-value.min {
+    float: left;
+    margin: 10px 0 0 10px;
+  }
+
+  .slide-value.max {
+    float: right;
+    margin: 10px 10px 0 0;
+  }
+}
+
+.flexibility-slider {
+  background: rgba($color-highlight2, .4);
+  @include border-radius(20px);
+  height: 12px;
+
+  .ui-slider-handle {
+    background: url("images/planes.png") 0 0 no-repeat;
+    width: 56px; height: 52px;
+    top: -20px;
+    cursor: pointer;
+
+    &.min {
+      margin-left: -5px;
+    }
+
+    &.max {
+      background-position: 0 bottom;
+      margin-left: -53px;
+    }
+  }
+
+  .ui-slider-range {
+    background-color: $color-highlight2;
+  }
+}
+
+// Descriptions and Tooltips
+
+.description {
+  color: $color-text;
+  font-family: $font-museo-500;
+  font-size: 15px;
+  margin-bottom: 20px;
+  text-transform: lowercase;
+
+  .tooltip {
+    display: none;
+  }
+}
+
+
+// Footer
+
+.colophon {
+  background: $color-text;
+  font-family: $font-museo-500;
+  padding-top: 20px;
+  position: relative;
+
+  .footer-detail {
+    background: url('images/footer-detail.png') 50% 0;
+    display: block;
+    width: 100%; height: 70px;
+    position: absolute;
+    top: -70px;
+  }
+
+  .legal {
+    color: $color-text-light;
+    font-size: 14px;
+  }
+
+  nav {
+    margin-right: 15px;
+  }
+
+  a {
+    color: white;
+    padding: 0 8px;
+    text-align: right;
+    @include inline-block;
+
+    &.first {
+      padding-left: 0;
+    }
+
+    &.last {
+      padding-right: 0;
+    }
+  }
+}
