@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'charts.html' %}
 
 
 {% block title %}Fare Changes{% endblock %}
@@ -6,34 +6,34 @@
 {% block content %}
 
 
-{% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
+  {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
 
-  {% if form.errors %}
-    <p style="color: red;">
-      Please correct the error{{ form.errors|pluralize }} below.
-    </p>
-  {% endif %}
+    {% if form.errors %}
+      <p style="color: red;">
+        Please correct the error{{ form.errors|pluralize }} below.
+      </p>
+    {% endif %}
 
-  <form action="" method="get">
-    {% csrf_token %}
-    <table>
-    {{ form.as_table }}
-    </table>
-    <input type="submit" name="Search">
-  </form>
+    <form action="" method="get">
+      {% csrf_token %}
+      <table>
+      {{ form.as_table }}
+      </table>
+      <input type="submit" name="Search">
+    </form>
 
 
-<div class="row-fluid">
-  {% for split in res %}
-  <div class="span12" id='hist_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-  <div class="span12" id='scat_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-  <div class="span12" id='abs_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-  {% endfor %}
-</div>
+  <div class="row-fluid">
+    {% for split in res %}
+    <div class="span12" id='hist_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    <div class="span12" id='scat_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    <div class="span12" id='abs_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    {% endfor %}
+  </div>
 {% endblock %}
 
 
-{% block footer %}
+{% block charts %}
 
 	{% for split in res %}
 
@@ -179,8 +179,5 @@
     </script>
 
     {% endfor %}
-
-
-
 
 {% endblock %}

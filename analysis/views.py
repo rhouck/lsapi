@@ -58,22 +58,11 @@ def exposure(request):
 
     display_time_frame_wks = 5
 
-    if (inputs) and form.is_valid():
-        cd = form.cleaned_data
 
-        if cd['cash_change']:
-            try:
-                latest_change = Cash_reserve.objects.latest('action_date')
-                new_balance = latest_change.cash_balance + cd['cash_change']
-            except:
-                new_balance = cd['cash_change']
-            add_cash = Cash_reserve(action_date=now, transaction=None, cash_change=cd['cash_change'], cash_balance=new_balance)
-            add_cash.save()
+    if (inputs):
 
-            capacity.recalc_capacity(new_balance)
-            capacity.save()
-
-        if cd['change_status']:
+        #if cd['change_status']:
+        if 'change_status' in inputs:
 
             if sales_gate.status == True:
                 sales_gate.status = False
@@ -83,6 +72,21 @@ def exposure(request):
                 if capacity.quantity != 0:
                     sales_gate.status = True
             sales_gate.save()
+
+        if form.is_valid():
+            cd = form.cleaned_data
+
+            if cd['cash_change']:
+                try:
+                    latest_change = Cash_reserve.objects.latest('action_date')
+                    new_balance = latest_change.cash_balance + cd['cash_change']
+                except:
+                    new_balance = cd['cash_change']
+                add_cash = Cash_reserve(action_date=now, transaction=None, cash_change=cd['cash_change'], cash_balance=new_balance)
+                add_cash.save()
+
+                capacity.recalc_capacity(new_balance)
+                capacity.save()
 
         return HttpResponseRedirect('')
 

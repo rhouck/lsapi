@@ -44,4 +44,4 @@ class Dashboard_current(forms.Form):
     #open = forms.BooleanField(label='Enable sale of options', required=False, initial=Open.objects.get(pk=1).get_status())
     #force_stop = forms.BooleanField(label='Force stop option sales', required=False, initial=False)
     cash_change = forms.FloatField(label='Change in cash balance', required=False)
-    change_status = forms.BooleanField(label='Flip open sales status', required=False, initial=False)
+    #change_status = forms.BooleanField(label='Open Status', required=False, initial=False)
