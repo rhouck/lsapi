@@ -118,6 +118,12 @@ class CustomerDetail(DetailView):
     def get_object(self):
         return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
 
+
+def get_cust_detail(request, slug):
+
+    customer = get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
+
+
 class PlatformDetail(DetailView):
     context_object_name = "platform"
     template_name='sales/detail_plat.html'
@@ -126,11 +132,8 @@ class PlatformDetail(DetailView):
         return get_object_or_404(Platform, key__iexact=self.kwargs['slug'])
 
 
-class PlatSpecCustDetail(DetailView):
-    context_object_name = "detail"
-    template_name='sales/detail.html'
-    def get_object(self):
-        return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
+
+
 
 
 

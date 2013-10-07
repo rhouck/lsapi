@@ -23,11 +23,11 @@
     </form>
 
 
-  <div class="row-fluid">
+  <div class="row">
     {% for split in res %}
-    <div class="span12" id='hist_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-    <div class="span12" id='scat_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-    <div class="span12" id='abs_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    <div class="col-md-11" id='hist_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    <div class="col-md-11" id='scat_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    <div class="col-md-11" id='abs_{{ split.index }}' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
     {% endfor %}
   </div>
 {% endblock %}
@@ -67,6 +67,9 @@
                 title: {
                     text: 'Frquency'
                 }
+            },
+            credits: {
+                enabled: false
             },
             plotOptions: {
                 series: {
@@ -116,8 +119,11 @@
             text : 'Price changes occur over periods between ' + proj_length[0] + ' and '
                     +  proj_length[1] + ' days'
           },
+          credits: {
+              enabled: false
+          },
           series : [{
-            color: 'rgba(246,248,38, .25)',
+            color: 'rgba(119, 152, 191, .75)',
             data : scat_data,
             lineWidth : 0,
             marker : {
@@ -147,9 +153,12 @@
             text : 'Price changes occur over periods between ' + proj_length[0] + ' and '
                     +  proj_length[1] + ' days'
           },
+          credits: {
+              enabled: false
+          },
           series : [{
             name: 'Beg price',
-            color: 'rgba(119, 152, 191, .25)',
+            color: 'rgba(119, 152, 191, .75)',
             data : beg_data,
             lineWidth : 0,
             marker : {
@@ -161,7 +170,7 @@
             }
           },{
             name: 'End price',
-            color: 'rgba(223, 83, 83, .25)',
+            color: 'rgba(223, 83, 83, .75)',
             data : end_data,
             lineWidth : 0,
             marker : {
