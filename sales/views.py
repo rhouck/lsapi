@@ -2,6 +2,9 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+
 import datetime
 import socket
 import json
@@ -98,39 +101,94 @@ def test_trans(request):
 
 
 
+def get_cust_list(request):
 
+    items = Customer.objects.all()
 
-class CustomerList(ListView):
-    model = Customer
-    context_object_name = "items"
-    template_name='sales/list.html'
-    paginate_by = 100
+    paginator = Paginator(items, 25)
+    page = request.GET.get('page')
+    try:
+        short_list = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        short_list = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        short_list = paginator.page(paginator.num_pages)
 
-class PlatformList(ListView):
-    model = Platform
-    context_object_name = "items"
-    template_name='sales/list.html'
-    paginate_by = 100
+    return render_to_response('sales/list.html', {'items': short_list, 'category': "Customers"}, context_instance=RequestContext(request))
 
-class CustomerDetail(DetailView):
-    context_object_name = "customer"
-    template_name='sales/detail.html'
-    def get_object(self):
-        return get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
+def get_plat_list(request):
+    items = Platform.objects.all()
+
+    paginator = Paginator(items, 25)
+    page = request.GET.get('page')
+    try:
+        short_list = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        short_list = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        short_list = paginator.page(paginator.num_pages)
+
+    return render_to_response('sales/list.html', {'items': short_list, 'category': "Platforms"}, context_instance=RequestContext(request))
+
+def get_staging_list(request):
+
+    contracts = Staging.objects.all().order_by('id')
+
+    paginator = Paginator(contracts, 25)
+    page = request.GET.get('page')
+    try:
+        short_list = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        short_list = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        short_list = paginator.page(paginator.num_pages)
+
+    return render_to_response('sales/staging_list.html', {'items': short_list}, context_instance=RequestContext(request))
+
 
 
 def get_cust_detail(request, slug):
 
-    customer = get_object_or_404(Customer, key__iexact=self.kwargs['slug'])
+    cust = get_object_or_404(Customer, key__iexact=slug)
+    contracts = Contract.objects.filter(customer__key=slug).order_by('-purch_date')
+
+    paginator = Paginator(contracts, 25)
+    page = request.GET.get('page')
+    try:
+        short_list = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        short_list = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        short_list = paginator.page(paginator.num_pages)
+
+    return render_to_response('sales/detail.html', {'items': short_list, 'name': cust}, context_instance=RequestContext(request))
+
+def get_plat_detail(request, slug):
+
+    plat = get_object_or_404(Platform, key__iexact=slug)
+    contracts = Contract.objects.filter(customer__platform__key=slug).order_by('-purch_date')
+
+    paginator = Paginator(contracts, 25)
+    page = request.GET.get('page')
+    try:
+        short_list = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        short_list = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        short_list = paginator.page(paginator.num_pages)
 
 
-class PlatformDetail(DetailView):
-    context_object_name = "platform"
-    template_name='sales/detail_plat.html'
-
-    def get_object(self):
-        return get_object_or_404(Platform, key__iexact=self.kwargs['slug'])
-
+    return render_to_response('sales/detail.html', {'items': short_list, 'name': plat}, context_instance=RequestContext(request))
 
 
 
@@ -537,11 +595,6 @@ def add_to_staging(request, action, slug):
         return HttpResponse(json.dumps({'success': False, 'error': '%s' % (err)}), mimetype="application/json")
 
 
-class StagingList(ListView):
-    model = Staging
-    context_object_name = "items"
-    template_name='sales/staging_list.html'
-    paginate_by = 100
 
 
 def staged_item(request, slug):
@@ -560,7 +613,7 @@ def staged_item(request, slug):
             form = ExerStagingForm(inputs)
         else:
             data = {'dep_date': find_stage.dep_date, 'ret_date': find_stage.ret_date}
-            form = StagingForm(initial=data)
+            form = ExerStagingForm(initial=data)
 
     else:
         form = RefundStagingForm(inputs)

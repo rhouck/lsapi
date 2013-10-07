@@ -4,7 +4,8 @@
 
   {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
 
-  <h2>{{ detail.contract.customer }}</h2>
+  <h2>{{ detail.contract.customer|title }}</h2>
+
   <h4>{{ detail.contract.search.origin_code }} to {{ detail.contract.search.destination_code }}</h4>
   <p>Dep: {{ detail.contract.search.depart_date1 }} - {{ detail.contract.search.depart_date2 }}</p>
   <p>Ret: {{ detail.contract.search.return_date1 }} - {{ detail.contract.search.return_date2 }}</p>

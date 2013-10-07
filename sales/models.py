@@ -97,5 +97,5 @@ class Staging(models.Model):
     ret_date = models.DateField('return date', blank=True, null=True)
 
     def __unicode__(self):
-        uni_name = '%s - Exercise: %s' % (self.contract, self.exercise)
+        uni_name = '%s' % (self.contract)
         return uni_name

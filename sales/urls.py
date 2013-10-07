@@ -12,7 +12,7 @@ urlpatterns = patterns('',
     url(r'^purchase/$', purchase_option, name='purchase'),
 
     # staging - admin only
-    url(r'^staging/$', login_required(StagingList.as_view()), name='staging_view'),
+    url(r'^staging/$', login_required(get_staging_list), name='staging_view'),
     url(r'^staging/(?P<slug>[-\w]{6})/$', staged_item, name='staged_item'),
     url(r'^staging/add/(?P<action>[A-Za-z]{6,8})/(?P<slug>[-\w]{6})/$', add_to_staging, name='add_to_staging'),
     url(r'^staging/sweep/$', staging_sweep, name='staging_sweep'),
@@ -25,9 +25,9 @@ urlpatterns = patterns('',
     url(r'^customer/open/(?P<slug>[-\w]{6})/$', find_open_contracts, name='open_contracts'),
 
     # view contracts - admin only
-    url(r'^customer/$', login_required(CustomerList.as_view()), name='customer_list'),
-    url(r'^customer/(?P<slug>[-\w]{6})/$', login_required(CustomerDetail.as_view()), name='customer_detail'),
-    url(r'^platform/$', login_required(PlatformList.as_view()), name='platform_list'),
-    url(r'^platform/(?P<slug>[-\w]{6})/$', PlatformDetail.as_view(), name='platform_detail'),
+    url(r'^customer/$', login_required(get_cust_list), name='customer_list'),
+    url(r'^customer/(?P<slug>[-\w]{6})/$', login_required(get_cust_detail), name='customer_detail'),
+    url(r'^platform/$', login_required(get_plat_list), name='platform_list'),
+    url(r'^platform/(?P<slug>[-\w]{6})/$', login_required(get_plat_detail), name='platform_detail'),
 
 )
