@@ -15,18 +15,6 @@ ADMINS = (
 MANAGERS = ADMINS
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'api_api',
-        'USER': 'root',
-        'PASSWORD': 'bitnami',
-        'HOST': '',
-        'PORT': '',
-	'OPTIONS': { 'unix_socket' : '/opt/bitnami/mysql/tmp/mysql.sock', }
-    }
-}
-
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -182,5 +170,10 @@ XS_SHARING_ALLOWED_METHODS = ['POST','GET','OPTIONS', 'PUT', 'DELETE']
 XS_SHARING_ALLOWED_HEADERS = ['Origin', 'Content-Type', 'Accept']
 XS_SHARING_ALLOWED_CREDENTIALS = 'true'
 
+
+# Use site-specific settings
+local_settings_path = os.path.join(os.path.dirname(__file__), 'local_settings.py')
 if host == live:
     from settings_production import *
+else:
+    from local_settings import *
