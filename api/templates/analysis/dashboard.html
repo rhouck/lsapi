@@ -6,7 +6,7 @@
 
 {% block content %}
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-7">
 
             <table class="table table-condensed">
     		<tr><td>Options Outstanding</td><td>{{ current_exposure.num_options_out }}</td><td>Cash Balance</td><td>{{ cash_balance.cash_balance }}</td></tr>
@@ -14,34 +14,89 @@
     		<tr><td>Next Expiration</td><td>{{ current_exposure.next_expiration }}</td><td>Last Change</td><td>{{ cash_balance.last_change }}</td></tr>
     		</table>
         </div>
-        <div class="col-md-5">
+        <div class="col-md-4">
             <div clas="row">
                 <div class="col-md-12">
-                    <form action="" method="post">
-                        {% csrf_token %}
-                        {% if sales_gate %}
-                            <input type="submit" class="btn btn-success" name="change_status" value="Sales Open">
-                        {% else %}
-                            <input type="submit" class="btn btn-danger" name="change_status" value="Sales Closed">
-                        {% endif %}
 
-                    </form>
+                    {% csrf_token %}
+                    {% if sales_gate %}
+                        <a data-toggle="modal" href="#openModal" class="btn btn-success">Sales Open</a>
+                    {% else %}
+                        <a data-toggle="modal" href="#openModal" class="btn btn-danger">Sales Closed</a>
+                    {% endif %}
+
+
+                  <!-- Modal -->
+                  <div class="modal fade" id="openModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                          <h4 class="modal-title">Change Sales Status</h4>
+                        </div>
+                        <div class="modal-body">
+                          This will either enable or disable additional sales. Confirm you want to change this status.
+                        </div>
+                        <div class="modal-footer">
+                          <form action="" method="post">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Close</button>
+                                <input type="submit" class="btn btn-primary btn-sm" name="change_status" value="Confirm">
+                            </form>
+                        </div>
+                      </div><!-- /.modal-content -->
+                    </div><!-- /.modal-dialog -->
+                  </div><!-- /.modal -->
                 </div>
             </div>
             <div clas="row">
                 <div class="col-md-12">
-                    <form class="form-inline" role="form" action="" method="post">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <input type="submit" class="btn btn-primary btn-sm" name="Search" value="Change Cash">
-                            {% for field in form %}
-                                <!--<label>{{ field.label_tag }}</label>-->
-                                  {% for error in field.errors %} <p style="color: red;">{{ error }}</p>{% endfor %}
-                                  {{ field }}
-                            {% endfor %}
+                </br>
+                </div>
+            </div>
+            <div clas="row">
+                <div class="col-md-12">
+                    <a data-toggle="modal" href="#cashModal" class="btn btn-primary btn-sm">Change Cash</a>
 
+
+                    <!-- Modal -->
+                  <div class="modal fade" id="cashModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                          <h4 class="modal-title">Change Cash Balance</h4>
                         </div>
-                    </form>
+                        <div class="modal-body">
+                          <p>Enter the dollar change to the risk pool.</p>
+                            <form class="form-inline" role="form" action="" method="post">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    {% for field in form %}
+                                        <!--<label>{{ field.label_tag }}</label>-->
+                                          {% for error in field.errors %} <p style="color: red;">{{ error }}</p>{% endfor %}
+                                          {{ field }}
+                                    {% endfor %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Close</button>
+                                    <input type="submit" class="btn btn-primary btn-sm" name="Search" value="Confirm">
+                                </div>
+                            </form>
+                        </div>
+                      </div><!-- /.modal-content -->
+                    </div><!-- /.modal-dialog -->
+                  </div><!-- /.modal -->
+
+
+
+
+
+
+
+
+
+
                 </div>
             </div>
         </div>
