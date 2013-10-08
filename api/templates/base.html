@@ -1,8 +1,18 @@
 {% load static %}
 
-<html lang='en'>
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]> <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]> <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+
 <head>
+
+  <meta charset="utf-8">
   <title>{% block title %}Level Skies API{% endblock %}</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width">
+
 
   <link rel="stylesheet" href="{% static "assets/wfl/css/jquery-ui-1.10.3.custom.min.css" %}">
   <link rel="stylesheet" href="{% static "assets/wfl/style.css" %}">
@@ -13,12 +23,14 @@
 
 </head>
 <body>
+    <div class="page-wrap container">
 
-	    <div class="row">
+      <div class="row">
           <div class="col-md-12">
                 <h2>&nbsp;Level Skies API</h2>
           </div>
       </div>
+
       <div class="row">
           <div class="col-md-12">
             <div class="container-fluid">
@@ -62,14 +74,16 @@
                       </div>
                     </div>
                     <div class="col-md-10">
-                        <!--Body content-->
-                        {% block content %}
-                          <div class="row">
-                            <div class="col-md-5 col-md-offset-4">
-                            <a href="index.html"><img src="{% static "assets/wfl/images/logo.png" %}" width="320" height="250" alt="Level Skies"></a>
+                        <section class="form-container col-md-12">
+                          <!--Body content-->
+                          {% block content %}
+                            <div class="row">
+                              <div class="col-md-5 col-md-offset-4">
+                              <a href="index.html"><img src="{% static "assets/wfl/images/logo.png" %}" width="320" height="250" alt="Level Skies"></a>
+                              </div>
                             </div>
-                          </div>
-                        {% endblock %}
+                          {% endblock %}
+                        </section>
                     </div>
                 </div>
             </div>
@@ -83,6 +97,8 @@
   				<p>&nbsp;Price Point Analytics Inc</p>
       	</div>
       </div>
+
+    </div>
 </body>
 
 

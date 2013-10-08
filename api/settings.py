@@ -127,6 +127,7 @@ INSTALLED_APPS = (
 
     # API development below
     #'tastypie',
+    'widget_tweaks',
     'pricing',
     'sales',
     'analysis',

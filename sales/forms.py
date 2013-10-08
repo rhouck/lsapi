@@ -62,7 +62,7 @@ class ExerStagingForm(forms.Form):
     fare = forms.IntegerField()
     dep_date = forms.DateField()
     ret_date = forms.DateField()
-    flight_choice = forms.CharField(required=False)
+    flight_choice = forms.CharField(required=False, widget=forms.Textarea)
 
 class RefundStagingForm(forms.Form):
-    notes = forms.CharField(required=False)
+    notes = forms.CharField(required=False, widget=forms.Textarea)

@@ -1,69 +1,98 @@
 {% extends 'base.html' %}
 
+{% load widget_tweaks %}
+
 {% block content %}
 
-  {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
+  <div class="row">
+      <div class="col-md-3">
+        <h2>{{ detail.contract.customer|title }}</h2>
+      </div>
+      <div class="col-md-3">
+        </br></br>
+        <p>{{ detail.contract.customer.email }}</p>
+      </div>
+      <div class="col-md-3">
+        </br></br>
+        <p>{{ detail.contract.customer.phone }}</p>
+      </div>
+  </div>
 
-  <h2>{{ detail.contract.customer|title }}</h2>
+  <div class="row">
+      <div class="col-md-12">
+        <h3>{{ detail.contract.search.origin_code }} to {{ detail.contract.search.destination_code }}</h3>
+      </div>
+  </div>
+  <div class="row">
+      <div class="col-md-3">
+        <p>Dep: {{ detail.contract.search.depart_date1 }} - {{ detail.contract.search.depart_date2 }}</p>
+        <p>Ret: {{ detail.contract.search.return_date1 }} - {{ detail.contract.search.return_date2 }}</p>
+      </div>
+      <div class="col-md-3">
+        <p>Locked Fare: {{ detail.contract.search.deposit_value }}</p>
+        <p>Refund Value: {{ detail.contract.search.locked_fare }}</p>
+      </div>
+      <div class="col-md-3">
+        <p>Departure Time: {{ detail.contract.search.depart_times }}</p>
+        <p>Return Time: {{ detail.contract.search.return_times }}</p>
+      </div>
+      <div class="col-md-3">
+        <p>Convenience: {{ detail.contract.search.nonstop }}</p>
+        <p>Airlines: {{ detail.contract.search.airlines }}</p>
+      </div>
+  </div>
 
-  <h4>{{ detail.contract.search.origin_code }} to {{ detail.contract.search.destination_code }}</h4>
-  <p>Dep: {{ detail.contract.search.depart_date1 }} - {{ detail.contract.search.depart_date2 }}</p>
-  <p>Ret: {{ detail.contract.search.return_date1 }} - {{ detail.contract.search.return_date2 }}</p>
-  </br>
-  {% if detail.exercise %}
-    <h2>Exercise</h2>
-  {% else %}
-    <h2>Refund</h2>
-  {% endif %}
-  <p>Customer Contact:</p>
-  <ul>
-    <li>{{ detail.contract.customer.first_name }}</li>
-    <li>{{ detail.contract.customer.last_name }}</li>
-    <li>{{ detail.contract.customer.email }}</li>
-    <li>{{ detail.contract.customer.phone }}</li>
-  </ul>
 
-  <p>Locked Fare:</p>
-  <ul>
-    <li>Locked Fare: {{ detail.contract.search.deposit_value }}</li>
-    <li>Refund Value: {{ detail.contract.search.locked_fare }}</li>
-    <li>From: {{ detail.contract.search.origin_code }}</li>
-    <li>To: {{ detail.contract.search.destination_code }}</li>
-    <li>Departure Time: {{ detail.contract.search.depart_times }}</li>
-    <li>Return Time: {{ detail.contract.search.return_times }}</li>
-    <li>Convenience: {{ detail.contract.search.nonstop }}</li>
-    <li>Airlines: {{ detail.contract.search.airlines }}</li>
-  </ul>
-  {% if detail.exercise %}
-    <p>Purchase Details:</p>
-    <ul>
-      <li>Selected Departure: {{ detail.dep_date }}</li>
-      <li>Selected Return:    {{ detail.ret_date }}</li>
-      <li>Notes: {{ detail.notes }}</li>
-      <li>Flight Choice: {{ detail.flight_choice }}</li>
-    </ul>
-  {% else %}
-    <p>Card Info:</p>
-    <ul>
-      {% if detail.notes %}
-        <li>Notes: {{ detail.notes }}</li>
+  <div class="row">
+    <div class="col-md-3">
+      {% if detail.exercise %}
+        <h3>Exercise</h3>
+      {% else %}
+        <h3>Refund</h3>
       {% endif %}
-      <li>CC - Last Four Digits: {{ detail.contract.cc_last_four }}</li>
-      <li>Expiration Month: {{ detail.contract.cc_exp_month }}</li>
-      <li>Expiration Year:  {{ detail.contract.cc_exp_year }}</li>
-    </ul>
-  {% endif %}
+    </div>
+  </div>
 
-  <form action="" method="post">
-    {% csrf_token %}
-    <table>
-      {{ form.as_table }}
-    </table>
-    <input type="submit" name="Search">
-    <input type="submit" name="remove" value="Remove">
-    <input type="submit" name="force_close" value="Force Close">
-  </form>
 
+  <div class="row">
+    <div class="col-md-3">
+      {% if detail.exercise %}
+          <p>Selected Departure: {{ detail.dep_date }}</p>
+          <p>Selected Return:    {{ detail.ret_date }}</p>
+          <p>Notes: {{ detail.notes }}</p>
+          <p>Flight Choice: {{ detail.flight_choice }}</p>
+      {% else %}
+        {% if detail.notes %}
+          <p>Notes: {{ detail.notes }}</p>
+        {% endif %}
+        <p>CC - Last Four Digits: {{ detail.contract.cc_last_four }}</p>
+        <p>Expiration Month: {{ detail.contract.cc_exp_month }}</p>
+        <p>Expiration Year:  {{ detail.contract.cc_exp_year }}</p>
+      {% endif %}
+    </div>
+    <div class="col-md-6">
+      {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
+
+      <form action="" method="post">
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label>{{ field.label_tag }}</label>
+                {{ field|add_class:"form-control" }}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        <input type="submit" class="btn btn-success btn-sm" name="Search">
+        {% if not detail.exercise %}
+          <input type="submit" class="btn btn-primary btn-sm" name="force_close" value="Force Close">
+        {% endif %}
+        <input type="submit" class="btn btn-danger btn-sm" name="remove" value="Remove">
+      </form>
+    </div>
+  </div>
 
 {% endblock %}
 
