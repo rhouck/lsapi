@@ -1,3 +1,4 @@
+import time
 import datetime
 import sys
 from random import randint
@@ -14,7 +15,7 @@ from forms import *
 from pricing.models import Search_history
 from sales.models import Platform
 from analysis.models import Open
-from api.views import current_time_aware, gen_search_display, gen_alphanum_key
+from api.views import current_time_aware, gen_search_display, gen_alphanum_key, conv_to_js_date
 
 
 from functions import *
@@ -23,8 +24,160 @@ from mult_search import *
 from search_summary import *
 
 
+from api.utils import *
 
-from api.views import conv_to_js_date
+
+# build function to recieve range of dates, cycle through cached searches both locally and from api, run live search when necessary
+
+
+
+def run_flight_search(request):
+
+    origin="SFO"
+    destination="LHR"
+    depart_date = datetime.date(2013,11,1)
+    return_date = datetime.date(2013,11,20)
+    depart_times = ['morning']
+    return_times = ['evening']
+    num_stops = "best-only"
+    airlines = None
+
+    # check if exists in DB
+
+    # if not, run search and save in DB
+
+    # return response from DB
+
+    # run 'parser' specific to source api
+
+    response = live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines)
+    return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
+def cached_search(origin, destination, depart_date, return_date):
+
+    # this search does not actually find cached fares for the two dates listed
+    # instead it supposedly finds best fares for dates departing within that range
+    url = "rates/daily/from_city_to_city"
+    data = {'from': origin, 'to': destination, 'trip_type': 'roundtrip'}
+    data.update({'dt_start': depart_date, 'dt_end': return_date})
+
+    response = call_wan(url, data, method="get")
+    return response
+
+def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
+
+
+    # format inputs
+    def pick_time_window(time_list):
+        morning = [360, 720] # 6:00am to 12:00pm
+        evening = [720, 1080] # 12:00pm to 6:00pm
+        any_time = [0, 1440] # 12:00am to 12:00am
+
+        if 'any_time' in time_list:
+            return (any_time[0], any_time[1])
+        else:
+            if 'morning' in time_list and 'evening' not in time_list:
+                return (morning[0], morning[1])
+            elif 'morning' in time_list and 'evening' in time_list:
+                return (morning[0], evening[1])
+            elif 'morning' not in time_list and 'evening' in time_list:
+                return (evening[0], evening[1])
+            else:
+                return (any_time[0], any_time[1])
+
+    depart_times = pick_time_window(depart_times)
+    return_times = pick_time_window(return_times)
+
+    if num_stops == "best-only":
+        num_stops = ["none", "one",]
+    else:
+        num_stops = ["none", "one", "two_plus"]
+
+
+    # create search
+    url = 'k/2/searches'
+    data = {
+            "trips": [
+              {
+                "departure_code": str(origin),
+                "arrival_code": str(destination),
+                "outbound_date": "%s" % (depart_date),
+                "inbound_date": "%s" % (return_date),
+              }
+            ],
+            "adults_count": 1
+          }
+    response = call_wan(url, data)
+
+    if not response['success']:
+
+        return HttpResponse(json.dumps({'success': False, 'error': "Could not complete 'Searches' call: %s" % (response['error'])}), mimetype="application/json")
+
+    else:
+
+        # pull fares
+        url = 'k/2/fares'
+        data = {
+                  # general
+                  "id": "%s" % (gen_alphanum_key()),
+                  "fares_query_type": "route",
+                  "departure_day_time_filter_type": "separate",
+
+                  # api response format
+                  "sort": "price",
+                  "order": "asc",
+                  #"page": 1,
+                  "per_page": 10,
+
+                  # four hour max layover
+                  "stopover_duration_min": 0,
+                  "stopover_duration_max": 240,
+
+                  # travel times
+                  "outbound_departure_day_time_min": depart_times[0],
+                  "outbound_departure_day_time_max": depart_times[1],
+                  "inbound_departure_day_time_min": return_times[0],
+                  "inbound_departure_day_time_max": return_times[1],
+
+                  # num stops
+                  "stop_types": num_stops,
+                }
+
+        data.update({'search_id': response['response']['id'], 'trip_id': response['response']['trips'][0]['id']})
+
+        response = call_wan(url, data)
+
+        # if no results, try two more times since it occasionally returns zero routes
+        counter = 1
+        while counter <= 2:
+            if response['success'] and response['response']['filtered_routes_count'] == 0:
+                time.sleep(0.5)
+                response = call_wan(url, data)
+                counter += 1
+            else:
+                break
+
+    return response
+    #return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
 
@@ -105,9 +258,15 @@ def price_edu_combo(view, clean=False):
                 if form.is_valid():
                     cd = form.cleaned_data
 
+                    # remove these hard coded numbers
+                    expected_risk = 25
+                    total_flexibility = 3
+                    time_to_departure = 10
+
+
                     search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'],
                                                    holding_price=25, locked_fare=500, exp_date=(datetime.datetime.now().date()+datetime.timedelta(weeks=3)),
-                                                   search_date = current_time_aware(), open_status = True, key=gen_alphanum_key())
+                                                   search_date = current_time_aware(), open_status = True, key=gen_alphanum_key(), expected_risk=expected_risk, total_flexibility=total_flexibility, time_to_departure=time_to_departure)
                     search_params.save()
                     search_key = search_params.key
 

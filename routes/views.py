@@ -19,3 +19,9 @@ def dests(request, slug):
     bank = [i['dest_code'] for i in res]
     bank.sort()
     return HttpResponse(json.dumps({'destinations': bank}), mimetype="application/json")
+
+
+def pairs(request):
+    res = Routes.objects.all().order_by('org_code', 'dest_code')
+    bank = [{'hub': i.org_code, 'destination': i.dest_code} for i in res]
+    return HttpResponse(json.dumps({'pairs': bank}), mimetype="application/json")

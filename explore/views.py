@@ -4,17 +4,14 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
 from django.template import RequestContext
+
 import sys
 sys.path.insert(0, '/home/projects/api')
+
 from api.views import current_time_aware, conv_to_js_date
 from view_data import *
 from forms import *
 
-
-
-def hello(request):
-    #return HttpResponse(json.dumps(ex), mimetype="application/json")
-    return HttpResponse("hello")
 
 def fare_changes(request):
 
@@ -52,4 +49,7 @@ def fare_changes(request):
 
   else:
     return render_to_response('explore/fare_changes.html', {'form': form,}, context_instance=RequestContext(request))
+
+
+
 

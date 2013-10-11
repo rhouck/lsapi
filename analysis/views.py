@@ -13,6 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 
 from analysis.models import *
+from pricing.models import *
 from sales.models import *
 from api.views import current_time_aware, conv_to_js_date
 
@@ -94,7 +95,7 @@ def exposure(request):
     try:
         current_cash_reserve = Cash_reserve.objects.latest('action_date')
         #date = conv_to_js_date(current_cash_reserve.action_date)
-        date = current_cash_reserve.action_date.strftime("%Y-%m-%d")
+        date = current_cash_reserve.action_date.strftime("%b %d, %Y")
         cash_balance = {'last_change': date, 'cash_balance': int(current_cash_reserve.cash_balance)}
     except:
         cash_balance = {}
@@ -240,6 +241,7 @@ def exposure(request):
         search_dep_len_chart = [["Short dep time (2-5)", round((short_length/total),2)], ["Med dep time (6-10)", round((med_length/total),2)], ["Long dep time (10>)", round((long_length/total),2)]]
     except:
         search_flex_chart = search_hold_chart = search_dep_len_chart = []
+
     try:
         # purch flexibility
         cut_off_date = now + datetime.timedelta(weeks = -weeks_back)

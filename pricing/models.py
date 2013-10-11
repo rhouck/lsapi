@@ -24,6 +24,9 @@ class Search_history(models.Model):
     error = models.CharField(max_length=200, blank=True, null=True)
 
     # returned from search results
+    expected_risk = models.FloatField(blank=True, null=True)
+    total_flexibility = models.IntegerField(max_length=3)
+    time_to_departure = models.IntegerField(max_length=3)
     """
     buffer = models.FloatField(blank=True, null=True)
     correl_coef = models.FloatField(blank=True, null=True)
@@ -48,8 +51,6 @@ class Search_history(models.Model):
     first_week_max_proj_st_dev = models.FloatField('1st wk max stdev', blank=True, null=True)
     second_week_avg_proj_st_dev = models.FloatField('2nd wk avg stdev', blank=True, null=True)
     second_week_max_proj_st_dev = models.FloatField('2nd wk max stdev', blank=True, null=True)
-    total_flexibility = models.IntegerField(max_length=3)
-    time_to_departure = models.IntegerField(max_length=3)
     """
 
     class Meta:

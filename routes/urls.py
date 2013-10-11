@@ -7,6 +7,7 @@ urlpatterns = patterns('',
 
     url(r'^hubs/$', hubs),
     url(r'^destinations/(?P<slug>[A-Z]{3})/$', dests),
+    url(r'^pairs/$', pairs),
 
 )
 
