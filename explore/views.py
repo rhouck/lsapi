@@ -8,7 +8,7 @@ from django.template import RequestContext
 import sys
 sys.path.insert(0, '/home/projects/api')
 
-from api.views import current_time_aware, conv_to_js_date
+from api.utils import current_time_aware, conv_to_js_date
 from view_data import *
 from forms import *
 

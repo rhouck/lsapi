@@ -9,7 +9,8 @@ import datetime
 import socket
 import json
 
-from api.views import current_time_aware, conv_to_js_date, gen_alphanum_key, gen_search_display
+from api.views import gen_search_display
+from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key
 from sales.models import *
 from forms import *
 
@@ -27,7 +28,7 @@ from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
 def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
     gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
-    gateway.use_test_mode = True
+    #gateway.use_test_mode = True
     # gateway.use_test_url = True
     # use gateway.authorize() for an "authorize only" transaction
 
@@ -503,7 +504,7 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
                 # if option is refunded
                 if use_gateway:
                     #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
-                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': find_contract.cc_last_four, 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_month}
+                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
                     response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
                 else:
                     response = {'success': True}

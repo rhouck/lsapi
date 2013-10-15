@@ -1,9 +1,6 @@
 import datetime
 import time
-from django.utils.timezone import utc
 import sys
-from random import randint, choice
-import string
 import json
 
 from django.template.loader import get_template
@@ -20,6 +17,7 @@ from django.contrib.auth.views import logout
 from django.contrib.auth.views import login
 
 from forms import *
+from utils import *
 
 # this path contains all simualtion and valuation models and scripts
 sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localweb/projects/analysis')
@@ -28,21 +26,6 @@ sys.path.insert(2, '/home/develop/analysis')
 sys.path.insert(3, '/home/bitnami/analysis')
 sys.path.insert(4, '/home/projects/api')
 
-
-
-"""
-from django.core.mail import send_mail
-def practice_mail(request):
-
-    send_mail('Auto message from Level Skies', 'Here is an auto generated message sent just to annoy you while testing.', 'levelskiestest@gmail.com',
-        ['ryanchouck@gmail.com', 'bcollins.audio@gmail.com'], fail_silently=False)
-    return HttpResponse("success i think")
-"""
-def conv_to_js_date(date):
-    return 1000 * time.mktime(date.timetuple())
-
-def current_time_aware():
-    return datetime.datetime.utcnow().replace(tzinfo=utc)
 
 def gen_search_display(request, build, clean, method=None):
     if 'results' in build:
@@ -59,11 +42,6 @@ def gen_search_display(request, build, clean, method=None):
         else:
             return render_to_response('general_form.html', build, context_instance=RequestContext(request))
 
-def gen_alphanum_key():
-    key = ''
-    for i in range(6):
-        key += choice(string.lowercase + string.uppercase + string.digits)
-    return key
 
 
 def hello(request):

@@ -15,7 +15,7 @@ from django.db.models import Sum
 from analysis.models import *
 from pricing.models import *
 from sales.models import *
-from api.views import current_time_aware, conv_to_js_date
+from api.utils import current_time_aware, conv_to_js_date
 
 from projection import *
 
