@@ -143,7 +143,10 @@ def parse_wan(data):
         flight['cabin'] = i['best_fare']['description']
         flight.update({'inbound_segments': i['inbound_segments'], 'outbound_segments': i['outbound_segments'],})
         bank.append(flight)
-    return {'success': True, 'flights': bank}
+
+    fare_bank = [i['fare'] for i in bank]
+
+    return {'success': True, 'flights': bank, 'min_fare': min(fare_bank)}
 
 
 

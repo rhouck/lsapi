@@ -15,7 +15,7 @@ from sales.models import *
 from forms import *
 
 from analysis.models import Cash_reserve, Additional_capacity
-from pricing.models import Search_history
+from pricing.models import Searches
 from api.views import gen_search_display
 
 from django.contrib.auth.decorators import login_required

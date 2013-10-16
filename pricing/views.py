@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
-from pricing.models import Search_history
+from pricing.models import Searches
 from sales.models import Platform
 from analysis.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key, conv_to_js_date
@@ -22,7 +22,7 @@ from functions import *
 from gen_price import *
 from mult_search import *
 from search_summary import *
-
+from simp_price import *
 
 from api.utils import *
 
@@ -107,17 +107,24 @@ def price_edu_combo(view, clean=False):
                 if form.is_valid():
                     cd = form.cleaned_data
 
-                    flights = run_flight_search('SFO', 'JFK', datetime.date(2014,1,3), datetime.date(2014,1,20), 'any_time', 'any_time', 'best_only', airlines=None)
-                    return HttpResponse(json.dumps(flights), mimetype="application/json")
+
+                    flights = run_flight_search(cd['origin_code'], cd['destination_code'], datetime.date(2014,1,3), datetime.date(2014,1,20), 'any_time', 'any_time', 'best_only', airlines=None)
+
+                    prices = calc_price(cd['origin_code'], cd['destination_code'], [flights['min_fare']], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
+
+                    return HttpResponse(json.dumps(prices), mimetype="application/json")
+
 
                     # remove these hard coded numbers
-                    expected_risk = 25
-                    total_flexibility = 3
-                    time_to_departure = 10
 
-                    search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'],
+                    # add expected risk and other elements from simp_price
+
+                    #total_flexibility = 3
+                    #time_to_departure = 10
+
+                    search_params = Searches(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'],
                                                    holding_price=3, locked_fare=7, exp_date=(datetime.datetime.now().date()+datetime.timedelta(weeks=3)),
-                                                   search_date = current_time_aware(), open_status = True, key=gen_alphanum_key(), expected_risk=expected_risk, total_flexibility=total_flexibility, time_to_departure=time_to_departure)
+                                                   search_date = current_time, open_status = True, key=gen_alphanum_key(), expected_risk=expected_risk, total_flexibility=total_flexibility, time_to_departure=time_to_departure)
                     search_params.save()
                     search_key = search_params.key
 

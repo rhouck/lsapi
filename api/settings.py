@@ -127,11 +127,14 @@ INSTALLED_APPS = (
 
     # API development below
     #'tastypie',
+    'south',
     'widget_tweaks',
     'pricing',
     'sales',
     'analysis',
     'routes',
+    'southtut',
+
 
 )
 
