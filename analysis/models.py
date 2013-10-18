@@ -30,7 +30,12 @@ class Open(models.Model):
         return bool(self.status)
 
     def __unicode__(self):
-        return str(self.status)
+
+        if self.status:
+            return "Open to new sales"
+        else:
+            return "Closed to new sales"
+        #return str(self.status)
 
 
 

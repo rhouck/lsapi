@@ -2,7 +2,6 @@ from django.db import models
 
 class Searches(models.Model):
     search_date = models.DateTimeField('date / time searched')
-    exp_date = models.DateField('expiration date', blank=True, null=True)
     open_status = models.BooleanField('available capacity')
     key = models.CharField(max_length=10, blank=True, null=True)
     # from search inputs
@@ -14,21 +13,19 @@ class Searches(models.Model):
     return_date1 = models.DateField('first return date', blank=True, null=True)
     return_date2 = models.DateField('second return date', blank=True, null=True)
     search_type = models.CharField('round trip / one way', max_length=200)
-    depart_times = models.IntegerField('departure time preference', max_length=5)
-    return_times = models.IntegerField('return time preference', max_length=5)
-    nonstop = models.IntegerField('non-stop flight preference', max_length=5)
+    depart_times = models.CharField('departure time preference', max_length=25)
+    return_times = models.CharField('return time preference', max_length=25)
+    convenience = models.CharField('non-stop flight preference', max_length=25)
 
-    # short search results
-    locked_fare = models.FloatField(blank=True, null=True)
-    holding_price = models.FloatField(blank=True, null=True)
-    error = models.CharField(max_length=200, blank=True, null=True)
 
     # returned from search results
+    exp_date = models.DateField('expiration date', blank=True, null=True)
     locked_fare = models.FloatField(blank=True, null=True)
     holding_price = models.FloatField(blank=True, null=True)
     expected_risk = models.FloatField(blank=True, null=True)
-    total_flexibility = models.IntegerField(max_length=3)
-    time_to_departure = models.IntegerField(max_length=3)
+    total_flexibility = models.IntegerField(max_length=3, blank=True, null=True)
+    time_to_departure = models.IntegerField(max_length=3, blank=True, null=True)
+    error = models.CharField(max_length=200, blank=True, null=True)
     """
     buffer = models.FloatField(blank=True, null=True)
     correl_coef = models.FloatField(blank=True, null=True)

@@ -28,8 +28,7 @@ from api.utils import *
 
 
 
-# start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
-
+# start date u'sed to calc': late price and lock' in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
     pricing_results['refund_value'] = pricing_results['locked_fare']
     if pricing_results['holding_price'] and pricing_results['locked_fare']:
@@ -107,29 +106,28 @@ def price_edu_combo(view, clean=False):
                 if form.is_valid():
                     cd = form.cleaned_data
 
+                    open_status = Open.objects.get(pk=1)
 
-                    flights = run_flight_search(cd['origin_code'], cd['destination_code'], datetime.date(2014,1,3), datetime.date(2014,1,20), 'any_time', 'any_time', 'best_only', airlines=None)
+                    general = {'search_date': current_time_aware(), 'open_status': open_status.get_status(), 'key': gen_alphanum_key(),}
 
-                    prices = calc_price(cd['origin_code'], cd['destination_code'], [flights['min_fare']], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
+                    model_in = {'origin_code': cd['origin_code'], 'destination_code': cd['destination_code'], 'holding_per': cd['holding_per'],
+                                'depart_date1': str(cd['depart_date1']), 'depart_date2': str(cd['depart_date2']), 'return_date1': str(cd['return_date1']), 'return_date2': str(cd['return_date2']),
+                                'search_type': 'rt', 'depart_times': cd['depart_times'], 'return_times': cd['return_times'], 'nonstop': cd['nonstop'],}
 
-                    return HttpResponse(json.dumps(prices), mimetype="application/json")
+                    if open_status.get_status():
+                        flights = run_flight_search(cd['origin_code'], cd['destination_code'], datetime.date(2014,1,3), datetime.date(2014,1,20), 'any_time', 'any_time', 'best_only', airlines=None)
+                        prices = calc_price(cd['origin_code'], cd['destination_code'], [flights['min_fare']], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
 
+                        model_out = {'holding_price': (prices['locked_fare']-prices['refund_value']), 'locked_fare': prices['refund_value'], 'expected_risk': prices['expected_risk'],
+                                        'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['dep_time'] }
 
-                    # remove these hard coded numbers
-
-                    # add expected risk and other elements from simp_price
-
-                    #total_flexibility = 3
-                    #time_to_departure = 10
-
-                    search_params = Searches(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'],
-                                                   holding_price=3, locked_fare=7, exp_date=(datetime.datetime.now().date()+datetime.timedelta(weeks=3)),
-                                                   search_date = current_time, open_status = True, key=gen_alphanum_key(), expected_risk=expected_risk, total_flexibility=total_flexibility, time_to_departure=time_to_departure)
+                    combined = dict(general.items() + model_in.items() + model_out.items())
+                    search_params = Searches(**combined)
                     search_params.save()
                     search_key = search_params.key
 
-                    inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 'morning',"search_type": "rt","decision_time": 2,"return_times": 'evening',"convenience": 'best options', "airlines": "major"}
-                    combined_results = {'success': True, 'pricing_results': {'dates': "2013612, 2013612, 2013620, 2013622",'deposit_value': 10,'error': {0: "No error"},'refund_value': 7}, 'context': 'this flight gets expensive fast', 'inputs': inputs, 'key': search_key}
+                    #inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 'morning',"search_type": "rt","decision_time": 2,"return_times": 'evening',"convenience": 'best options', "airlines": "major"}
+                    combined_results = {'success': True, 'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key}
 
                     build = {'form': form, 'results': combined_results}
                     return view(request, build, clean)

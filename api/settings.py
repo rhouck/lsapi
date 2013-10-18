@@ -125,15 +125,16 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.redirects',
 
-    # API development below
+    # tools
     #'tastypie',
     'south',
     'widget_tweaks',
+
+    # custom apps
     'pricing',
     'sales',
     'analysis',
     'routes',
-    'southtut',
 
 
 )
