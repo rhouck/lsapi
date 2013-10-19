@@ -85,6 +85,19 @@ def call_wan(url, data, method='post'):
   return send_request(url, data, headers, method)
 
 
+def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, display_dates):
+    """
+    @summary:
+      1. run cached search on full date range
+      2. run live search on display dates
+      3. run live search on non display dates that are empty or have chached fare higher than all live search prices
+    """
+
+
+    depart_date = depart_dates[0]
+    return_date = return_dates[0]
+    return run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines)
+
 
 
 def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines):

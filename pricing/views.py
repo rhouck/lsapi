@@ -112,22 +112,33 @@ def price_edu_combo(view, clean=False):
 
                     model_in = {'origin_code': cd['origin_code'], 'destination_code': cd['destination_code'], 'holding_per': cd['holding_per'],
                                 'depart_date1': str(cd['depart_date1']), 'depart_date2': str(cd['depart_date2']), 'return_date1': str(cd['return_date1']), 'return_date2': str(cd['return_date2']),
-                                'search_type': 'rt', 'depart_times': cd['depart_times'], 'return_times': cd['return_times'], 'nonstop': cd['nonstop'],}
+                                'search_type': 'rt', 'depart_times': cd['depart_times'], 'return_times': cd['return_times'], 'convenience': cd['convenience'],}
+
+                    combined = dict(general.items() + model_in.items())
 
                     if open_status.get_status():
-                        flights = run_flight_search(cd['origin_code'], cd['destination_code'], datetime.date(2014,1,3), datetime.date(2014,1,20), 'any_time', 'any_time', 'best_only', airlines=None)
-                        prices = calc_price(cd['origin_code'], cd['destination_code'], [flights['min_fare']], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
+                        flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), 'any_time', 'any_time', 'best_only', airlines=None, display_dates=None)
+                        return HttpResponse(json.dumps(flights), mimetype="application/json")
+                        if flights['success']:
+                            prices = calc_price(cd['origin_code'], cd['destination_code'], [flights['min_fare']], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
 
-                        model_out = {'holding_price': (prices['locked_fare']-prices['refund_value']), 'locked_fare': prices['refund_value'], 'expected_risk': prices['expected_risk'],
-                                        'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['dep_time'] }
+                            model_out = {'holding_price': (prices['locked_fare']-prices['refund_value']), 'locked_fare': prices['refund_value'], 'expected_risk': prices['expected_risk'],
+                                            'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['dep_time'], 'error': prices['error'] }
 
-                    combined = dict(general.items() + model_in.items() + model_out.items())
+                    # save in model
+                    combined.update(model_out.items())
                     search_params = Searches(**combined)
                     search_params.save()
                     search_key = search_params.key
 
-                    #inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 'morning',"search_type": "rt","decision_time": 2,"return_times": 'evening',"convenience": 'best options', "airlines": "major"}
-                    combined_results = {'success': True, 'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key}
+                    # add current flight list if no errors and 'show_flights' is true
+                    combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
+                    if not model_out['error']:
+                        combined_results.update({'success': True})
+                        if cd['disp_depart_date'] and cd['disp_return_date']:
+                            combined_results.update({'flights': flights['flights']})
+                    else:
+                        combined_results.update({'success': False})
 
                     build = {'form': form, 'results': combined_results}
                     return view(request, build, clean)
