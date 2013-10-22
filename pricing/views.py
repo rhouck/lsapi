@@ -163,22 +163,6 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
 
 def refund_format_conversion(pricing_results):
