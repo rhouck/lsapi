@@ -117,7 +117,7 @@ def price_edu_combo(view, clean=False):
                     combined = dict(general.items() + model_in.items())
 
                     if open_status.get_status():
-                        flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), 'any_time', 'any_time', 'best_only', airlines=None, display_dates=None)
+                        flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), 'any_time', 'any_time', 'best_only', airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
                         return HttpResponse(json.dumps(flights), mimetype="application/json")
                         if flights['success']:
                             prices = calc_price(cd['origin_code'], cd['destination_code'], [flights['min_fare']], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])

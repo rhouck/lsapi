@@ -82,25 +82,71 @@ def call_wan(url, data, method='post'):
   data.update({'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'})
   headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-  return send_request(url, data, headers, method)
+  response = send_request(url, data, headers, method)
+  response['source'] = 'wego'
+  return response
 
 
 def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, display_dates):
     """
     @summary:
-      1. run cached search on full date range
-      2. run live search on display dates
-      3. run live search on non display dates that are empty or have chached fare higher than all live search prices
+      1. run live search on display dates
+      2. run cached search on full date range
+      3. run live search on non display dates that are empty or have cached fare higher than all live search prices
     """
 
-
-    depart_date = depart_dates[0]
-    return_date = return_dates[0]
-    return run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines)
+    # to do: cached fare should return results by date, then run live search on empty dates and dates that are higher than display date live search
 
 
 
-def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines):
+    results = {}
+
+    # run search for display flights
+    if display_dates:
+      if len(display_dates) == 2:
+        if display_dates[1] > display_dates[0]:
+          display_flights = run_flight_search(origin, destination, display_dates[0], display_dates[1], depart_times, return_times, num_stops, airlines)
+          if display_flights['success']:
+            results['flights'] = display_flights['flights']
+
+
+
+    dep_range = (depart_dates[1] - depart_dates[0]).days
+    ret_range = (return_dates[1] - return_dates[0]).days
+
+    max_fare = None
+
+    # cached fare
+    res = cached_search(origin, destination, depart_dates[0], depart_dates[1])
+    if res['max_fare']:
+      max_fare = res['max_fare']
+
+
+    # check mongo for existing flight searches
+    bank = []
+    for i in range(dep_range + 1):
+      depart_date = depart_dates[0] + datetime.timedelta(days=i)
+      for k in range(ret_range + 1):
+        return_date = return_dates[0] + datetime.timedelta(days=k)
+        res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines)
+
+        if res:
+          bank.append(res['min_fare'])
+
+    if max(bank) > max_fare:
+      max_fare = max(bank)
+
+    results['max_fare'] = max_fare
+    results['success'] = True
+    return results
+
+
+def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False):
+    """
+    @summary: first searches mongo db for valid cached fare meeting search parameters
+              calls external api if no cached search available
+              runs selects appropriate parsing function based on api source
+    """
     inputs = {
             'origin':origin,
             'destination': destination,
@@ -119,18 +165,23 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
 
     data = None
     for i in range(2):
-
         # check if search has already been cached
-        res = mongo.flight_search.practice.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
+        res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
 
         if res.count():
             # return search results if already cached
             data = res[0]
+            if i == 0:
+              method = "cached"
+
         else:
             # run search if not already cached
-            response = live_search(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
-            if response['flights_count']:
-                search_res = mongo.flight_search.practice.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+            if not cache_only:
+              response = live_search(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+              if response['success']:
+                if response['flights_count']:
+                    search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+                    method = "live"
 
     mongo.disconnect()
 
@@ -139,15 +190,18 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
         data = {'success': False, 'error': 'No data returned'}
     else:
         if data['source'] == 'wego':
-            data = parse_wan(data)
+            data = parse_wan_live(data)
+            data['method'] = method
         else:
             data = {'success': False, 'error': 'Data was not parsed'}
-    #return HttpResponse(json.dumps(data), mimetype="application/json")
+
     return data
 
 
-def parse_wan(data):
-
+def parse_wan_live(data):
+    """
+    @summary: parsing function for WeGo api flight search response
+    """
     bank = []
     for i in data['response']['routes']:
         flight = {}
@@ -158,21 +212,93 @@ def parse_wan(data):
         bank.append(flight)
 
     fare_bank = [i['fare'] for i in bank]
+    if fare_bank:
+      min_fare = min(fare_bank)
+    else:
+      min_fare = None
 
-    return {'success': True, 'flights': bank, 'min_fare': min(fare_bank)}
+    return {'success': True, 'flights': bank, 'min_fare': min_fare}
 
 
 
-def cached_search(origin, destination, depart_date, return_date):
+def cached_search(origin, destination, beg_depart_date, end_depart_date):
 
     # this search does not actually find cached fares for the two dates listed
     # instead it supposedly finds best fares for dates departing within that range
+    # saves cached data into mongo
+
+    inputs = {
+            'origin':origin,
+            'destination': destination,
+            #'beg_depart_date': beg_depart_date,
+            #'end_depart_date': end_depart_date,
+
+            'beg_depart_date': conv_date_to_datetime(beg_depart_date),
+            'end_depart_date': conv_date_to_datetime(end_depart_date),
+
+
+            #'return_date': conv_date_to_datetime(return_date),
+            #'depart_times': depart_times,
+            #'return_times': return_times,
+            #'num_stops': num_stops,
+            #'airlines': airlines,
+            }
+
+    current_time = current_time_aware()
+    current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
+
+    mongo = pymongo.MongoClient()
+
     url = "rates/daily/from_city_to_city"
     data = {'from': origin, 'to': destination, 'trip_type': 'roundtrip'}
-    data.update({'dt_start': depart_date, 'dt_end': return_date})
+    data.update({'dt_start': beg_depart_date, 'dt_end': end_depart_date})
 
     response = call_wan(url, data, method="get")
-    return response
+
+    if response['success']:
+      if response['response']['rates']:
+        cached_res = mongo.flight_search.cached.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+
+    mongo.disconnect()
+
+    # parse data if available
+    if not response['success']:
+        data = {'success': False, 'error': response['success']['error']}
+    else:
+        if response['source'] == 'wego':
+            data = parse_wan_cached(response['response'])
+        else:
+            data = {'success': False, 'error': 'Data was not parsed'}
+
+    return data
+
+
+
+def parse_wan_cached(data):
+    """
+    @summary: parsing function for WeGo api cached search response
+    """
+
+    bank = []
+
+    for i in data['rates'].iterkeys():
+      for k in data['rates'][i]:
+
+        fare = {}
+        fare['depart_date'] = k['outbound']
+        fare['return_date'] = k['inbound']
+        fare['fare'] = k['price_in_usd']
+        bank.append(fare)
+
+    fare_bank = [i['fare'] for i in bank]
+    if fare_bank:
+      max_fare = max(fare_bank)
+    else:
+      max_fare = None
+
+
+    return {'success': True, 'fare': bank, 'max_fare': max_fare}
+
 
 
 def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
@@ -269,6 +395,5 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
             else:
                 break
 
-    response['source'] = 'wego'
     response['flights_count'] = response['response']['filtered_routes_count']
     return response
