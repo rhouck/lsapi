@@ -1,7 +1,7 @@
 import pymongo
 from random import randint, choice
 import string
-
+import copy
 import time
 import datetime
 from django.utils.timezone import utc
@@ -14,6 +14,7 @@ from django.contrib.sites.models import Site
 
 from settings import host,live
 
+from functions import find_sub_index_dict
 
 """
 from django.core.mail import send_mail
@@ -95,11 +96,22 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       3. run live search on non display dates that are empty or have cached fare higher than all live search prices
     """
 
-    # to do: cached fare should return results by date, then run live search on empty dates and dates that are higher than display date live search
+    # to do: then run live search on empty dates and dates that are higher than display date live search
 
+    def string_dates(inp):
+      if isinstance(inp, list):
+        for ind, i in enumerate(inp):
+          for k, v in i.iteritems():
+            inp[ind][k] = str(v)
+      else:
+        for k, v in inp.iteritems():
+          inp[k] = str(v)
+      return inp
 
 
     results = {}
+    max_live_fare = None
+
 
     # run search for display flights
     if display_dates:
@@ -108,36 +120,95 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
           display_flights = run_flight_search(origin, destination, display_dates[0], display_dates[1], depart_times, return_times, num_stops, airlines)
           if display_flights['success']:
             results['flights'] = display_flights['flights']
+            max_live_fare = display_flights['min_fare']
 
 
 
     dep_range = (depart_dates[1] - depart_dates[0]).days
     ret_range = (return_dates[1] - return_dates[0]).days
 
-    max_fare = None
-
-    # cached fare
-    res = cached_search(origin, destination, depart_dates[0], depart_dates[1])
-    if res['max_fare']:
-      max_fare = res['max_fare']
 
 
-    # check mongo for existing flight searches
-    bank = []
+    # build empty list of fares for each flight date combination
+    fares = []
     for i in range(dep_range + 1):
       depart_date = depart_dates[0] + datetime.timedelta(days=i)
       for k in range(ret_range + 1):
         return_date = return_dates[0] + datetime.timedelta(days=k)
-        res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines)
+        fares.append({'depart_date': depart_date, 'return_date': return_date, 'fare': None, 'method': None})
 
-        if res:
-          bank.append(res['min_fare'])
 
-    if max(bank) > max_fare:
-      max_fare = max(bank)
 
-    results['max_fare'] = max_fare
-    results['success'] = True
+
+    # cached fare
+    res = cached_search(origin, destination, depart_dates, return_dates)
+    if res['fares']:
+      for i in res['fares']:
+        where = copy.deepcopy(i)
+        del where['fare']
+        ind = find_sub_index_dict(fares, where, loop=False)
+        if ind:
+          fares[ind[0]]['fare'] = i['fare']
+          fares[ind[0]]['method'] = 'api_cached'
+
+
+
+
+    # check mongo for existing flight searches
+    for i in range(dep_range + 1):
+      depart_date = depart_dates[0] + datetime.timedelta(days=i)
+      for k in range(ret_range + 1):
+        return_date = return_dates[0] + datetime.timedelta(days=k)
+
+        # check if cached fare exists in level skies db, if so, overide api_cached fare
+        ind = find_sub_index_dict(fares, {'depart_date': depart_date, 'return_date': return_date}, loop=False)
+        if ind:
+          #if not fares[ind[0]]['fare'] or fares[ind[0]]['fare'] > max_live_fare:
+          res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=True)
+
+          if res['success']:
+            fares[ind[0]]['fare'] = res['min_fare']
+            fares[ind[0]]['method'] = res['method']
+            if res['min_fare'] > max_live_fare:
+              max_live_fare = res['min_fare']
+
+
+
+
+    # run live flight searches where no fare exists data exists or api_cached fare is higher than max_live_fare
+    for i in range(dep_range + 1):
+      depart_date = depart_dates[0] + datetime.timedelta(days=i)
+      for k in range(ret_range + 1):
+        return_date = return_dates[0] + datetime.timedelta(days=k)
+
+        ind = find_sub_index_dict(fares, {'depart_date': depart_date, 'return_date': return_date}, loop=False)
+        if ind:
+          if not fares[ind[0]]['fare'] or (fares[ind[0]]['fare'] > max_live_fare and fares[ind[0]]['fare'] == 'api_cached'):
+            res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False)
+
+            if res['success']:
+              fares[ind[0]]['fare'] = res['min_fare']
+              fares[ind[0]]['method'] = res['method']
+              if res['min_fare'] > max_live_fare:
+                max_live_fare = res['min_fare']
+
+    results['fares'] = string_dates(fares)
+
+
+    error = ""
+    if results['fares']:
+      results['success'] = True
+    else:
+      results['success'] = False
+      error += "Couldn't find minimum fares for date combinations."
+      results['error'] = error
+
+    if display_dates:
+      if not results['flights']:
+        results['success'] = False
+        error += "Couldn't build list of current flights for display dates."
+        results['error'] = error
+
     return results
 
 
@@ -221,7 +292,7 @@ def parse_wan_live(data):
 
 
 
-def cached_search(origin, destination, beg_depart_date, end_depart_date):
+def cached_search(origin, destination, depart_dates, return_dates):
 
     # this search does not actually find cached fares for the two dates listed
     # instead it supposedly finds best fares for dates departing within that range
@@ -230,14 +301,8 @@ def cached_search(origin, destination, beg_depart_date, end_depart_date):
     inputs = {
             'origin':origin,
             'destination': destination,
-            #'beg_depart_date': beg_depart_date,
-            #'end_depart_date': end_depart_date,
-
-            'beg_depart_date': conv_date_to_datetime(beg_depart_date),
-            'end_depart_date': conv_date_to_datetime(end_depart_date),
-
-
-            #'return_date': conv_date_to_datetime(return_date),
+            'depart_dates': (conv_date_to_datetime(depart_dates[0]), conv_date_to_datetime(depart_dates[1])),
+            'return_dates': (conv_date_to_datetime(return_dates[0]), conv_date_to_datetime(return_dates[1])),
             #'depart_times': depart_times,
             #'return_times': return_times,
             #'num_stops': num_stops,
@@ -247,19 +312,19 @@ def cached_search(origin, destination, beg_depart_date, end_depart_date):
     current_time = current_time_aware()
     current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
 
-    mongo = pymongo.MongoClient()
 
     url = "rates/daily/from_city_to_city"
     data = {'from': origin, 'to': destination, 'trip_type': 'roundtrip'}
-    data.update({'dt_start': beg_depart_date, 'dt_end': end_depart_date})
+    data.update({'dt_start': depart_dates[0], 'dt_end': depart_dates[1]})
 
     response = call_wan(url, data, method="get")
 
     if response['success']:
       if response['response']['rates']:
+        mongo = pymongo.MongoClient()
         cached_res = mongo.flight_search.cached.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+        mongo.disconnect()
 
-    mongo.disconnect()
 
     # parse data if available
     if not response['success']:
@@ -296,8 +361,7 @@ def parse_wan_cached(data):
     else:
       max_fare = None
 
-
-    return {'success': True, 'fare': bank, 'max_fare': max_fare}
+    return {'success': True, 'fares': bank, 'max_fare': max_fare}
 
 
 

@@ -19,13 +19,14 @@ from django.contrib.auth.views import login
 from forms import *
 from utils import *
 
+"""
 # this path contains all simualtion and valuation models and scripts
 sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localweb/projects/analysis')
 sys.path.insert(1, '/home/humbert/analysis')
 sys.path.insert(2, '/home/develop/analysis')
 sys.path.insert(3, '/home/bitnami/analysis')
 sys.path.insert(4, '/home/projects/api')
-
+"""
 
 def gen_search_display(request, build, clean, method=None):
     if 'results' in build:

@@ -1,7 +1,7 @@
 # Django settings for api project.
 import os.path
 from socket import gethostname
-
+import sys
 host = gethostname()
 live = 'scheduler.levelskies.com'
 
@@ -167,6 +167,16 @@ LOGGING = {
         },
     }
 }
+
+
+# this path contains all simualtion and valuation models and scripts
+sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localweb/projects/analysis')
+sys.path.insert(1, '/home/humbert/analysis')
+sys.path.insert(2, '/home/develop/analysis')
+sys.path.insert(3, '/home/bitnami/analysis')
+sys.path.insert(4, '/home/projects/api')
+
+
 
 # cross domain xhr settings
 XS_SHARING_ALLOWED_ORIGINS = '*'
