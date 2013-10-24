@@ -65,7 +65,7 @@
         {% if detail.notes %}
           <p>Notes: {{ detail.notes }}</p>
         {% endif %}
-        <p>CC - Last Four Digits: {{ detail.contract.cc_last_four }}</p>
+        <p>CC - Last Four Digits: {{ detail.contract.cc_last_four|stringformat:"04d" }}</p>
         <p>Expiration Month: {{ detail.contract.cc_exp_month }}</p>
         <p>Expiration Year:  {{ detail.contract.cc_exp_year }}</p>
       {% endif %}

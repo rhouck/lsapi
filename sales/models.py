@@ -53,7 +53,7 @@ class Contract(models.Model):
     #platform = models.ForeignKey(Platform)
     customer = models.ForeignKey(Customer)
     purch_date = models.DateTimeField('date / time purchased')
-    search = models.OneToOneField('pricing.Search_history') # , primary_key=True
+    search = models.OneToOneField('pricing.Searches') # , primary_key=True
     ex_fare = models.FloatField('exercised fare', blank=True, null=True)
     ex_date = models.DateTimeField('date / time exercised', blank=True, null=True)
     gateway_id = models.CharField(max_length=20, blank=True, null=True)

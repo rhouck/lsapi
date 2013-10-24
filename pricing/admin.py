@@ -1,12 +1,12 @@
-from pricing.models import Search_history
+from pricing.models import Searches
 from django.contrib import admin
 
 
 
-class Search_historyAdmin(admin.ModelAdmin):
+class SearchesAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
     #def has_change_permission(self, request):
     #    return False
-admin.site.register(Search_history, Search_historyAdmin)
+admin.site.register(Searches, SearchesAdmin)
 
