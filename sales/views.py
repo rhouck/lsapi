@@ -209,11 +209,11 @@ def customer_info(request, slug):
         request.GET = None
     inputs = copy.deepcopy(inputs)
 
-
-    platform_key = None
-    if 'platform_key' in inputs:
-        platform_key = inputs['platform_key']
-        del inputs['platform_key']
+    if inputs:
+        platform_key = None
+        if 'platform_key' in inputs:
+            platform_key = inputs['platform_key']
+            del inputs['platform_key']
 
 
     if not request.user.is_authenticated():
@@ -246,7 +246,18 @@ def customer_info(request, slug):
     if 'Search' in cust_dict:
         del cust_dict['Search']
 
-    return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
+
+    build = {'results': cust_dict}
+
+    if request.user.is_authenticated():
+        clean = False
+        del build['results']['update']
+    else:
+        clean = True
+
+
+    return gen_search_display(request, build, clean)
+    #return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
 
 
 

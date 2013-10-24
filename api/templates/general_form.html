@@ -9,13 +9,15 @@
 		</p>
 	{% endif %}
 
-	<form action="" method="get">
-		{% csrf_token %}
-		<table>
-		{{ form.as_table }}
-		</table>
-		<input type="submit" name="Search">
-	</form>
+	{% if form %}
+		<form action="" method="get">
+			{% csrf_token %}
+			<table>
+			{{ form.as_table }}
+			</table>
+			<input type="submit" name="Search">
+		</form>
+	{% endif %}
 
 	{% if results %}
 

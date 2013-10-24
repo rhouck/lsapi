@@ -2,7 +2,9 @@
 
 {% block content %}
 
+
   <h2>{{ name|title }}</h2>
+  <a href="{% url customer_info name.key %}">Contact Info</a>
 
   <div class="row">
       <div class="col-md-5 col-md-offset-1">
