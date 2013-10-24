@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
-from pricing.models import Search_history
+from pricing.models import Searches
 from sales.models import Platform
 from analysis.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key, conv_to_js_date
@@ -22,165 +22,13 @@ from functions import *
 from gen_price import *
 from mult_search import *
 from search_summary import *
-
+from simp_price import *
 
 from api.utils import *
 
 
-# build function to recieve range of dates, cycle through cached searches both locally and from api, run live search when necessary
 
-
-
-def run_flight_search(request):
-
-    origin="SFO"
-    destination="LHR"
-    depart_date = datetime.date(2013,11,1)
-    return_date = datetime.date(2013,11,20)
-    depart_times = ['morning']
-    return_times = ['evening']
-    num_stops = "best-only"
-    airlines = None
-
-    # check if exists in DB
-
-    # if not, run search and save in DB
-
-    # return response from DB
-
-    # run 'parser' specific to source api
-
-    response = live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines)
-    return HttpResponse(json.dumps(response), mimetype="application/json")
-
-
-def cached_search(origin, destination, depart_date, return_date):
-
-    # this search does not actually find cached fares for the two dates listed
-    # instead it supposedly finds best fares for dates departing within that range
-    url = "rates/daily/from_city_to_city"
-    data = {'from': origin, 'to': destination, 'trip_type': 'roundtrip'}
-    data.update({'dt_start': depart_date, 'dt_end': return_date})
-
-    response = call_wan(url, data, method="get")
-    return response
-
-def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
-
-
-    # format inputs
-    def pick_time_window(time_list):
-        morning = [360, 720] # 6:00am to 12:00pm
-        evening = [720, 1080] # 12:00pm to 6:00pm
-        any_time = [0, 1440] # 12:00am to 12:00am
-
-        if 'any_time' in time_list:
-            return (any_time[0], any_time[1])
-        else:
-            if 'morning' in time_list and 'evening' not in time_list:
-                return (morning[0], morning[1])
-            elif 'morning' in time_list and 'evening' in time_list:
-                return (morning[0], evening[1])
-            elif 'morning' not in time_list and 'evening' in time_list:
-                return (evening[0], evening[1])
-            else:
-                return (any_time[0], any_time[1])
-
-    depart_times = pick_time_window(depart_times)
-    return_times = pick_time_window(return_times)
-
-    if num_stops == "best-only":
-        num_stops = ["none", "one",]
-    else:
-        num_stops = ["none", "one", "two_plus"]
-
-
-    # create search
-    url = 'k/2/searches'
-    data = {
-            "trips": [
-              {
-                "departure_code": str(origin),
-                "arrival_code": str(destination),
-                "outbound_date": "%s" % (depart_date),
-                "inbound_date": "%s" % (return_date),
-              }
-            ],
-            "adults_count": 1
-          }
-    response = call_wan(url, data)
-
-    if not response['success']:
-
-        return HttpResponse(json.dumps({'success': False, 'error': "Could not complete 'Searches' call: %s" % (response['error'])}), mimetype="application/json")
-
-    else:
-
-        # pull fares
-        url = 'k/2/fares'
-        data = {
-                  # general
-                  "id": "%s" % (gen_alphanum_key()),
-                  "fares_query_type": "route",
-                  "departure_day_time_filter_type": "separate",
-
-                  # api response format
-                  "sort": "price",
-                  "order": "asc",
-                  #"page": 1,
-                  "per_page": 10,
-
-                  # four hour max layover
-                  "stopover_duration_min": 0,
-                  "stopover_duration_max": 240,
-
-                  # travel times
-                  "outbound_departure_day_time_min": depart_times[0],
-                  "outbound_departure_day_time_max": depart_times[1],
-                  "inbound_departure_day_time_min": return_times[0],
-                  "inbound_departure_day_time_max": return_times[1],
-
-                  # num stops
-                  "stop_types": num_stops,
-                }
-
-        data.update({'search_id': response['response']['id'], 'trip_id': response['response']['trips'][0]['id']})
-
-        response = call_wan(url, data)
-
-        # if no results, try two more times since it occasionally returns zero routes
-        counter = 1
-        while counter <= 2:
-            if response['success'] and response['response']['filtered_routes_count'] == 0:
-                time.sleep(0.5)
-                response = call_wan(url, data)
-                counter += 1
-            else:
-                break
-
-    return response
-    #return HttpResponse(json.dumps(response), mimetype="application/json")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
-
+# start date u'sed to calc': late price and lock' in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
     pricing_results['refund_value'] = pricing_results['locked_fare']
     if pricing_results['holding_price'] and pricing_results['locked_fare']:
@@ -190,7 +38,6 @@ def refund_format_conversion(pricing_results):
     del pricing_results['holding_price']
     del pricing_results['locked_fare']
     return pricing_results
-
 
 def search_info(request, slug, all=False):
 
@@ -216,7 +63,7 @@ def search_info(request, slug, all=False):
     del search_dict['_state']
     del search_dict['open_status']
     del search_dict['id']
-    del search_dict['search_type']
+    #del search_dict['search_type']
     del search_dict['holding_per']
     del search_dict['error']
 
@@ -225,10 +72,6 @@ def search_info(request, slug, all=False):
 
     search_dict['success'] = True
     return HttpResponse(json.dumps(search_dict), mimetype="application/json")
-
-
-
-
 
 def select_geography(hub):
     """
@@ -244,44 +87,73 @@ def select_geography(hub):
     return geography
 
 
-def price_edu_combo(view, clean=False):
-    def gen_price_edu_combo(request, clean):
+def price_edu_combo(request):
 
+        """
         if not clean and not request.user.is_authenticated():
             return HttpResponseRedirect(reverse('login'))
         else:
-            if (request.GET):
-                if clean:
-                    platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        """
+        if request.user.is_authenticated():
+            clean = False
+        else:
+            clean = True
 
-                form = full_option_info(request.GET)
-                if form.is_valid():
-                    cd = form.cleaned_data
+        if (request.POST):
+            if clean:
+                platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
 
-                    # remove these hard coded numbers
-                    expected_risk = 25
-                    total_flexibility = 3
-                    time_to_departure = 10
+            form = full_option_info(request.POST)
+            if form.is_valid():
+                cd = form.cleaned_data
 
+                open_status = Open.objects.get(pk=1)
 
-                    search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=cd['depart_date1'], depart_date2=cd['depart_date2'], return_date1=cd['return_date1'], return_date2=cd['return_date2'], search_type=cd['search_type'], depart_times=cd['depart_times'], return_times=cd['return_times'], nonstop=cd['nonstop'],
-                                                   holding_price=25, locked_fare=500, exp_date=(datetime.datetime.now().date()+datetime.timedelta(weeks=3)),
-                                                   search_date = current_time_aware(), open_status = True, key=gen_alphanum_key(), expected_risk=expected_risk, total_flexibility=total_flexibility, time_to_departure=time_to_departure)
-                    search_params.save()
-                    search_key = search_params.key
+                general = {'search_date': current_time_aware(), 'open_status': open_status.get_status(), 'key': gen_alphanum_key(),}
 
-                    inputs = {"depart_date2": "2013-06-12","return_date1": "2013-06-20","destination_code": "MAD","return_date2": "2013-06-22","origin_code": "SFO","depart_date1": "2013-06-12","depart_times": 'morning',"search_type": "rt","decision_time": 2,"return_times": 'evening',"convenience": 'best options', "airlines": "major"}
-                    combined_results = {'success': True, 'pricing_results': {'dates': "2013612, 2013612, 2013620, 2013622",'deposit_value': 1900,'error': {0: "No error"},'refund_value': 1862}, 'context': 'this flight gets expensive fast', 'inputs': inputs, 'key': search_key}
+                model_in = {'origin_code': cd['origin_code'], 'destination_code': cd['destination_code'], 'holding_per': cd['holding_per'],
+                            'depart_date1': str(cd['depart_date1']), 'depart_date2': str(cd['depart_date2']), 'return_date1': str(cd['return_date1']), 'return_date2': str(cd['return_date2']),
+                            'search_type': 'rt', 'depart_times': cd['depart_times'], 'return_times': cd['return_times'], 'convenience': cd['convenience'],}
 
-                    build = {'form': form, 'results': combined_results}
-                    return view(request, build, clean)
+                combined = dict(general.items() + model_in.items())
+
+                if open_status.get_status():
+                    #flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), 'any_time', 'any_time', 'best_only', airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
+                    #return HttpResponse(json.dumps(flights), mimetype="application/json")
+                    flights = {}
+                    flights['flights'] = []
+                    flights['success'] = True
+                    flights['min_fare'] = [10,12]
+                    if flights['success']:
+                        prices = calc_price(cd['origin_code'], cd['destination_code'], flights['min_fare'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
+
+                        model_out = {'holding_price': (prices['locked_fare']-prices['refund_value']), 'locked_fare': prices['refund_value'], 'expected_risk': prices['expected_risk'],
+                                        'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['dep_time'], 'error': prices['error'] }
+
+                # save in model
+                combined.update(model_out.items())
+                search_params = Searches(**combined)
+                search_params.save()
+                search_key = search_params.key
+
+                # add current flight list if no errors and 'show_flights' is true
+                combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
+                if not model_out['error']:
+                    combined_results.update({'success': True})
+                    if cd['disp_depart_date'] and cd['disp_return_date']:
+                        combined_results.update({'flights': flights['flights']})
                 else:
-                    return HttpResponse('not valid form')
-            else:
-                form = full_option_info()
-                combined_results = None
+                    combined_results.update({'success': False})
+
                 build = {'form': form, 'results': combined_results}
-                return view(request, build, clean)
+                return gen_search_display(request, build, clean, method='post')
+            else:
+                return HttpResponse('not valid form')
+        else:
+            form = full_option_info()
+            combined_results = None
+            build = {'form': form, 'results': combined_results}
+            return gen_search_display(request, build, clean, method='post')
 
 
             """
@@ -456,7 +328,7 @@ def price_edu_combo(view, clean=False):
             build = {'form': form, 'results': combined_results}
             return view(request, build, clean)
             """
-    return gen_price_edu_combo
+            #return gen_price_edu_combo
 
 
 
