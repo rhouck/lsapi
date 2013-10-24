@@ -4,7 +4,7 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-
+import copy
 import datetime
 import socket
 import json
@@ -198,31 +198,41 @@ def get_plat_detail(request, slug):
 
 def customer_info(request, slug):
 
-    inputs = request.GET if request.GET else None
+
+    if request.POST:
+        method = 'post'
+        inputs = request.POST if request.POST else None
+        request.POST = None
+    else:
+        method = 'get'
+        inputs = request.GET if request.GET else None
+        request.GET = None
+    inputs = copy.deepcopy(inputs)
+
+
+    platform_key = None
+    if 'platform_key' in inputs:
+        platform_key = inputs['platform_key']
+        del inputs['platform_key']
+
 
     if not request.user.is_authenticated():
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        platform = get_object_or_404(Platform, key__iexact=platform_key)
 
-    request.GET = None
 
-    if inputs:
-        try:
-            del inputs['platform_key']
-        except:
-            pass
-
-        #cust = get_object_or_404(Customer, key__iexact=slug, password__iexact=inputs['password'])
+    if inputs and method == 'post':
         cust = get_object_or_404(Customer, key__iexact=slug)
         for key, value in inputs.items():
             setattr(cust, key, value)
         cust.save()
+        cust = get_object_or_404(Customer, key__iexact=slug)
         cust_dict = cust.__dict__
         cust_dict['update'] = True
-
     else:
         cust = get_object_or_404(Customer, key__iexact=slug)
         cust_dict = cust.__dict__
         cust_dict['update'] = False
+
 
     del cust_dict['_state']
     del cust_dict['platform_id']
@@ -230,11 +240,11 @@ def customer_info(request, slug):
     del cust_dict['key']
     del cust_dict['id']
 
-    try:
+
+    if 'csrfmiddlewaretoken' in cust_dict:
         del cust_dict['csrfmiddlewaretoken']
+    if 'Search' in cust_dict:
         del cust_dict['Search']
-    except:
-        pass
 
     return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
 
@@ -556,7 +566,6 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
 
 
 # staging views
-
 def add_to_staging(request, action, slug):
 
     if request.user.is_authenticated():
@@ -565,7 +574,7 @@ def add_to_staging(request, action, slug):
         clean = True
 
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
 
     find_contract = get_object_or_404(Contract, search__key__iexact=slug)
 
@@ -578,7 +587,7 @@ def add_to_staging(request, action, slug):
         exercise = True if action == 'exercise' else False
         staged_cont = Staging(contract=find_contract, exercise=exercise)
 
-        inputs = request.GET if request.GET else None
+        inputs = request.POST if request.POST else None
         form = AddToStagingForm(inputs)
 
         if form.is_valid():

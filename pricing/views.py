@@ -183,7 +183,7 @@ def search_info(request, slug, all=False):
     if not request.user.is_authenticated():
         platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
 
-    search = get_object_or_404(Search_history, key__iexact=slug)
+    search = get_object_or_404(Searches, key__iexact=slug)
 
     purch_date_time = current_time_aware()
     search_date_date = search.search_date
@@ -415,7 +415,7 @@ def price_edu_combo(request):
                                     second_week_max_fare = second_week_max_st_dev = second_week_avg_fare = second_week_avg_st_dev = None
 
                                 exp_date = search_date.date() + datetime.timedelta(weeks = cd['holding_per'])
-                                search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=inputs['depart_date1'], depart_date2=inputs['depart_date2'], return_date1=inputs['return_date1'], return_date2=inputs['return_date2'], search_type=inputs['search_type'], depart_times=inputs['depart_times'], return_times=inputs['return_times'], nonstop=inputs['nonstop'], search_date=search_date,
+                                search_params = Searches(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=inputs['depart_date1'], depart_date2=inputs['depart_date2'], return_date1=inputs['return_date1'], return_date2=inputs['return_date2'], search_type=inputs['search_type'], depart_times=inputs['depart_times'], return_times=inputs['return_times'], nonstop=inputs['nonstop'], search_date=search_date,
                                                                holding_price=pricing_results_full['output']['holding_price'], locked_fare=pricing_results_full['output']['locked_fare'], buffer=pricing_results_full['buffer'], correl_coef=pricing_results_full['correl_coef'], cycles=pricing_results_full['cycles'], expected_risk=pricing_results_full['expected_risk'], lockin_per=pricing_results_full['lockin_per'], markup=pricing_results_full['markup'], round_to=pricing_results_full['round_to'], wtp=pricing_results_full['wtp'], wtpx=pricing_results_full['wtpx'], max_trip_length=pricing_results_full['max_trip_length'], exp_date=exp_date,
                                                                first_week_avg_proj_fare = first_week_avg_fare, first_week_max_proj_fare = first_week_max_fare, second_week_avg_proj_fare = second_week_avg_fare, second_week_max_proj_fare = second_week_max_fare,
                                                                first_week_avg_proj_st_dev = first_week_avg_st_dev, first_week_max_proj_st_dev = first_week_max_st_dev, second_week_avg_proj_st_dev = second_week_avg_st_dev, second_week_max_proj_st_dev = second_week_max_st_dev,
