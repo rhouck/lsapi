@@ -265,7 +265,7 @@ def find_open_contracts(request, slug):
                                     'purch_date': conv_to_js_date(i.purch_date),
                                     'depart_times': i.search.depart_times,
                                     'return_times': i.search.return_times,
-                                    'convenience': i.search.nonstop,
+                                    'convenience': i.search.convenience,
                                     'deposit': i.search.locked_fare + i.search.holding_price,
                                     'refund_value': i.search.locked_fare,
                                     'depart_date_1': conv_to_js_date(i.search.depart_date1),
@@ -273,17 +273,23 @@ def find_open_contracts(request, slug):
                                     'depart_date_2': conv_to_js_date(i.search.depart_date2),
                                     'return_date_2': conv_to_js_date(i.search.return_date2),
                                     }
+    build = {}
+    if bank:
+        build['results'] = {'success': True, 'results': bank,}
+    else:
+        build['results'] = {'success': False, 'error': 'No data returned'}
+    return gen_search_display(request, build, True)
 
-    return gen_search_display(request, {'results': bank}, True)
 
 
 def find_cust_id(request):
+
     if request.user.is_authenticated():
         clean = False
     else:
         clean = True
 
-    inputs = request.POST if request.POST else None
+    inputs = request.GET if request.GET else None
     form = Customer_login(inputs)
     build = {'form': form, 'cust_title': "Find ID"}
     if (inputs) and form.is_valid():
@@ -292,13 +298,18 @@ def find_cust_id(request):
             find_org = Platform.objects.get(key=cd['platform_key'])
             find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
             build['results'] = {'success': True, 'key': find_cust.key}
+            here = "worked"
         except:
             build['error_message'] = 'The customer is not registered in the system.'
             build['results'] = {'success': False, 'message': 'The customer is not registered in the system.'}
-    return gen_search_display(request, build, clean, method='post')
+            here = "didnt work"
+
+    #check = {'inputs': inputs, 'form_val': form.is_valid()}
+    #return HttpResponse(json.dumps(check), mimetype="application/json")
+    return gen_search_display(request, build, clean)
 
 
-
+"""
 def customer_login(request):
     if request.user.is_authenticated():
         clean = False
@@ -322,7 +333,7 @@ def customer_login(request):
             build['error_message'] = 'The customer is not registered in the system.'
             build['results'] = {'error': 'The customer is not registered in the system.'}
     return gen_search_display(request, build, clean)
-
+"""
 
 def customer_signup(request):
 
@@ -331,9 +342,9 @@ def customer_signup(request):
     else:
         clean = True
 
-    inputs = request.GET if request.GET else None
+    inputs = request.POST if request.POST else None
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
 
 
     form = Customer_signup(inputs)
@@ -370,7 +381,7 @@ def customer_signup(request):
                 del build['results']['_state']
                 del build['results']['id']
 
-    return gen_search_display(request, build, clean)
+    return gen_search_display(request, build, clean, method='post')
 
 
 def purchase_option(request):
@@ -380,9 +391,9 @@ def purchase_option(request):
     else:
         clean = True
 
-    inputs = request.GET if request.GET else None
+    inputs = request.POST if request.POST else None
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
 
 
     form = Purchase_option(inputs)
@@ -393,7 +404,7 @@ def purchase_option(request):
         try:
 
             #find_org = Platform.objects.get(key=cd['platform_key'])
-            find_search = Search_history.objects.get(key=cd['search_key'])
+            find_search = Searches.objects.get(key=cd['search_key'])
             find_cust = Customer.objects.get(key__iexact=cd['cust_key']) # , platform__iexact=cd['platform']
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
@@ -415,7 +426,7 @@ def purchase_option(request):
         #except (Platform.DoesNotExist):
         #    build['error_message'] = 'The platform name is not valid.'
         #    build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
-        except (Search_history.DoesNotExist):
+        except (Searches.DoesNotExist):
             build['error_message'] = 'The option id entered is not valid.'
             build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
         except (Exception):
@@ -470,7 +481,7 @@ def purchase_option(request):
                     #build['error_message'] = response['status']
                     build['results'] = {'success': False, 'error': response['status']}
 
-    return gen_search_display(request, build, clean, method='get')
+    return gen_search_display(request, build, clean, method='post')
 
 
 

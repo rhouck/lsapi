@@ -63,7 +63,7 @@ def search_info(request, slug, all=False):
     del search_dict['_state']
     del search_dict['open_status']
     del search_dict['id']
-    del search_dict['search_type']
+    #del search_dict['search_type']
     del search_dict['holding_per']
     del search_dict['error']
 
