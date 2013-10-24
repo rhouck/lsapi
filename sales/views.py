@@ -283,7 +283,7 @@ def find_cust_id(request):
     else:
         clean = True
 
-    inputs = request.GET if request.GET else None
+    inputs = request.POST if request.POST else None
     form = Customer_login(inputs)
     build = {'form': form, 'cust_title': "Find ID"}
     if (inputs) and form.is_valid():
@@ -291,12 +291,11 @@ def find_cust_id(request):
         try:
             find_org = Platform.objects.get(key=cd['platform_key'])
             find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
-            #find_cust = Customer.objects.get(email=cd['email'], platform=cd['password'])
             build['results'] = {'success': True, 'key': find_cust.key}
         except:
             build['error_message'] = 'The customer is not registered in the system.'
             build['results'] = {'success': False, 'message': 'The customer is not registered in the system.'}
-    return gen_search_display(request, build, clean)
+    return gen_search_display(request, build, clean, method='post')
 
 
 

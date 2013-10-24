@@ -91,13 +91,14 @@ def call_wan(url, data, method='post'):
 def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, display_dates):
     """
     @summary:
-      1. run live search on display dates
-      2. run cached search on full date range
+      1. *** to do *** run live search on one likely expensive pair of dates
+      2. run api-based cached search on full date range
+      2. run local cached search on full date range
       3. run live search on non display dates that are empty or have cached fare higher than all live search prices
     """
 
     # to do: then run live search on empty dates and dates that are higher than display date live search
-
+    # make sure it only compares display date search with max fare if the display dates are within the option range
     def string_dates(inp):
       if isinstance(inp, list):
         for ind, i in enumerate(inp):
