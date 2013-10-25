@@ -331,33 +331,6 @@ def find_cust_id(request):
     return gen_search_display(request, build, clean)
 
 
-"""
-def customer_login(request):
-    if request.user.is_authenticated():
-        clean = False
-    else:
-        clean = True
-
-    inputs = request.GET if request.GET else None
-    form = Customer_login(inputs)
-    build = {'form': form, 'cust_title': "Customer Login"}
-    if (inputs) and form.is_valid():
-        cd = form.cleaned_data
-        try:
-            find_org = Platform.objects.get(key=cd['platform_key'])
-            find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
-            #find_cust = Customer.objects.get(email=cd['email'], password=cd['password'], platform_key=cd['platform_key'])
-            if clean:
-                return HttpResponseRedirect(reverse('open_contracts', kwargs={'slug': find_cust.key}))
-            else:
-                return HttpResponseRedirect(reverse('customer_detail', kwargs={'slug': find_cust.key}))
-        except:
-            build['error_message'] = 'The customer is not registered in the system.'
-            build['results'] = {'error': 'The customer is not registered in the system.'}
-    return gen_search_display(request, build, clean)
-"""
-
-
 
 def customer_signup(request):
 
