@@ -109,6 +109,10 @@ def price_edu_combo(request):
             form = full_option_info(request.POST)
             if form.is_valid():
                 cd = form.cleaned_data
+                #inp_errors = sim_errors(self.db, cd['origin_code'], cd['destination_code'],self.lockin_per,self.start_date,self.d_date1,self.d_date2,self.r_date1,self.r_date2,self.final_proj_week, self.max_trip_length, self.geography)
+                #flights = pull_fares_range(, , (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
+                #return HttpResponse(json.dumps({'inputs': cd}), mimetype="application/json")
+
 
                 open_status = Open.objects.get(pk=1)
 

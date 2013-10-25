@@ -295,10 +295,8 @@ def find_open_contracts(request, slug):
                                     'return_date_2': conv_to_js_date(i.search.return_date2),
                                     }
     build = {}
-    if bank:
-        build['results'] = {'success': True, 'results': bank,}
-    else:
-        build['results'] = {'success': False, 'error': 'No data returned'}
+    build['results'] = {'success': True, 'results': bank,}
+
     return gen_search_display(request, build, True)
 
 
@@ -579,6 +577,7 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
 # staging views
 def add_to_staging(request, action, slug):
 
+
     if request.user.is_authenticated():
         clean = False
     else:
@@ -586,6 +585,7 @@ def add_to_staging(request, action, slug):
 
     if clean:
         platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
+
 
     find_contract = get_object_or_404(Contract, search__key__iexact=slug)
 
