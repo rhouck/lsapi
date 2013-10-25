@@ -4,13 +4,13 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-
+import copy
 import datetime
 import socket
 import json
 
 from api.views import gen_search_display
-from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key
+from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds
 from sales.models import *
 from forms import *
 
@@ -24,6 +24,7 @@ from django.views.generic import DetailView, ListView
 
 from quix.pay.gateway.authorizenet import AimGateway
 from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
+
 
 def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
@@ -198,31 +199,40 @@ def get_plat_detail(request, slug):
 
 def customer_info(request, slug):
 
-    inputs = request.GET if request.GET else None
+
+    if request.POST:
+        method = 'post'
+        inputs = request.POST
+        request.POST = None
+    else:
+        method = 'get'
+        inputs = request.GET if request.GET else None
+        request.GET = None
+    inputs = copy.deepcopy(inputs)
 
     if not request.user.is_authenticated():
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
-
-    request.GET = None
+        cred = check_creds(inputs, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
 
     if inputs:
-        try:
+        if 'platform_key' in inputs:
             del inputs['platform_key']
-        except:
-            pass
 
-        #cust = get_object_or_404(Customer, key__iexact=slug, password__iexact=inputs['password'])
+
+    if inputs and method == 'post':
         cust = get_object_or_404(Customer, key__iexact=slug)
         for key, value in inputs.items():
             setattr(cust, key, value)
         cust.save()
+        cust = get_object_or_404(Customer, key__iexact=slug)
         cust_dict = cust.__dict__
         cust_dict['update'] = True
-
     else:
         cust = get_object_or_404(Customer, key__iexact=slug)
         cust_dict = cust.__dict__
         cust_dict['update'] = False
+
 
     del cust_dict['_state']
     del cust_dict['platform_id']
@@ -230,13 +240,24 @@ def customer_info(request, slug):
     del cust_dict['key']
     del cust_dict['id']
 
-    try:
-        del cust_dict['csrfmiddlewaretoken']
-        del cust_dict['Search']
-    except:
-        pass
 
-    return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
+    if 'csrfmiddlewaretoken' in cust_dict:
+        del cust_dict['csrfmiddlewaretoken']
+    if 'Search' in cust_dict:
+        del cust_dict['Search']
+
+
+    build = {'results': cust_dict}
+
+    if request.user.is_authenticated():
+        clean = False
+        del build['results']['update']
+    else:
+        clean = True
+
+
+    return gen_search_display(request, build, clean)
+    #return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
 
 
 
@@ -244,7 +265,10 @@ def customer_info(request, slug):
 def find_open_contracts(request, slug):
 
     if not request.user.is_authenticated():
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        cred = check_creds(request.GET, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
 
 
     cust = get_object_or_404(Customer, key__iexact=slug)
@@ -265,7 +289,7 @@ def find_open_contracts(request, slug):
                                     'purch_date': conv_to_js_date(i.purch_date),
                                     'depart_times': i.search.depart_times,
                                     'return_times': i.search.return_times,
-                                    'convenience': i.search.nonstop,
+                                    'convenience': i.search.convenience,
                                     'deposit': i.search.locked_fare + i.search.holding_price,
                                     'refund_value': i.search.locked_fare,
                                     'depart_date_1': conv_to_js_date(i.search.depart_date1),
@@ -273,17 +297,21 @@ def find_open_contracts(request, slug):
                                     'depart_date_2': conv_to_js_date(i.search.depart_date2),
                                     'return_date_2': conv_to_js_date(i.search.return_date2),
                                     }
+    build = {}
+    build['results'] = {'success': True, 'results': bank,}
 
-    return gen_search_display(request, {'results': bank}, True)
+    return gen_search_display(request, build, True)
+
 
 
 def find_cust_id(request):
+
     if request.user.is_authenticated():
         clean = False
     else:
         clean = True
 
-    inputs = request.POST if request.POST else None
+    inputs = request.GET if request.GET else None
     form = Customer_login(inputs)
     build = {'form': form, 'cust_title': "Find ID"}
     if (inputs) and form.is_valid():
@@ -292,36 +320,16 @@ def find_cust_id(request):
             find_org = Platform.objects.get(key=cd['platform_key'])
             find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
             build['results'] = {'success': True, 'key': find_cust.key}
+            here = "worked"
         except:
             build['error_message'] = 'The customer is not registered in the system.'
             build['results'] = {'success': False, 'message': 'The customer is not registered in the system.'}
-    return gen_search_display(request, build, clean, method='post')
+            here = "didnt work"
 
-
-
-def customer_login(request):
-    if request.user.is_authenticated():
-        clean = False
-    else:
-        clean = True
-
-    inputs = request.GET if request.GET else None
-    form = Customer_login(inputs)
-    build = {'form': form, 'cust_title': "Customer Login"}
-    if (inputs) and form.is_valid():
-        cd = form.cleaned_data
-        try:
-            find_org = Platform.objects.get(key=cd['platform_key'])
-            find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
-            #find_cust = Customer.objects.get(email=cd['email'], password=cd['password'], platform_key=cd['platform_key'])
-            if clean:
-                return HttpResponseRedirect(reverse('open_contracts', kwargs={'slug': find_cust.key}))
-            else:
-                return HttpResponseRedirect(reverse('customer_detail', kwargs={'slug': find_cust.key}))
-        except:
-            build['error_message'] = 'The customer is not registered in the system.'
-            build['results'] = {'error': 'The customer is not registered in the system.'}
+    #check = {'inputs': inputs, 'form_val': form.is_valid()}
+    #return HttpResponse(json.dumps(check), mimetype="application/json")
     return gen_search_display(request, build, clean)
+
 
 
 def customer_signup(request):
@@ -331,10 +339,11 @@ def customer_signup(request):
     else:
         clean = True
 
-    inputs = request.GET if request.GET else None
+    inputs = request.POST if request.POST else None
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
-
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
 
     form = Customer_signup(inputs)
     build = {'form': form, 'cust_title': "Customer Signup"}
@@ -370,7 +379,7 @@ def customer_signup(request):
                 del build['results']['_state']
                 del build['results']['id']
 
-    return gen_search_display(request, build, clean)
+    return gen_search_display(request, build, clean, method='post')
 
 
 def purchase_option(request):
@@ -380,9 +389,12 @@ def purchase_option(request):
     else:
         clean = True
 
-    inputs = request.GET if request.GET else None
+    inputs = request.POST if request.POST else None
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
 
 
     form = Purchase_option(inputs)
@@ -393,7 +405,7 @@ def purchase_option(request):
         try:
 
             #find_org = Platform.objects.get(key=cd['platform_key'])
-            find_search = Search_history.objects.get(key=cd['search_key'])
+            find_search = Searches.objects.get(key=cd['search_key'])
             find_cust = Customer.objects.get(key__iexact=cd['cust_key']) # , platform__iexact=cd['platform']
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
@@ -415,7 +427,7 @@ def purchase_option(request):
         #except (Platform.DoesNotExist):
         #    build['error_message'] = 'The platform name is not valid.'
         #    build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
-        except (Search_history.DoesNotExist):
+        except (Searches.DoesNotExist):
             build['error_message'] = 'The option id entered is not valid.'
             build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
         except (Exception):
@@ -470,7 +482,7 @@ def purchase_option(request):
                     #build['error_message'] = response['status']
                     build['results'] = {'success': False, 'error': response['status']}
 
-    return gen_search_display(request, build, clean, method='get')
+    return gen_search_display(request, build, clean, method='post')
 
 
 
@@ -545,8 +557,8 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
 
 
 # staging views
-
 def add_to_staging(request, action, slug):
+
 
     if request.user.is_authenticated():
         clean = False
@@ -554,7 +566,11 @@ def add_to_staging(request, action, slug):
         clean = True
 
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
+
 
     find_contract = get_object_or_404(Contract, search__key__iexact=slug)
 
@@ -567,7 +583,7 @@ def add_to_staging(request, action, slug):
         exercise = True if action == 'exercise' else False
         staged_cont = Staging(contract=find_contract, exercise=exercise)
 
-        inputs = request.GET if request.GET else None
+        inputs = request.POST if request.POST else None
         form = AddToStagingForm(inputs)
 
         if form.is_valid():
