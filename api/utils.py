@@ -16,6 +16,7 @@ from settings import host,live
 
 from functions import find_sub_index_dict
 
+
 """
 from django.core.mail import send_mail
 def practice_mail(request):
@@ -24,6 +25,20 @@ def practice_mail(request):
         ['ryanchouck@gmail.com', 'bcollins.audio@gmail.com'], fail_silently=False)
     return HttpResponse("success i think")
 """
+
+def check_creds(inps,model):
+    #return HttpResponse(json.dumps({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
+    #platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
+    if 'platform_key' not in inps:
+        return {'success': False, 'error': 'platform_key not sent'}
+    else:
+        try:
+            platform = model.objects.get(key=inps['platform_key'])
+            return {'success': True, 'error': 'valid credentials submitted'}
+        except:
+            return {'success': False, 'error': 'platform_key not valid'}
+
+
 
 def gen_alphanum_key():
     key = ''

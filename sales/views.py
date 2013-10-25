@@ -10,7 +10,7 @@ import socket
 import json
 
 from api.views import gen_search_display
-from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key
+from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds
 from sales.models import *
 from forms import *
 
@@ -24,6 +24,7 @@ from django.views.generic import DetailView, ListView
 
 from quix.pay.gateway.authorizenet import AimGateway
 from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
+
 
 def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
@@ -201,7 +202,7 @@ def customer_info(request, slug):
 
     if request.POST:
         method = 'post'
-        inputs = request.POST if request.POST else None
+        inputs = request.POST
         request.POST = None
     else:
         method = 'get'
@@ -209,15 +210,14 @@ def customer_info(request, slug):
         request.GET = None
     inputs = copy.deepcopy(inputs)
 
-    if inputs:
-        platform_key = None
-        if 'platform_key' in inputs:
-            platform_key = inputs['platform_key']
-            del inputs['platform_key']
-
-
     if not request.user.is_authenticated():
-        platform = get_object_or_404(Platform, key__iexact=platform_key)
+        cred = check_creds(inputs, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
+    if inputs:
+        if 'platform_key' in inputs:
+            del inputs['platform_key']
 
 
     if inputs and method == 'post':
@@ -265,7 +265,10 @@ def customer_info(request, slug):
 def find_open_contracts(request, slug):
 
     if not request.user.is_authenticated():
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        cred = check_creds(request.GET, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
 
 
     cust = get_object_or_404(Customer, key__iexact=slug)
@@ -354,6 +357,8 @@ def customer_login(request):
     return gen_search_display(request, build, clean)
 """
 
+
+
 def customer_signup(request):
 
     if request.user.is_authenticated():
@@ -363,8 +368,9 @@ def customer_signup(request):
 
     inputs = request.POST if request.POST else None
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
-
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
 
     form = Customer_signup(inputs)
     build = {'form': form, 'cust_title': "Customer Signup"}
@@ -412,7 +418,10 @@ def purchase_option(request):
 
     inputs = request.POST if request.POST else None
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
 
 
     form = Purchase_option(inputs)
@@ -584,7 +593,10 @@ def add_to_staging(request, action, slug):
         clean = True
 
     if clean:
-        platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
 
 
     find_contract = get_object_or_404(Contract, search__key__iexact=slug)

@@ -45,7 +45,9 @@ def refund_format_conversion(pricing_results):
 def search_info(request, slug, all=False):
 
     if not request.user.is_authenticated():
-        platform = get_object_or_404(Platform, key__iexact=request.GET['platform_key'])
+        cred = check_creds(request.GET, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
 
     search = get_object_or_404(Searches, key__iexact=slug)
 
@@ -104,7 +106,10 @@ def price_edu_combo(request):
 
         if (request.POST):
             if clean:
-                platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
+                cred = check_creds(request.POST, Platform)
+                if not cred['success']:
+                    return HttpResponse(json.dumps(cred), mimetype="application/json")
+
 
             form = full_option_info(request.POST)
             if form.is_valid():
