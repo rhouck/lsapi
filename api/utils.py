@@ -97,6 +97,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       3. run live search on non display dates that are empty or have cached fare higher than all live search prices
     """
 
+
     # to do: then run live search on empty dates and dates that are higher than display date live search
     # make sure it only compares display date search with max fare if the display dates are within the option range
     def string_dates(inp):
@@ -119,6 +120,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       if len(display_dates) == 2:
         if display_dates[1] > display_dates[0]:
           display_flights = run_flight_search(origin, destination, display_dates[0], display_dates[1], depart_times, return_times, num_stops, airlines)
+          #return display_flights
           if display_flights['success']:
             results['flights'] = display_flights['flights']
             max_live_fare = display_flights['min_fare']
@@ -143,6 +145,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
     # cached fare
     res = cached_search(origin, destination, depart_dates, return_dates)
+
     if res['fares']:
       for i in res['fares']:
         where = copy.deepcopy(i)
@@ -196,6 +199,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     results['fares'] = string_dates(fares)
 
 
+    results = {'fares': None, 'flights': None}
     error = ""
     if results['fares']:
       results['success'] = True
@@ -207,6 +211,8 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     if display_dates:
       if not results['flights']:
         results['success'] = False
+        if error:
+          error += " "
         error += "Couldn't build list of current flights for display dates."
         results['error'] = error
 
@@ -250,6 +256,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
             # run search if not already cached
             if not cache_only:
               response = live_search(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+
               if response['success']:
                 if response['flights_count']:
                     search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
@@ -368,32 +375,36 @@ def parse_wan_cached(data):
 
 def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
 
+    return {'success': False, 'error': 'test'}
 
     # format inputs
     def pick_time_window(time_list):
-        morning = [360, 720] # 6:00am to 12:00pm
-        evening = [720, 1080] # 12:00pm to 6:00pm
-        any_time = [0, 1440] # 12:00am to 12:00am
 
-        if 'any_time' in time_list:
-            return (any_time[0], any_time[1])
+        if time_list == 'morning':
+          return (0, 720) # 12:00am to 12:00pm
+        elif time_list == 'morning-no-red-eye':
+          return (360, 720) # 6:00am to 12:00pm
+        elif time_list == 'evening':
+          return (720, 1440) # 12:00pm to 12:00am
+        elif time_list == 'evening-no-red-eye':
+          return (720, 1080) # 12:00pm to 6:00pm
+        elif time_list == 'no-red-eye':
+          return (360, 1080) # 6:00am to 6:00pm
+        elif time_list == 'any':
+          return (0, 1440) # 12:00am to 12:00am
         else:
-            if 'morning' in time_list and 'evening' not in time_list:
-                return (morning[0], morning[1])
-            elif 'morning' in time_list and 'evening' in time_list:
-                return (morning[0], evening[1])
-            elif 'morning' not in time_list and 'evening' in time_list:
-                return (evening[0], evening[1])
-            else:
-                return (any_time[0], any_time[1])
+          return (0, 1440) # 12:00am to 12:00am
 
     depart_times = pick_time_window(depart_times)
     return_times = pick_time_window(return_times)
 
-    if num_stops == "best-only":
+
+    if num_stops == "none-one":
         num_stops = ["none", "one",]
-    else:
+    elif num_stops == "any":
         num_stops = ["none", "one", "two_plus"]
+    else:
+      num_stops = ["none", "one", "two_plus"]
 
 
     # create search
@@ -459,6 +470,7 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
                 counter += 1
             else:
                 break
+
 
     response['flights_count'] = response['response']['filtered_routes_count']
     return response

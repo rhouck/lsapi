@@ -28,10 +28,7 @@ from api.utils import *
 
 
 
-# build function to recieve range of dates, cycle through cached searches both locally and from api, run live search when necessary
-
-
-
+"""
 def run_flight_search(request):
 
     origin="SFO"
@@ -53,7 +50,6 @@ def run_flight_search(request):
 
     response = live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines)
     return HttpResponse(json.dumps(response), mimetype="application/json")
-
 
 def cached_search(origin, destination, depart_date, return_date):
 
@@ -161,13 +157,12 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
     return response
     #return HttpResponse(json.dumps(response), mimetype="application/json")
+"""
 
 
 
-# start date used to calculate price and lock in period both need to be changed to follow current date, not fixed date
 
-
-# start date u'sed to calc': late price and lock' in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
+# start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
     pricing_results['refund_value'] = pricing_results['locked_fare']
     if pricing_results['holding_price'] and pricing_results['locked_fare']:
@@ -177,6 +172,8 @@ def refund_format_conversion(pricing_results):
     del pricing_results['holding_price']
     del pricing_results['locked_fare']
     return pricing_results
+
+
 
 def search_info(request, slug, all=False):
 
@@ -257,8 +254,8 @@ def price_edu_combo(request):
                 combined = dict(general.items() + model_in.items())
 
                 if open_status.get_status():
-                    #flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), 'any_time', 'any_time', 'best_only', airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
-                    #return HttpResponse(json.dumps(flights), mimetype="application/json")
+                    #flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
+
                     flights = {}
                     flights['flights'] = []
                     flights['success'] = True
@@ -268,6 +265,9 @@ def price_edu_combo(request):
 
                         model_out = {'holding_price': (prices['locked_fare']-prices['refund_value']), 'locked_fare': prices['refund_value'], 'expected_risk': prices['expected_risk'],
                                         'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['dep_time'], 'error': prices['error'] }
+                    else:
+                        model_out = {'error': flights['error']}
+
 
                 # save in model
                 combined.update(model_out.items())
@@ -275,8 +275,10 @@ def price_edu_combo(request):
                 search_params.save()
                 search_key = search_params.key
 
+
                 # add current flight list if no errors and 'show_flights' is true
                 combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
+
                 if not model_out['error']:
                     combined_results.update({'success': True})
                     if cd['disp_depart_date'] and cd['disp_return_date']:
