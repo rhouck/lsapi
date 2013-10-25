@@ -21,7 +21,6 @@ urlpatterns = patterns('',
     url(r'^customer/find/$', find_cust_id, name='find_cust_id'),
     url(r'^customer/signup/$', customer_signup, name='cust_signup'),
     url(r'^customer/info/(?P<slug>[-\w]{6})/$', customer_info, name='customer_info'),
-    #url(r'^customer/open/$', customer_login, name='customer_login'),
     url(r'^customer/open/(?P<slug>[-\w]{6})/$', find_open_contracts, name='open_contracts'),
 
     # view contracts - admin only
