@@ -354,13 +354,13 @@ def customer_signup(request):
             find_org = Platform.objects.get(key=cd['platform_key'])
         except (Platform.DoesNotExist):
             build['error_message'] = 'The platform name is not valid.'
-            build['results'] = {'success': False, 'message': 'The platform name is not valid.'}
+            build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
         else:
             try:
                 find_cust = Customer.objects.get(email=cd['email'], platform=find_org)
                 message = 'The email address is already registered in the system with this platform.'
                 build['error_message'] = message
-                build['results'] = {'success': False, 'message': message} # , 'key': find_cust.key
+                build['results'] = {'success': False, 'error': message} # , 'key': find_cust.key
             except:
                 cust_key = gen_alphanum_key()
                 field_inps = cd
