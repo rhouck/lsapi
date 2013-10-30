@@ -26,7 +26,12 @@ from simp_price import *
 
 from api.utils import *
 
+from temp import return_search_res
 
+def demo_search_results(request):
+    flights = return_search_res()
+    res = {'success': True, 'flights': flights}
+    return HttpResponse(json.dumps(res), mimetype="application/json")
 
 
 # start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':

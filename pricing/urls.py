@@ -9,5 +9,6 @@ urlpatterns = patterns('',
     url(r'^single/$', price_edu_combo, name='price_single'),
     url(r'^search/info/(?P<slug>[-\w]{6})/$', search_info, name='search_info'),
     url(r'^search/info/all/(?P<slug>[-\w]{6})/$', search_info,{'all': True}, name='search_info_all'),
+    url(r'^search_results/$', demo_search_results),
 )
 
