@@ -17,15 +17,6 @@ from settings import host,live
 from functions import find_sub_index_dict
 
 
-"""
-from django.core.mail import send_mail
-def practice_mail(request):
-
-    send_mail('Auto message from Level Skies', 'Here is an auto generated message sent just to annoy you while testing.', 'levelskiestest@gmail.com',
-        ['ryanchouck@gmail.com', 'bcollins.audio@gmail.com'], fail_silently=False)
-    return HttpResponse("success i think")
-"""
-
 def check_creds(inps,model):
     #return HttpResponse(json.dumps({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
     #platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
@@ -37,8 +28,6 @@ def check_creds(inps,model):
             return {'success': True, 'error': 'valid credentials submitted'}
         except:
             return {'success': False, 'error': 'platform_key not valid'}
-
-
 
 def gen_alphanum_key():
     key = ''
@@ -52,15 +41,11 @@ def conv_to_js_date(date):
 def current_time_aware():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
 
-
 def conv_date_to_datetime(inp):
     return datetime.datetime(inp.year, inp.month, inp.day,0,0)
 
 
-def send_request(url, data, headers=None, method='get'):
-
-  if not data:
-    data = {}
+def send_request(url, data={}, headers=None, method='get'):
 
   try:
 
@@ -87,20 +72,27 @@ def send_request(url, data, headers=None, method='get'):
     return {'success': False, 'error': str(err)}
 
 
+def call_sky(url, data={}, method='get'):
 
-def call_wan(url, data, method='post'):
+  url = 'http://partners.api.skyscanner.net/apiservices/%s' % (url)
+  data.update({'apikey': 'lvls0948650201236592310165489310', 'locationschema': 'Iata',})
+  #data.update({'apikey': 'prtl6749387986743898559646983194'})
+
 
   if method == 'post':
-    url = 'http://api.wego.com/flights/api/%s' % (url)
+    pass
   elif method == 'get':
-    url = 'http://www.wego.com/flights/api/%s' % (url)
+    pass
 
-  data.update({'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'})
-  headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
+  #headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
+  #headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+  headers = None
   response = send_request(url, data, headers, method)
-  response['source'] = 'wego'
+  response['source'] = 'skyscanner'
   return response
+
+
 
 
 def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, display_dates):
@@ -292,29 +284,6 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     return data
 
 
-def parse_wan_live(data):
-    """
-    @summary: parsing function for WeGo api flight search response
-    """
-    bank = []
-    for i in data['response']['routes']:
-        flight = {}
-        flight['fare'] = i['best_fare']['price']
-        flight['link'] = i['best_fare']['deeplink']
-        flight['cabin'] = i['best_fare']['description']
-        flight.update({'inbound_segments': i['inbound_segments'], 'outbound_segments': i['outbound_segments'],})
-        bank.append(flight)
-
-    fare_bank = [i['fare'] for i in bank]
-    if fare_bank:
-      min_fare = min(fare_bank)
-    else:
-      min_fare = None
-
-    return {'success': True, 'flights': bank, 'min_fare': min_fare}
-
-
-
 def cached_search(origin, destination, depart_dates, return_dates):
 
     # this search does not actually find cached fares for the two dates listed
@@ -359,33 +328,6 @@ def cached_search(origin, destination, depart_dates, return_dates):
             data = {'success': False, 'error': 'Data was not parsed'}
 
     return data
-
-
-
-def parse_wan_cached(data):
-    """
-    @summary: parsing function for WeGo api cached search response
-    """
-
-    bank = []
-
-    for i in data['rates'].iterkeys():
-      for k in data['rates'][i]:
-
-        fare = {}
-        fare['depart_date'] = k['outbound']
-        fare['return_date'] = k['inbound']
-        fare['fare'] = k['price_in_usd']
-        bank.append(fare)
-
-    fare_bank = [i['fare'] for i in bank]
-    if fare_bank:
-      max_fare = max(fare_bank)
-    else:
-      max_fare = None
-
-    return {'success': True, 'fares': bank, 'max_fare': max_fare}
-
 
 
 def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
@@ -489,3 +431,66 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
     response['flights_count'] = response['response']['filtered_routes_count']
     return response
+
+
+
+
+
+def call_wan(url, data, method='post'):
+
+  if method == 'post':
+    url = 'http://api.wego.com/flights/api/%s' % (url)
+  elif method == 'get':
+    url = 'http://www.wego.com/flights/api/%s' % (url)
+
+  data.update({'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'})
+  headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+  response = send_request(url, data, headers, method)
+  response['source'] = 'wego'
+  return response
+
+def parse_wan_live(data):
+    """
+    @summary: parsing function for WeGo api flight search response
+    """
+    bank = []
+    for i in data['response']['routes']:
+        flight = {}
+        flight['fare'] = i['best_fare']['price']
+        flight['link'] = i['best_fare']['deeplink']
+        flight['cabin'] = i['best_fare']['description']
+        flight.update({'inbound_segments': i['inbound_segments'], 'outbound_segments': i['outbound_segments'],})
+        bank.append(flight)
+
+    fare_bank = [i['fare'] for i in bank]
+    if fare_bank:
+      min_fare = min(fare_bank)
+    else:
+      min_fare = None
+
+    return {'success': True, 'flights': bank, 'min_fare': min_fare}
+
+def parse_wan_cached(data):
+    """
+    @summary: parsing function for WeGo api cached search response
+    """
+
+    bank = []
+
+    for i in data['rates'].iterkeys():
+      for k in data['rates'][i]:
+
+        fare = {}
+        fare['depart_date'] = k['outbound']
+        fare['return_date'] = k['inbound']
+        fare['fare'] = k['price_in_usd']
+        bank.append(fare)
+
+    fare_bank = [i['fare'] for i in bank]
+    if fare_bank:
+      max_fare = max(fare_bank)
+    else:
+      max_fare = None
+
+    return {'success': True, 'fares': bank, 'max_fare': max_fare}

@@ -28,11 +28,46 @@ from api.utils import *
 
 from temp import return_search_res
 
+def test_skyscan(request):
+    """
+    # grid search
+    url = 'browsegrid/v1.0/GB/GBP/en-GB/LHR/FRA/2013-12/2014-01'
+    res = call_sky(url, data={}, method='get')
+    return HttpResponse(json.dumps(res), mimetype="application/json")
+    """
+
+    """
+    # price caching api - seems to pull cached fare on specific flight
+    url = 'pricing/v1.0/GB/GBP/en-GB/LHR/FRA/2013-12/2014-01'
+    res = call_sky(url, method='get')
+    return HttpResponse(json.dumps(res), mimetype="application/json")
+    """
+
+
+
+    # create session
+    url = 'pricing/v1.0'
+
+    data = {
+            'country': 'US',
+            'currency': 'USD',
+            'locale': 'en-US',
+            'originplace': 'SFO',
+            'destinationplace': 'JFK',
+            'outbounddate': '2013-12-13',
+            'inbounddate': '2013-12-20',
+            'adults': 1,
+            }
+
+    res = call_sky(url, data, method='get')
+    return HttpResponse(json.dumps(res), mimetype="application/json")
+
+
+
 def demo_search_results(request):
     flights = return_search_res()
     res = {'success': True, 'flights': flights}
     return HttpResponse(json.dumps(res), mimetype="application/json")
-
 
 # start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
@@ -44,8 +79,6 @@ def refund_format_conversion(pricing_results):
     del pricing_results['holding_price']
     del pricing_results['locked_fare']
     return pricing_results
-
-
 
 def search_info(request, slug, all=False):
 
