@@ -571,11 +571,17 @@ def staged_item(request, slug):
 
     if inputs:
 
-        # remove or force close the contract
+        """
         if 'remove' in inputs or 'force_close' in inputs:
             find_stage.delete()
             if 'force_close' in inputs:
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'], use_gateway=False)
+            return HttpResponseRedirect(reverse('staging_view'))
+        """
+
+        # remove contract
+        if 'remove' in inputs:
+            find_stage.delete()
             return HttpResponseRedirect(reverse('staging_view'))
 
         # exercise the contract
@@ -585,23 +591,33 @@ def staged_item(request, slug):
                 if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
                     build['error_message'] = 'Selected travel dates not within locked fare range'
                 else:
-                    response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'])
-                    if not response['results']['success']:
-                        build['error_message'] = response['results']['error']
-                    else:
+                    if 'force_close' in inputs:
                         find_stage.delete()
+                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'], use_gateway=False)
                         return HttpResponseRedirect(reverse('staging_view'))
+                    else:
+                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'])
+                        if not response['results']['success']:
+                            build['error_message'] = response['results']['error']
+                        else:
+                            find_stage.delete()
+                            return HttpResponseRedirect(reverse('staging_view'))
             else:
                 build['error_message'] = "Form not valid"
 
         # refund the contract
         else:
-            response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'])
-            if not response['results']['success']:
-                    build['error_message'] = response['results']['error']
-            else:
+            if 'force_close' in inputs:
                 find_stage.delete()
+                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'], use_gateway=False)
                 return HttpResponseRedirect(reverse('staging_view'))
+            else:
+                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'])
+                if not response['results']['success']:
+                        build['error_message'] = response['results']['error']
+                else:
+                    find_stage.delete()
+                    return HttpResponseRedirect(reverse('staging_view'))
 
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))

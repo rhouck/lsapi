@@ -59,7 +59,7 @@ class Contract(models.Model):
     gateway_id = models.CharField(max_length=20, blank=True, null=True)
     dep_date = models.DateField('depart date', blank=True, null=True)
     ret_date = models.DateField('return date', blank=True, null=True)
-    flight_choice = models.TextField(blank=True, null=True)
+    flight_choice = models.TextField('flight choice / notes', blank=True, null=True)
     # non-sensitive credit card info
     cc_last_four = models.IntegerField(max_length=4, blank=True, null=True)
     cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
