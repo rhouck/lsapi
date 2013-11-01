@@ -191,6 +191,7 @@ def price_edu_combo(request):
 
 
                 # add current flight list if no errors and 'show_flights' is true
+                model_out = refund_format_conversion(model_out)
                 combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
 
                 if not model_out['error']:
