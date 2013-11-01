@@ -5,7 +5,7 @@ from explore.views import *
 
 urlpatterns = patterns('',
 
-    url(r'^changes/$', fare_changes),
+    url(r'^changes/$', fare_changes, name='fare_changes'),
 
 
 

@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% load widget_tweaks %}
+
+{% block head %}
+  <link rel="stylesheet" href="{% static "assets/wfl/css/jquery-ui-1.10.3.custom.min.css" %}">
+{% endblock %}
 
 {% block content %}
 
@@ -91,9 +97,9 @@
             </div>
           </div>
         {% endfor %}
-        <input type="submit" class="btn btn-success btn-sm" name="Search">
-        <input type="submit" class="btn btn-primary btn-sm" name="force_close" value="Force Close">
-        <input type="submit" class="btn btn-danger btn-sm" name="remove" value="Remove">
+        <input type="submit" class="btn btn-success btn-sm" name="Search" data-msg="Are you sure?">
+        <input type="submit" class="btn btn-primary btn-sm" name="force_close" value="Force Close" data-msg="Are you sure?">
+        <input type="submit" class="btn btn-danger btn-sm" name="remove" value="Remove" data-msg="Are you sure?">
       </form>
     </div>
   </div>
@@ -102,6 +108,7 @@
 
 
 {% block footer %}
+  <script src="{% static "assets/js/juicer.js" %}"></script>
   <script>
     var dispEl = $('#calc_ref')
     ref_val = {{ detail.contract.search.locked_fare }};
