@@ -100,7 +100,7 @@ MIDDLEWARE_CLASSES = (
     # custom middleware
     #'django.middleware.custom.django-crossdomainxhr-middleware',
     'middleware.cdxhr.XsSharing',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    #'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 ROOT_URLCONF = 'api.urls'
@@ -130,7 +130,7 @@ INSTALLED_APPS = (
     #'tastypie',
     'south',
     'widget_tweaks',
-    'debug_toolbar',
+    #'debug_toolbar',
     # custom apps
     'pricing',
     'sales',
@@ -187,7 +187,7 @@ XS_SHARING_ALLOWED_HEADERS = ['Origin', 'Content-Type', 'Accept']
 XS_SHARING_ALLOWED_CREDENTIALS = 'true'
 
 # for debug toolbar
-INTERNAL_IPS = ('127.0.0.1',)
+#INTERNAL_IPS = ('127.0.0.1',)
 
 # Use site-specific settings
 local_settings_path = os.path.join(os.path.dirname(__file__), 'local_settings.py')

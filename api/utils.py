@@ -12,6 +12,10 @@ from django.http import HttpResponse
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.sites.models import Site
 
+from quix.pay.gateway.authorizenet import AimGateway
+from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
+
+
 from settings import host,live
 
 from functions import find_sub_index_dict
@@ -49,14 +53,22 @@ def send_request(url, data={}, headers=None, method='get'):
 
   try:
 
+    url_values = urllib.urlencode(data)
+
     if method == 'get':
       url_values = urllib.urlencode(data)
       full_url = url + '?' + url_values
       data = urllib2.urlopen(full_url)
 
     elif method == 'post':
-      url_values = json.dumps(data)
-      req = urllib2.Request(url, url_values, headers)
+
+      if headers:
+        if headers['Content-Type'] == 'application/json':
+          url_values = json.dumps(data)
+        req = urllib2.Request(url, url_values, headers)
+      else:
+        req = urllib2.Request(url, url_values)
+
       data = urllib2.urlopen(req)
 
     else:
@@ -78,16 +90,15 @@ def call_sky(url, data={}, method='get'):
   data.update({'apikey': 'lvls0948650201236592310165489310', 'locationschema': 'Iata',})
   #data.update({'apikey': 'prtl6749387986743898559646983194'})
 
-
+  #return {'data': data, 'url': url}
+  """
   if method == 'post':
     pass
   elif method == 'get':
     pass
+  """
 
-
-  #headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
-  #headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-  headers = None
+  headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
   response = send_request(url, data, headers, method)
   response['source'] = 'skyscanner'
   return response
@@ -494,3 +505,85 @@ def parse_wan_cached(data):
       max_fare = None
 
     return {'success': True, 'fares': bank, 'max_fare': max_fare}
+
+
+
+
+
+
+
+
+def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
+
+    gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
+    #gateway.use_test_mode = True
+    # gateway.use_test_url = True
+    # use gateway.authorize() for an "authorize only" transaction
+
+    # number, month, year, first_name, last_name, code
+    card = CreditCard(**card_info)
+    if not trans_id:
+        if cust_info:
+            address = Address(**address)
+            customer = AuthCustomer(**cust_info)
+            customer.billing_address = address
+            customer.shipping_address = address
+            response = gateway.sale(str(amt), card, customer=customer)
+        else:
+            response = gateway.sale(str(amt), card)
+    else:
+        response = gateway.credit(str(trans_id), str(amt), card)
+
+    if response.status == response.APPROVED:
+        # this is where you store data from the response object into
+        # your models. The response.trans_id would be used to capture,
+        # void, or credit the sale later.
+
+        success = True
+        status = "Authorize Request: %s</br>Transaction %s = %s: %s" % (gateway.get_last_request().url,response.trans_id,
+                                           response.status_strings[response.status],
+                                           response.message)
+    else:
+        success = False
+        status = "%s - %s" % (response.status_strings[response.status],
+            response.message)
+        #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([status])
+    return {'success': success, 'status': status, 'trans_id': response.trans_id}
+
+
+def test_trans(request):
+
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    if request.GET:
+        form = PaymentForm(request.GET)
+        if form.is_valid():
+            cd = form.cleaned_data
+            #return HttpResponse(cd)
+            card = {}
+            for i in ('first_name', 'last_name', 'number','month','year','code'):
+                card[i] = cd[i]
+
+            address = {}
+            for i in ('first_name', 'last_name', 'phone', 'address1', 'city', 'state_province', 'country', 'postal_code'):
+                address[i] = cd[i]
+
+            cust_info = {}
+            for i in ('email',):
+                cust_info[i] = cd[i]
+
+            response = run_authnet_trans(123, card, address=address, cust_info=cust_info)
+
+            if response['success']:
+                return HttpResponse(response['status'])
+            else:
+
+                form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
+                return gen_search_display(request, {'form': form}, clean)
+    else:
+        form = PaymentForm()
+        build = {'form': form}
+    return gen_search_display(request, build, clean)

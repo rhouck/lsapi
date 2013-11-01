@@ -56,10 +56,10 @@ def test_skyscan(request):
             'destinationplace': 'JFK',
             'outbounddate': '2013-12-13',
             'inbounddate': '2013-12-20',
-            'adults': 1,
+            'adults': "1",
             }
 
-    res = call_sky(url, data, method='get')
+    res = call_sky(url, data, method='post')
     return HttpResponse(json.dumps(res), mimetype="application/json")
 
 

@@ -77,11 +77,17 @@
         {% csrf_token %}
         {% for field in form %}
           <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-9">
               <div class="form-group">
                 <label>{{ field.label_tag }}</label>
                 {{ field|add_class:"form-control" }}
               </div>
+            </div>
+            <div class="col-md-3">
+              {% if field.name == 'fare' %}
+                </br></br>
+                <div id="calc_ref" style="color: red;"></div>
+              {% endif %}
             </div>
           </div>
         {% endfor %}
@@ -97,3 +103,10 @@
 {% endblock %}
 
 
+{% block footer %}
+  <script>
+    var dispEl = $('#calc_ref')
+    ref_val = {{ detail.contract.search.locked_fare }};
+    $('#id_fare').keyup(function(){dispEl.html(((ref_val > parseInt(this.value)) ? "Refund: " + (ref_val - parseInt(this.value)) : ""));});
+  </script>
+{% endblock %}

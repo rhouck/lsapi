@@ -10,7 +10,7 @@ import socket
 import json
 
 from api.views import gen_search_display
-from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds
+from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
 from sales.models import *
 from forms import *
 
@@ -22,84 +22,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
-from quix.pay.gateway.authorizenet import AimGateway
-from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
-
-
-def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
-
-    gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
-    #gateway.use_test_mode = True
-    # gateway.use_test_url = True
-    # use gateway.authorize() for an "authorize only" transaction
-
-    # number, month, year, first_name, last_name, code
-    card = CreditCard(**card_info)
-    if not trans_id:
-        if cust_info:
-            address = Address(**address)
-            customer = AuthCustomer(**cust_info)
-            customer.billing_address = address
-            customer.shipping_address = address
-            response = gateway.sale(str(amt), card, customer=customer)
-        else:
-            response = gateway.sale(str(amt), card)
-    else:
-        response = gateway.credit(str(trans_id), str(amt), card)
-
-    if response.status == response.APPROVED:
-        # this is where you store data from the response object into
-        # your models. The response.trans_id would be used to capture,
-        # void, or credit the sale later.
-
-        success = True
-        status = "Authorize Request: %s</br>Transaction %s = %s: %s" % (gateway.get_last_request().url,response.trans_id,
-                                           response.status_strings[response.status],
-                                           response.message)
-    else:
-        success = False
-        status = "%s - %s" % (response.status_strings[response.status],
-            response.message)
-        #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([status])
-    return {'success': success, 'status': status, 'trans_id': response.trans_id}
-
-
-def test_trans(request):
-
-    if request.user.is_authenticated():
-        clean = False
-    else:
-        clean = True
-
-    if request.GET:
-        form = PaymentForm(request.GET)
-        if form.is_valid():
-            cd = form.cleaned_data
-            #return HttpResponse(cd)
-            card = {}
-            for i in ('first_name', 'last_name', 'number','month','year','code'):
-                card[i] = cd[i]
-
-            address = {}
-            for i in ('first_name', 'last_name', 'phone', 'address1', 'city', 'state_province', 'country', 'postal_code'):
-                address[i] = cd[i]
-
-            cust_info = {}
-            for i in ('email',):
-                cust_info[i] = cd[i]
-
-            response = run_authnet_trans(123, card, address=address, cust_info=cust_info)
-
-            if response['success']:
-                return HttpResponse(response['status'])
-            else:
-
-                form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
-                return gen_search_display(request, {'form': form}, clean)
-    else:
-        form = PaymentForm()
-        build = {'form': form}
-    return gen_search_display(request, build, clean)
 
 
 
@@ -511,20 +433,26 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
                 find_contract.dep_date = dep_date
                 find_contract.ret_date = ret_date
                 find_contract.flight_choice = flight_choice
+
+                # refund partial value if exercised fare below refund value
+                if find_contract.search.locked_fare > fare and use_gateway:
+                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
+                    response = run_authnet_trans(find_contract.search.locked_fare - fare, card_info, trans_id=find_contract.gateway_id)
+                    if not response['success']:
+                        build['results'] = {'success': False, 'error': response['status']}
+                        return build
+
             else:
                 # if option is refunded
                 if use_gateway:
-                    #card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
                     card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
                     response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
                 else:
                     response = {'success': True}
                 if not response['success']:
-                    #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
-                    #build['error_message'] = response['status']
                     build['results'] = {'success': False, 'error': response['status']}
                     return build
-                    #return gen_search_display(request, build, clean)
+
 
                 find_contract.ex_fare = None
                 find_contract.dep_date = None
@@ -536,6 +464,7 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
             find_contract.ex_date = exercise_date_time
             find_contract.save()
             build['results'] = {'success': True, 'search_key': search_key, 'cust_key': cust_key, 'exercise_fare': find_contract.ex_fare, 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
+
             # augment cash reserve with option price
             try:
                 if find_contract.ex_fare > find_contract.search.locked_fare:
@@ -550,6 +479,7 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
                     capacity.save()
             except:
                 pass
+
 
     return build
     #return gen_search_display(request, build, clean)
