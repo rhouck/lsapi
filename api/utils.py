@@ -12,19 +12,14 @@ from django.http import HttpResponse
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.sites.models import Site
 
+from quix.pay.gateway.authorizenet import AimGateway
+from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
+
+
 from settings import host,live
 
 from functions import find_sub_index_dict
 
-
-"""
-from django.core.mail import send_mail
-def practice_mail(request):
-
-    send_mail('Auto message from Level Skies', 'Here is an auto generated message sent just to annoy you while testing.', 'levelskiestest@gmail.com',
-        ['ryanchouck@gmail.com', 'bcollins.audio@gmail.com'], fail_silently=False)
-    return HttpResponse("success i think")
-"""
 
 def check_creds(inps,model):
     #return HttpResponse(json.dumps({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
@@ -38,8 +33,6 @@ def check_creds(inps,model):
         except:
             return {'success': False, 'error': 'platform_key not valid'}
 
-
-
 def gen_alphanum_key():
     key = ''
     for i in range(6):
@@ -52,17 +45,15 @@ def conv_to_js_date(date):
 def current_time_aware():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
 
-
 def conv_date_to_datetime(inp):
     return datetime.datetime(inp.year, inp.month, inp.day,0,0)
 
 
-def send_request(url, data, headers=None, method='get'):
-
-  if not data:
-    data = {}
+def send_request(url, data={}, headers=None, method='get'):
 
   try:
+
+    url_values = urllib.urlencode(data)
 
     if method == 'get':
       url_values = urllib.urlencode(data)
@@ -70,8 +61,14 @@ def send_request(url, data, headers=None, method='get'):
       data = urllib2.urlopen(full_url)
 
     elif method == 'post':
-      url_values = json.dumps(data)
-      req = urllib2.Request(url, url_values, headers)
+
+      if headers:
+        if headers['Content-Type'] == 'application/json':
+          url_values = json.dumps(data)
+        req = urllib2.Request(url, url_values, headers)
+      else:
+        req = urllib2.Request(url, url_values)
+
       data = urllib2.urlopen(req)
 
     else:
@@ -87,20 +84,26 @@ def send_request(url, data, headers=None, method='get'):
     return {'success': False, 'error': str(err)}
 
 
+def call_sky(url, data={}, method='get'):
 
-def call_wan(url, data, method='post'):
+  url = 'http://partners.api.skyscanner.net/apiservices/%s' % (url)
+  data.update({'apikey': 'lvls0948650201236592310165489310', 'locationschema': 'Iata',})
+  #data.update({'apikey': 'prtl6749387986743898559646983194'})
 
+  #return {'data': data, 'url': url}
+  """
   if method == 'post':
-    url = 'http://api.wego.com/flights/api/%s' % (url)
+    pass
   elif method == 'get':
-    url = 'http://www.wego.com/flights/api/%s' % (url)
+    pass
+  """
 
-  data.update({'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'})
-  headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-
+  headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
   response = send_request(url, data, headers, method)
-  response['source'] = 'wego'
+  response['source'] = 'skyscanner'
   return response
+
+
 
 
 def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, display_dates):
@@ -292,29 +295,6 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     return data
 
 
-def parse_wan_live(data):
-    """
-    @summary: parsing function for WeGo api flight search response
-    """
-    bank = []
-    for i in data['response']['routes']:
-        flight = {}
-        flight['fare'] = i['best_fare']['price']
-        flight['link'] = i['best_fare']['deeplink']
-        flight['cabin'] = i['best_fare']['description']
-        flight.update({'inbound_segments': i['inbound_segments'], 'outbound_segments': i['outbound_segments'],})
-        bank.append(flight)
-
-    fare_bank = [i['fare'] for i in bank]
-    if fare_bank:
-      min_fare = min(fare_bank)
-    else:
-      min_fare = None
-
-    return {'success': True, 'flights': bank, 'min_fare': min_fare}
-
-
-
 def cached_search(origin, destination, depart_dates, return_dates):
 
     # this search does not actually find cached fares for the two dates listed
@@ -359,33 +339,6 @@ def cached_search(origin, destination, depart_dates, return_dates):
             data = {'success': False, 'error': 'Data was not parsed'}
 
     return data
-
-
-
-def parse_wan_cached(data):
-    """
-    @summary: parsing function for WeGo api cached search response
-    """
-
-    bank = []
-
-    for i in data['rates'].iterkeys():
-      for k in data['rates'][i]:
-
-        fare = {}
-        fare['depart_date'] = k['outbound']
-        fare['return_date'] = k['inbound']
-        fare['fare'] = k['price_in_usd']
-        bank.append(fare)
-
-    fare_bank = [i['fare'] for i in bank]
-    if fare_bank:
-      max_fare = max(fare_bank)
-    else:
-      max_fare = None
-
-    return {'success': True, 'fares': bank, 'max_fare': max_fare}
-
 
 
 def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
@@ -489,3 +442,148 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
     response['flights_count'] = response['response']['filtered_routes_count']
     return response
+
+
+
+
+
+def call_wan(url, data, method='post'):
+
+  if method == 'post':
+    url = 'http://api.wego.com/flights/api/%s' % (url)
+  elif method == 'get':
+    url = 'http://www.wego.com/flights/api/%s' % (url)
+
+  data.update({'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'})
+  headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+  response = send_request(url, data, headers, method)
+  response['source'] = 'wego'
+  return response
+
+def parse_wan_live(data):
+    """
+    @summary: parsing function for WeGo api flight search response
+    """
+    bank = []
+    for i in data['response']['routes']:
+        flight = {}
+        flight['fare'] = i['best_fare']['price']
+        flight['link'] = i['best_fare']['deeplink']
+        flight['cabin'] = i['best_fare']['description']
+        flight.update({'inbound_segments': i['inbound_segments'], 'outbound_segments': i['outbound_segments'],})
+        bank.append(flight)
+
+    fare_bank = [i['fare'] for i in bank]
+    if fare_bank:
+      min_fare = min(fare_bank)
+    else:
+      min_fare = None
+
+    return {'success': True, 'flights': bank, 'min_fare': min_fare}
+
+def parse_wan_cached(data):
+    """
+    @summary: parsing function for WeGo api cached search response
+    """
+
+    bank = []
+
+    for i in data['rates'].iterkeys():
+      for k in data['rates'][i]:
+
+        fare = {}
+        fare['depart_date'] = k['outbound']
+        fare['return_date'] = k['inbound']
+        fare['fare'] = k['price_in_usd']
+        bank.append(fare)
+
+    fare_bank = [i['fare'] for i in bank]
+    if fare_bank:
+      max_fare = max(fare_bank)
+    else:
+      max_fare = None
+
+    return {'success': True, 'fares': bank, 'max_fare': max_fare}
+
+
+
+
+
+
+
+
+def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
+
+    gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
+    #gateway.use_test_mode = True
+    # gateway.use_test_url = True
+    # use gateway.authorize() for an "authorize only" transaction
+
+    # number, month, year, first_name, last_name, code
+    card = CreditCard(**card_info)
+    if not trans_id:
+        if cust_info:
+            address = Address(**address)
+            customer = AuthCustomer(**cust_info)
+            customer.billing_address = address
+            customer.shipping_address = address
+            response = gateway.sale(str(amt), card, customer=customer)
+        else:
+            response = gateway.sale(str(amt), card)
+    else:
+        response = gateway.credit(str(trans_id), str(amt), card)
+
+    if response.status == response.APPROVED:
+        # this is where you store data from the response object into
+        # your models. The response.trans_id would be used to capture,
+        # void, or credit the sale later.
+
+        success = True
+        status = "Authorize Request: %s</br>Transaction %s = %s: %s" % (gateway.get_last_request().url,response.trans_id,
+                                           response.status_strings[response.status],
+                                           response.message)
+    else:
+        success = False
+        status = "%s - %s" % (response.status_strings[response.status],
+            response.message)
+        #form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([status])
+    return {'success': success, 'status': status, 'trans_id': response.trans_id}
+
+
+def test_trans(request):
+
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    if request.GET:
+        form = PaymentForm(request.GET)
+        if form.is_valid():
+            cd = form.cleaned_data
+            #return HttpResponse(cd)
+            card = {}
+            for i in ('first_name', 'last_name', 'number','month','year','code'):
+                card[i] = cd[i]
+
+            address = {}
+            for i in ('first_name', 'last_name', 'phone', 'address1', 'city', 'state_province', 'country', 'postal_code'):
+                address[i] = cd[i]
+
+            cust_info = {}
+            for i in ('email',):
+                cust_info[i] = cd[i]
+
+            response = run_authnet_trans(123, card, address=address, cust_info=cust_info)
+
+            if response['success']:
+                return HttpResponse(response['status'])
+            else:
+
+                form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
+                return gen_search_display(request, {'form': form}, clean)
+    else:
+        form = PaymentForm()
+        build = {'form': form}
+    return gen_search_display(request, build, clean)

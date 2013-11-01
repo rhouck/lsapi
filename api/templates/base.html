@@ -14,10 +14,9 @@
   <meta name="viewport" content="width=device-width">
 
 
-  <link rel="stylesheet" href="{% static "assets/wfl/css/jquery-ui-1.10.3.custom.min.css" %}">
   <link rel="stylesheet" href="{% static "assets/wfl/style.css" %}">
   <script src="{% static "assets/wfl/js/vendor/modernizr-2.6.2.min.js" %}"></script>
-
+  <script src="{% static "assets/js/jquery.min.js" %}"></script>
   {% block head %}
   {% endblock %}
 
@@ -43,11 +42,12 @@
 
   										    <a href="{% url dashboard %}">Dashboard</a></br>
   										    <a href="{% url admin:index %}">Admin</a></br>
-  												<a href="{% url rep_data_status %}">Check Replicated Data</a></br>
+  												<!-- <a href="{% url rep_data_status %}">Check Replicated Data</a></br> -->
   												<a href="{% url logout %}">Logout</a></br>
   										    </br>
-  										    Product ></br>
-  										    <a href="{% url price_single %}">Single</a></br>
+  										    Pricing ></br>
+  										    <a href="{% url price_single %}">Search</a></br>
+                          <a href="{% url fare_changes %}">Explore</a></br>
   										    </br>
   										    Sales ></br>
                           <a href="{% url purchase %}">Purchase</a></br>
