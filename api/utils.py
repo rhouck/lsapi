@@ -160,7 +160,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
 
 
-
     # cached fare
     res = cached_search(origin, destination, depart_dates, return_dates)
 
@@ -214,7 +213,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               if res['min_fare'] > max_live_fare:
                 max_live_fare = res['min_fare']
 
-    results['fares'] = string_dates(fares)
+    #results['fares'] = string_dates(fares)
 
 
     results = {'fares': None, 'flights': None}

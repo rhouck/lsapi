@@ -53,6 +53,7 @@ class Cash_reserve(models.Model):
 
 
 class Additional_capacity(models.Model):
+
     quantity = models.IntegerField(max_length=6)
 
     class Meta:
@@ -62,7 +63,8 @@ class Additional_capacity(models.Model):
     def recalc_capacity(self, cash):
         # set's its own quantity value according to the rule defined below
         exposure = self.calc_exposure_by_date()
-        simple = math.floor((cash - exposure['max_current_exposure']) / 100.0) - 5
+        excess_risk_per_opt = math.ceil((exposure['max_current_exposure']-exposure['expected_exposure'])/exposure['num_outstanding'])
+        simple = math.floor((cash - exposure['max_current_exposure']) / excess_risk_per_opt) - 5
         rem_cap = max(simple, 0)
         self.quantity = rem_cap
 
@@ -91,15 +93,26 @@ class Additional_capacity(models.Model):
         """
         @summary: this should be used to estimate risk expsore in extreme or 1% scenarios
         """
+        # use multiple, not dollar amount here
+        high_risk_grid = {
+                            '5000': {10: 2.36, 50: 1.31, 100: 0.63, 250: 0.52, 50000: 0.26},
+                            #'1000': {'10': 50, '50': 25, '100': 20, '200': 15, '500': 10},
+                            #'5000': {'10': 70, '50': 50, '100': 40, '200': 25, '500': 20},
+                        }
+
 
         outstanding_options = Contract.objects.filter(search__exp_date__gte = date)
-        #exp_exposure = sum(opt.search.expected_risk for opt in outstanding_options if opt.outstanding())
-        exp_exposure = 123
+        exp_exposure = sum(opt.search.expected_risk for opt in outstanding_options if opt.outstanding())
         num_outstanding = sum(1 for opt in outstanding_options if opt.outstanding())
         if num_outstanding == 0:
             max_current_exposure = 0
         else:
-            max_current_exposure = exp_exposure * 3
+            bank = high_risk_grid['5000'].keys()
+            bank.sort()
+            for i in bank:
+                if num_outstanding <= i:
+                    max_current_exposure = exp_exposure * (high_risk_grid['5000'][i]+1)
+                    break
         js_date = conv_to_js_date(date)
         next_expiration = outstanding_options.aggregate(Min('search__exp_date'))['search__exp_date__min']
 
