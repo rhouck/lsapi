@@ -114,7 +114,6 @@ def exposure(request):
     valid = True
     while valid is True:
         date = now + datetime.timedelta(days = (i * 7))
-        #exposure = calc_exposure_by_date(date=date)
         exposure = capacity.calc_exposure_by_date(date=date)
         expected_exposure.append({'x': exposure['js_date'], 'y': exposure['expected_exposure'], 'count': exposure['num_outstanding']})
         max_exposure.append({'x': exposure['js_date'], 'y': exposure['max_current_exposure']})
