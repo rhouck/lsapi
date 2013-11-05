@@ -21,10 +21,6 @@ from projection import *
 
 
 
-def hello(request):
-    return HttpResponse("Hello")
-
-
 @login_required()
 def replicated_db_status(request):
 
@@ -144,9 +140,9 @@ def exposure(request):
             late = now + datetime.timedelta(days = (i * -7))
             early = late + datetime.timedelta(days = -7)
 
-            total_search =  Search_history.objects.filter(search_date__gte = early, search_date__lte = late).count()
-            total_open_search =  Search_history.objects.filter(search_date__gte = early, search_date__lte = late, open_status = True).count()
-            valid_search =  Search_history.objects.filter(search_date__gte = early, search_date__lte = late, open_status = True, error = None).count()
+            total_search =  Searches.objects.filter(search_date__gte = early, search_date__lte = late).count()
+            total_open_search =  Searches.objects.filter(search_date__gte = early, search_date__lte = late, open_status = True).count()
+            valid_search =  Searches.objects.filter(search_date__gte = early, search_date__lte = late, open_status = True, error = None).count()
             total_purchased =  Contract.objects.filter(purch_date__gte = early, purch_date__lte = late).count()
             total_exercised =  Contract.objects.filter(purch_date__gte = early, purch_date__lte = late, ex_fare__gte = 0).count()
             date = conv_to_js_date(late)
@@ -222,21 +218,21 @@ def exposure(request):
         weeks_back = display_time_frame_wks
         # search flexibility
         cut_off_date = now + datetime.timedelta(weeks = -weeks_back)
-        low_flex =  Search_history.objects.filter(search_date__gte = cut_off_date, total_flexibility__gte = 0, total_flexibility__lte = 2, error = None).count()
-        mid_flex =  Search_history.objects.filter(search_date__gte = cut_off_date, total_flexibility__gte = 3, total_flexibility__lte = 6, error = None).count()
-        high_flex =  Search_history.objects.filter(search_date__gte = cut_off_date, total_flexibility__gte = 7, error = None).count()
+        low_flex =  Searches.objects.filter(search_date__gte = cut_off_date, total_flexibility__gte = 0, total_flexibility__lte = 2, error = None).count()
+        mid_flex =  Searches.objects.filter(search_date__gte = cut_off_date, total_flexibility__gte = 3, total_flexibility__lte = 6, error = None).count()
+        high_flex =  Searches.objects.filter(search_date__gte = cut_off_date, total_flexibility__gte = 7, error = None).count()
         total = (low_flex + mid_flex + high_flex) * 1.0
         search_flex_chart = [["Low Flex (0-2)", round((low_flex/total),2)], ["Mid Flex (3-6)", round((mid_flex/total),2)], ["High Flex (>6)", round((high_flex/total),2)]]
         # search hold_period
-        low_hold =  Search_history.objects.filter(search_date__gte = cut_off_date, holding_per__gte = 1, holding_per__lte = 3, error = None).count()
-        mid_hold =  Search_history.objects.filter(search_date__gte = cut_off_date, holding_per__gte = 4, holding_per__lte = 6, error = None).count()
-        high_hold =  Search_history.objects.filter(search_date__gte = cut_off_date, holding_per__gte = 7, error = None).count()
+        low_hold =  Searches.objects.filter(search_date__gte = cut_off_date, holding_per__gte = 1, holding_per__lte = 3, error = None).count()
+        mid_hold =  Searches.objects.filter(search_date__gte = cut_off_date, holding_per__gte = 4, holding_per__lte = 6, error = None).count()
+        high_hold =  Searches.objects.filter(search_date__gte = cut_off_date, holding_per__gte = 7, error = None).count()
         total = (low_hold + mid_hold + high_hold) * 1.0
         search_hold_chart = [["Short Hold Per (1-3)", round((low_hold/total),2)], ["Med Hold Per (4-6)", round((mid_hold/total),2)], ["Long Hold Per (6>)", round((high_hold/total),2)]]
         # search departure distance
-        short_length =  Search_history.objects.filter(search_date__gte = cut_off_date, time_to_departure__gte = 2, time_to_departure__lte = 5, error = None).count()
-        med_length =  Search_history.objects.filter(search_date__gte = cut_off_date, time_to_departure__gte = 6, time_to_departure__lte = 10, error = None).count()
-        long_length =  Search_history.objects.filter(search_date__gte = cut_off_date, time_to_departure__gte = 11, error = None).count()
+        short_length =  Searches.objects.filter(search_date__gte = cut_off_date, time_to_departure__gte = 2, time_to_departure__lte = 5, error = None).count()
+        med_length =  Searches.objects.filter(search_date__gte = cut_off_date, time_to_departure__gte = 6, time_to_departure__lte = 10, error = None).count()
+        long_length =  Searches.objects.filter(search_date__gte = cut_off_date, time_to_departure__gte = 11, error = None).count()
         total = (short_length + med_length + long_length) * 1.0
         search_dep_len_chart = [["Short dep time (2-5)", round((short_length/total),2)], ["Med dep time (6-10)", round((med_length/total),2)], ["Long dep time (10>)", round((long_length/total),2)]]
     except:
@@ -250,17 +246,20 @@ def exposure(request):
         high_flex =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__total_flexibility__gte = 7).count()
         total = (low_flex + mid_flex + high_flex) * 1.0
         purch_flex_chart = [["Low Flex (0-2)", round((low_flex/total),2)], ["Mid Flex (3-6)", round((mid_flex/total),2)], ["High Flex (>6)", round((high_flex/total),2)]]
+
         # purch hold_period
         low_hold =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__holding_per__gte = 1, search__holding_per__lte = 3).count()
         mid_hold =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__holding_per__gte = 4, search__holding_per__lte = 6).count()
         high_hold =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__holding_per__gte = 7).count()
         total = (low_hold + mid_hold + high_hold) * 1.0
         purch_hold_chart = [["Short Hold Per (1-3)", round((low_hold/total),2)], ["Med Hold Per (4-6)", round((mid_hold/total),2)], ["Long Hold Per (6>)", round((high_hold/total),2)]]
+
         # purch departure distance
-        short_length =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__time_to_departure__gte = 2, search__time_to_departure__lte = 5).count()
-        med_length =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__time_to_departure__gte = 6, search__time_to_departure__lte = 10).count()
-        long_length =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__time_to_departure__gte = 11).count()
+        short_length =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__time_to_departure__gte = -20*7, search__time_to_departure__lte = 5*7).count()
+        med_length =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__time_to_departure__gte = 6*7, search__time_to_departure__lte = 10*7).count()
+        long_length =  Contract.objects.filter(search__search_date__gte = cut_off_date, search__time_to_departure__gte = 11*7).count()
         total = (short_length + med_length + long_length) * 1.0
+        #return HttpResponse(json.dumps(total), mimetype="application/json")
         purch_dep_len_chart = [["Short dep time (2-5)", round((short_length/total),2)], ["Med dep time (6-10)", round((med_length/total),2)], ["Long dep time (10>)", round((long_length/total),2)]]
     except:
         purch_flex_chart = purch_hold_chart = purch_dep_len_chart = []

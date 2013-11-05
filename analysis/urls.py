@@ -5,7 +5,6 @@ from analysis.views import *
 
 urlpatterns = patterns('',
 
-    url(r'^hello/$', hello),
     url(r'^historical/date/$', historical, {'departure_trend': None}, name='hist_date'),
     url(r'^historical/trend/absolute/$', historical, {'departure_trend': 'absolute'}, name='hist_trend_abs'),
     url(r'^historical/trend/relative/$', historical, {'departure_trend': 'relative'}, name='hist_trend_rel'),
@@ -14,7 +13,7 @@ urlpatterns = patterns('',
     url(r'^projection/overlay/absolute/$', overlay, {'departure_trend': 'absolute'}, name='proj_accuracy_abs'),
     url(r'^projection/overlay/relative/$', overlay, {'departure_trend': 'relative'}, name='proj_accuracy_rel'),
     url(r'^simulation/sales/$', simulation_sales, name='sim_analysis'),
-    url(r'^exposure/$', exposure, name='dashboard'),
+    url(r'^dashboard/$', exposure, name='dashboard'),
     url(r'^status/$', replicated_db_status, name='rep_data_status'),
 
 
