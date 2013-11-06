@@ -56,14 +56,17 @@ def send_request(url, data={}, headers=None, method='get'):
     url_values = urllib.urlencode(data)
 
     if method == 'get':
-      url_values = urllib.urlencode(data)
-      full_url = url + '?' + url_values
-      data = urllib2.urlopen(full_url)
+      url = url + '?' + url_values
+      data = urllib2.urlopen(url)
 
     elif method == 'post':
 
       if headers:
         if headers['Content-Type'] == 'application/json':
+          if 'query_params' in data:
+            url_values = urllib.urlencode(data['query_params'])
+            url = url + '?' + url_values
+            del data['query_params']
           url_values = json.dumps(data)
         req = urllib2.Request(url, url_values, headers)
       else:
@@ -82,7 +85,6 @@ def send_request(url, data={}, headers=None, method='get'):
     return {'success': False, 'error': "We failed to reach a server: %s" % (e.reason)}
   except Exception as err:
     return {'success': False, 'error': str(err)}
-
 
 def call_sky(url, data={}, method='get'):
 
@@ -159,7 +161,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         fares.append({'depart_date': depart_date, 'return_date': return_date, 'fare': None, 'method': None})
 
 
-
     # cached fare
     res = cached_search(origin, destination, depart_dates, return_dates)
 
@@ -213,10 +214,9 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               if res['min_fare'] > max_live_fare:
                 max_live_fare = res['min_fare']
 
-    #results['fares'] = string_dates(fares)
+    results['fares'] = string_dates(fares)
+    #results = {'fares': None, 'flights': None}
 
-
-    results = {'fares': None, 'flights': None}
     error = ""
     if results['fares']:
       results['success'] = True
@@ -342,8 +342,6 @@ def cached_search(origin, destination, depart_dates, return_dates):
 
 def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
 
-    return {'success': False, 'error': 'test'}
-
     # format inputs
     def pick_time_window(time_list):
 
@@ -375,7 +373,7 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
 
     # create search
-    url = 'k/2/searches'
+    url = 'searches'
     data = {
             "trips": [
               {
@@ -396,7 +394,7 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
     else:
 
         # pull fares
-        url = 'k/2/fares'
+        url = 'fares'
         data = {
                   # general
                   "id": "%s" % (gen_alphanum_key()),
@@ -448,17 +446,21 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
 def call_wan(url, data, method='post'):
 
+  creds = {'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'}
+
   if method == 'post':
-    url = 'http://api.wego.com/flights/api/%s' % (url)
+    url = 'http://api.wego.com/flights/api/k/2/%s' % (url)
+    data.update({'query_params': creds})
   elif method == 'get':
     url = 'http://www.wego.com/flights/api/%s' % (url)
+    data.update(creds)
 
-  data.update({'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'})
   headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
   response = send_request(url, data, headers, method)
   response['source'] = 'wego'
   return response
+
 
 def parse_wan_live(data):
     """
