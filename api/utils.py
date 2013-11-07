@@ -4,6 +4,7 @@ import string
 import copy
 import time
 import datetime
+from dateutil.parser import parse
 from django.utils.timezone import utc
 import json
 import urllib2
@@ -470,9 +471,59 @@ def parse_wan_live(data):
     for i in data['response']['routes']:
         flight = {}
         flight['fare'] = i['best_fare']['price']
-        flight['link'] = i['best_fare']['deeplink']
+        flight['deeplink'] = i['best_fare']['deeplink']
         flight['cabin'] = i['best_fare']['description']
-        flight.update({'inbound_segments': i['inbound_segments'], 'outbound_segments': i['outbound_segments'],})
+
+        for j in (('departing','outbound'), ('returning','inbound')):
+          flight[j[0]] = {}
+          flight[j[0]]['take_off_airport_code'] = i['%s_segments' % (j[1])][0]['departure_code']
+          flight[j[0]]['take_off_city'] = i['%s_segments' % (j[1])][0]['departure_name']
+          flight[j[0]]['landing_airport_code'] = i['%s_segments' % (j[1])][-1]['arrival_code']
+          flight[j[0]]['landing_city'] = i['%s_segments' % (j[1])][0]['arrival_name']
+          time = i['%s_segments' % (j[1])][0]['departure_time']
+          flight[j[0]]['take_off_time'] = time
+          flight[j[0]]['take_off_weekday'] = parse(time).strftime("%a")
+          time = i['%s_segments' % (j[1])][-1]['arrival_time']
+          flight[j[0]]['landing_time'] = time
+          flight[j[0]]['take_off_weekday'] = parse(time).strftime("%a")
+          flight[j[0]]['number_stops'] = len(i['%s_segments' % (j[1])])-1
+
+          airlines = []
+          for k in i['%s_segments' % (j[1])]:
+            if 'operating_airline_name' in k:
+              if k['operating_airline_name'] not in airlines:
+                airlines.append(k['operating_airline_name'])
+          flight[j[0]]['airline'] = airlines[0] if len(airlines) == 1 else "Multiple"
+
+          flight[j[0]]['detail'] = []
+          flight[j[0]]['layover_times'] = []
+          for ind, k in enumerate(i['%s_segments' % (j[1])]):
+            entry = {}
+            entry['flight_number'] = k['designator_code']
+            entry['take_off_airport_code'] = k['departure_code']
+            entry['take_off_city'] = k['departure_name']
+            entry['landing_airport_code'] = k['arrival_code']
+            entry['landing_city'] = k['arrival_name']
+            dep_time = k['departure_time']
+            entry['take_off_time'] = dep_time
+            entry['take_off_weekday'] = parse(dep_time).strftime("%a")
+
+            # calc layover
+            if ind > 0:
+              minutes = (parse(dep_time)-parse(arr_time)).seconds / 60
+              flight[j[0]]['layover_times'].append(minutes)
+
+            arr_time = k['arrival_time']
+            entry['landing_time'] = arr_time
+            entry['take_off_weekday'] = parse(arr_time).strftime("%a")
+            if 'operating_airline_name' in k:
+              entry['airline'] = k['operating_airline_name']
+            else:
+              entry['airline'] = None
+            entry['airline_code'] = k['airline_code']
+
+            flight[j[0]]['detail'].append(entry)
+
         bank.append(flight)
 
     fare_bank = [i['fare'] for i in bank]

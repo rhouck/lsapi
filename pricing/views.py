@@ -82,7 +82,7 @@ def test_skyscan(request):
 def demo_search_results(request, slug=None):
     flights = return_search_res()
     res = {'success': True, 'flights': flights}
-    return HttpResponse(json.dumps(res), mimetype="application/json")
+    return HttpResponse(json.dumps(res['flights']), mimetype="application/json")
 
 # start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
@@ -184,7 +184,7 @@ def price_edu_combo(request):
 
                 if open_status.get_status():
                     flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
-                    #return HttpResponse(json.dumps(flights), mimetype="application/json")
+                    return HttpResponse(json.dumps(flights['flights']), mimetype="application/json")
                     #flights = {}
                     #flights['flights'] = []
                     #flights['success'] = True
