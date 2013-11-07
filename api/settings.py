@@ -4,7 +4,7 @@ from socket import gethostname
 import sys
 host = gethostname()
 live = 'scheduler.levelskies.com'
-mongo_host = 'localhost'
+mongo_host = '127.0.0.1'
 mongo_port = 27017
 
 DEBUG = True
