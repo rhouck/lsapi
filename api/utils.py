@@ -149,9 +149,11 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
     # run search for display flights
     if display_dates:
+      results['flights'] = None
       if len(display_dates) == 2:
         if display_dates[1] > display_dates[0]:
           display_flights = run_flight_search(origin, destination, display_dates[0], display_dates[1], depart_times, return_times, num_stops, airlines)
+
           #return display_flights
           if display_flights['success']:
             results['flights'] = display_flights['flights']
@@ -227,8 +229,8 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
                 max_live_fare = res['min_fare']
 
 
-    results = {'fares': None, 'flights': None}
     results['fares'] = string_dates(fares)
+    #results = {'fares': None, 'flights': None}
 
     error = ""
     if results['fares']:
