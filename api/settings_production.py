@@ -25,5 +25,5 @@ DATABASES = {
     }
 }
 
-mongo_host = '127.0.0.1'
-mongo_port = 27107
+mongo_host = 'localhost'
+mongo_port = 27017
