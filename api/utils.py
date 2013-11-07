@@ -1,4 +1,19 @@
-import pymongo
+from settings import mongo_host, mongo_port
+
+try:
+    import czjson as json
+    json.encode = json.dumps
+    json.decode = json.loads
+except ImportError:
+    try:
+        import cjson as json
+    except ImportError:
+        import json
+        json.encode = json.dumps
+        json.decode = json.loads
+from pymongo import MongoClient
+mongo = MongoClient(mongo_host, mongo_port)
+
 from random import randint, choice
 import string
 import copy
@@ -6,7 +21,6 @@ import time
 import datetime
 from dateutil.parser import parse
 from django.utils.timezone import utc
-import json
 import urllib2
 import urllib
 from django.http import HttpResponse
@@ -16,14 +30,11 @@ from django.contrib.sites.models import Site
 from quix.pay.gateway.authorizenet import AimGateway
 from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
 
-
-from settings import host,live
-
 from functions import find_sub_index_dict
 
 
 def check_creds(inps,model):
-    #return HttpResponse(json.dumps({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
+    #return HttpResponse(json.encode({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
     #platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
     if 'platform_key' not in inps:
         return {'success': False, 'error': 'platform_key not sent'}
@@ -68,7 +79,7 @@ def send_request(url, data={}, headers=None, method='get'):
             url_values = urllib.urlencode(data['query_params'])
             url = url + '?' + url_values
             del data['query_params']
-          url_values = json.dumps(data)
+          url_values = json.encode(data)
         req = urllib2.Request(url, url_values, headers)
       else:
         req = urllib2.Request(url, url_values)
@@ -78,7 +89,7 @@ def send_request(url, data={}, headers=None, method='get'):
     else:
       raise Exception("Impropper method: '%s'" % method)
 
-    return {'success': True, 'response': json.loads(data.read())}
+    return {'success': True, 'response': json.decode(data.read())}
 
   except urllib2.HTTPError as e:
     return {'success': False, 'error': "The server couldn't fulfill the request: %s - %s" % (e.code, e.reason)}
@@ -257,8 +268,6 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     current_time = current_time_aware()
     current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
 
-    mongo = pymongo.MongoClient()
-
     data = None
     for i in range(2):
         # check if search has already been cached
@@ -324,7 +333,6 @@ def cached_search(origin, destination, depart_dates, return_dates):
 
     if response['success']:
       if response['response']['rates']:
-        mongo = pymongo.MongoClient()
         cached_res = mongo.flight_search.cached.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
         mongo.disconnect()
 
