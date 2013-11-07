@@ -227,7 +227,7 @@ def price_edu_combo(request):
 
                 if open_status.get_status():
                     flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
-                    return HttpResponse(json.encode(flights), mimetype="application/json")
+                    #return HttpResponse(json.encode(flights), mimetype="application/json")
                     #flights = {}
                     #flights['flights'] = []
                     #flights['success'] = True
