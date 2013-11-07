@@ -79,12 +79,43 @@ def test_skyscan(request):
     return HttpResponse(json.dumps(res), mimetype="application/json")
 
 
-def demo_search_results(request, slug=None):
-    #flights = return_search_res()
-    #res = {'success': True, 'flights': flights}
-    res = run_flight_search('SFO', 'MAD', datetime.date(2013,11,20), datetime.date(2013,11,25), 'any', 'any', 'any', 'any')
+def display_current_flights(request, slug):
+
+    inputs = request.GET if request.GET else None
+    form = flights_display(inputs)
+
+
+    if not request.user.is_authenticated():
+        cred = check_creds(inputs, Platform)
+        if not cred['success']:
+            return HttpResponse(json.dumps(cred), mimetype="application/json")
+
+    try:
+        if not form.is_valid():
+            raise Exception("Valid travel dates not provided: depart_date & return_date")
+
+        cd = form.cleaned_data
+        search = Searches.objects.get(key__iexact=slug)
+        airlines = 'any'
+        res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
+
+        # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
+        # or the purchase occured after too much time had passed, and the quoted price is deemed expired
+        purch_date_time = current_time_aware()
+        search_date_date = search.search_date
+        expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+
+        if search.error or not search.get_status() or expired:
+            raise Exception("The search is expired, had an error, or was made while sales were shut off")
+
+    except (Searches.DoesNotExist):
+        res = {'success': False, 'error': 'The option id entered is not valid.'}
+    except Exception as err:
+        res = {'success': False, 'error': str(err)}
 
     return HttpResponse(json.dumps(res), mimetype="application/json")
+
+
 
 # start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
@@ -110,7 +141,7 @@ def search_info(request, slug, all=False):
     search_date_date = search.search_date
 
     if not all:
-        expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 10) else False
+        expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
         if expired:
             return HttpResponse(json.dumps({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), mimetype="application/json")
 

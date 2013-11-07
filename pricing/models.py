@@ -4,6 +4,7 @@ class Searches(models.Model):
     search_date = models.DateTimeField('date / time searched')
     open_status = models.BooleanField('available capacity')
     key = models.CharField(max_length=10, blank=True, null=True)
+
     # from search inputs
     origin_code = models.CharField(max_length=20)
     destination_code = models.CharField(max_length=20)
@@ -16,7 +17,6 @@ class Searches(models.Model):
     depart_times = models.CharField('departure time preference', max_length=25)
     return_times = models.CharField('return time preference', max_length=25)
     convenience = models.CharField('non-stop flight preference', max_length=25)
-
 
     # returned from search results
     exp_date = models.DateField('expiration date', blank=True, null=True)
