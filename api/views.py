@@ -1,7 +1,17 @@
 import datetime
 import time
 import sys
-import json
+try:
+    import czjson as json
+    json.encode = json.dumps
+    json.decode = json.loads
+except ImportError:
+    try:
+        import cjson as json
+    except ImportError:
+        import json
+        json.encode = json.dumps
+        json.decode = json.loads
 
 from django.template.loader import get_template
 from django.template import Context
@@ -34,7 +44,7 @@ def gen_search_display(request, build, clean, method=None):
             build['results'] = build['results'][0]
     if clean:
         if 'results' in build:
-            return HttpResponse(json.dumps(build['results']), mimetype="application/json")
+            return HttpResponse(json.encode(build['results']), mimetype="application/json")
         else:
             return render_to_response('blank.html')
     else:
@@ -48,7 +58,7 @@ def gen_search_display(request, build, clean, method=None):
 def hello(request):
     url = "https://www.google.com/"
     ex = {'url': url}
-    return HttpResponse(json.dumps(ex), mimetype="application/json")
+    return HttpResponse(json.encode(ex), mimetype="application/json")
     #return HttpResponse(request.path)
 
 

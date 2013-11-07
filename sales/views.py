@@ -7,7 +7,17 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import copy
 import datetime
 import socket
-import json
+try:
+    import czjson as json
+    json.encode = json.dumps
+    json.decode = json.loads
+except ImportError:
+    try:
+        import cjson as json
+    except ImportError:
+        import json
+        json.encode = json.dumps
+        json.decode = json.loads
 
 from api.views import gen_search_display
 from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
@@ -135,7 +145,7 @@ def customer_info(request, slug):
     if not request.user.is_authenticated():
         cred = check_creds(inputs, Platform)
         if not cred['success']:
-            return HttpResponse(json.dumps(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), mimetype="application/json")
 
     if inputs:
         if 'platform_key' in inputs:
@@ -179,7 +189,7 @@ def customer_info(request, slug):
 
 
     return gen_search_display(request, build, clean)
-    #return HttpResponse(json.dumps(cust_dict), mimetype="application/json")
+    #return HttpResponse(json.encode(cust_dict), mimetype="application/json")
 
 
 
@@ -189,7 +199,7 @@ def find_open_contracts(request, slug):
     if not request.user.is_authenticated():
         cred = check_creds(request.GET, Platform)
         if not cred['success']:
-            return HttpResponse(json.dumps(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), mimetype="application/json")
 
 
 
@@ -249,7 +259,7 @@ def find_cust_id(request):
             here = "didnt work"
 
     #check = {'inputs': inputs, 'form_val': form.is_valid()}
-    #return HttpResponse(json.dumps(check), mimetype="application/json")
+    #return HttpResponse(json.encode(check), mimetype="application/json")
     return gen_search_display(request, build, clean)
 
 
@@ -265,7 +275,7 @@ def customer_signup(request):
     if clean:
         cred = check_creds(request.POST, Platform)
         if not cred['success']:
-            return HttpResponse(json.dumps(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), mimetype="application/json")
 
     form = Customer_signup(inputs)
     build = {'form': form, 'cust_title': "Customer Signup"}
@@ -315,7 +325,7 @@ def purchase_option(request):
     if clean:
         cred = check_creds(request.POST, Platform)
         if not cred['success']:
-            return HttpResponse(json.dumps(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), mimetype="application/json")
 
 
 
@@ -498,7 +508,7 @@ def add_to_staging(request, action, slug):
     if clean:
         cred = check_creds(request.POST, Platform)
         if not cred['success']:
-            return HttpResponse(json.dumps(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), mimetype="application/json")
 
 
 
@@ -507,7 +517,7 @@ def add_to_staging(request, action, slug):
 
     try:
         find_stage = Staging.objects.get(contract=find_contract)
-        return HttpResponse(json.dumps({'success': False, 'error': 'Already staged'}), mimetype="application/json")
+        return HttpResponse(json.encode({'success': False, 'error': 'Already staged'}), mimetype="application/json")
     except (Staging.DoesNotExist):
 
         exercise = True if action == 'exercise' else False
@@ -519,7 +529,7 @@ def add_to_staging(request, action, slug):
         if form.is_valid():
             cd = form.cleaned_data
             if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
-                return HttpResponse(json.dumps({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
+                return HttpResponse(json.encode({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
 
             if 'dep_date' in cd:
                 staged_cont.dep_date = cd['dep_date']
@@ -533,12 +543,12 @@ def add_to_staging(request, action, slug):
         staged_cont.save()
 
         if clean:
-            return HttpResponse(json.dumps({'success': True}), mimetype="application/json")
+            return HttpResponse(json.encode({'success': True}), mimetype="application/json")
         else:
             return HttpResponseRedirect(reverse('staged_item', kwargs={'slug': slug}))
 
     except Exception as err:
-        return HttpResponse(json.dumps({'success': False, 'error': '%s' % (err)}), mimetype="application/json")
+        return HttpResponse(json.encode({'success': False, 'error': '%s' % (err)}), mimetype="application/json")
 
 
 
