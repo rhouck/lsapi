@@ -36,10 +36,11 @@ class full_option_info(forms.Form):
     depart_times = forms.CharField()
     return_times = forms.CharField()
     convenience = forms.CharField()
+
     # select flight search results display
     #show_flights = forms.BooleanField(required=False, initial=True)
-    disp_depart_date = forms.DateField(required=False)
-    disp_return_date = forms.DateField(required=False)
+    #disp_depart_date = forms.DateField(required=False)
+    #disp_return_date = forms.DateField(required=False)
 
 
 class flights_display(forms.Form):

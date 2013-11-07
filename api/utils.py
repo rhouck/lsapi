@@ -120,7 +120,7 @@ def call_sky(url, data={}, method='get'):
 
 
 
-def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, display_dates):
+def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines):
     """
     @summary:
       1. *** to do *** run live search on one likely expensive pair of dates
@@ -174,10 +174,9 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         return_date = return_dates[0] + datetime.timedelta(days=k)
         fares.append({'depart_date': depart_date, 'return_date': return_date, 'fare': None, 'method': None})
 
-
+    """
     # cached fare
     res = cached_search(origin, destination, depart_dates, return_dates)
-
     if res['fares']:
       for i in res['fares']:
         where = copy.deepcopy(i)
@@ -186,10 +185,10 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         if ind:
           fares[ind[0]]['fare'] = i['fare']
           fares[ind[0]]['method'] = 'api_cached'
+    """
 
 
-
-
+    """
     # check mongo for existing flight searches
     for i in range(dep_range + 1):
       depart_date = depart_dates[0] + datetime.timedelta(days=i)
@@ -207,7 +206,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
             fares[ind[0]]['method'] = res['method']
             if res['min_fare'] > max_live_fare:
               max_live_fare = res['min_fare']
-
+    """
 
 
 
@@ -272,25 +271,25 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
 
     data = None
-    for i in range(2):
-        # check if search has already been cached
-        res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
 
-        if res.count():
-            # return search results if already cached
-            data = res[0]
-            if i == 0:
-              method = "cached"
+    # check if search has already been cached
+    res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
 
-        else:
-            # run search if not already cached
-            if not cache_only:
-              response = live_search(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+    if res.count():
+        # return search results if already cached
+        data = res[0]
+        method = "cached"
 
-              if response['success']:
-                if response['flights_count']:
-                    search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
-                    method = "live"
+    else:
+        # run search if not already cached
+        if not cache_only:
+          response = live_search(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+
+          if response['success']:
+            if response['flights_count']:
+                search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+                method = "live"
+                data = response
 
     mongo.disconnect()
 
@@ -397,6 +396,7 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
             ],
             "adults_count": 1
           }
+
     response = call_wan(url, data)
 
     if not response['success']:
@@ -435,14 +435,14 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
         data.update({'search_id': response['response']['id'], 'trip_id': response['response']['trips'][0]['id']})
 
-        time.sleep(0.5)
+        time.sleep(1)
         response = call_wan(url, data)
 
         # if no results, try two more times since it occasionally returns zero routes
         counter = 1
         while counter <= 2:
             if response['success'] and response['response']['filtered_routes_count'] == 0:
-                time.sleep(0.5)
+                time.sleep(1)
                 response = call_wan(url, data)
                 counter += 1
             else:

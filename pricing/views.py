@@ -226,17 +226,17 @@ def price_edu_combo(request):
                 combined = dict(general.items() + model_in.items())
 
                 if open_status.get_status():
-                    flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
-                    #return HttpResponse(json.encode(flights), mimetype="application/json")
+                    flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
+                    return HttpResponse(json.encode(flights), mimetype="application/json")
                     #flights = {}
                     #flights['flights'] = []
                     #flights['success'] = True
                     #flights['fares'] = [{'fare': 12},{'fare': 15}]
                     if flights['success']:
                         prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
-
-                        model_out = {'holding_price': (prices['locked_fare']-prices['refund_value']), 'locked_fare': prices['refund_value'], 'expected_risk': prices['expected_risk'],
-                                        'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['dep_time'], 'error': prices['error'] }
+                        #return HttpResponse(json.encode(prices), mimetype="application/json")
+                        model_out = {'holding_price': prices['holding_price'], 'locked_fare': prices['locked_fare'], 'expected_risk': prices['expected_risk'],
+                                        'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['time_to_departure'], 'error': prices['error'] }
                     else:
                         model_out = {'error': flights['error']}
 
@@ -254,8 +254,8 @@ def price_edu_combo(request):
 
                 if not model_out['error']:
                     combined_results.update({'success': True})
-                    if cd['disp_depart_date'] and cd['disp_return_date']:
-                        combined_results.update({'flights': flights['flights']})
+                    #if cd['disp_depart_date'] and cd['disp_return_date']:
+                    #    combined_results.update({'flights': flights['flights']})
                 else:
                     combined_results.update({'success': False})
 
