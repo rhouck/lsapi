@@ -28,6 +28,22 @@ from api.utils import *
 
 from temp import return_search_res
 
+def test_wan(request):
+    url = 'searches'
+    data = {
+              "trips": [
+                {
+                  "departure_code": "SIN",
+                  "arrival_code": "HKG",
+                  "outbound_date": "2013-11-13",
+                  "inbound_date": "2013-11-20"
+                }
+              ],
+              "adults_count": 1
+            }
+    res = call_wan(url, data, method='post')
+    return HttpResponse(json.dumps(res), mimetype="application/json")
+
 def test_skyscan(request):
     """
     # grid search
@@ -66,7 +82,7 @@ def test_skyscan(request):
 def demo_search_results(request, slug=None):
     flights = return_search_res()
     res = {'success': True, 'flights': flights}
-    return HttpResponse(json.dumps(res), mimetype="application/json")
+    return HttpResponse(json.dumps(res['flights']), mimetype="application/json")
 
 # start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
@@ -167,14 +183,14 @@ def price_edu_combo(request):
                 combined = dict(general.items() + model_in.items())
 
                 if open_status.get_status():
-                    #flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
-                    #return HttpResponse(json.dumps(flights), mimetype="application/json")
-                    flights = {}
-                    flights['flights'] = []
-                    flights['success'] = True
-                    flights['min_fare'] = [10,12]
+                    flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
+                    return HttpResponse(json.dumps(flights['flights']), mimetype="application/json")
+                    #flights = {}
+                    #flights['flights'] = []
+                    #flights['success'] = True
+                    #flights['fares'] = [{'fare': 12},{'fare': 15}]
                     if flights['success']:
-                        prices = calc_price(cd['origin_code'], cd['destination_code'], flights['min_fare'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
+                        prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
 
                         model_out = {'holding_price': (prices['locked_fare']-prices['refund_value']), 'locked_fare': prices['refund_value'], 'expected_risk': prices['expected_risk'],
                                         'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['dep_time'], 'error': prices['error'] }

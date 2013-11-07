@@ -4,6 +4,7 @@ import string
 import copy
 import time
 import datetime
+from dateutil.parser import parse
 from django.utils.timezone import utc
 import json
 import urllib2
@@ -56,14 +57,17 @@ def send_request(url, data={}, headers=None, method='get'):
     url_values = urllib.urlencode(data)
 
     if method == 'get':
-      url_values = urllib.urlencode(data)
-      full_url = url + '?' + url_values
-      data = urllib2.urlopen(full_url)
+      url = url + '?' + url_values
+      data = urllib2.urlopen(url)
 
     elif method == 'post':
 
       if headers:
         if headers['Content-Type'] == 'application/json':
+          if 'query_params' in data:
+            url_values = urllib.urlencode(data['query_params'])
+            url = url + '?' + url_values
+            del data['query_params']
           url_values = json.dumps(data)
         req = urllib2.Request(url, url_values, headers)
       else:
@@ -82,7 +86,6 @@ def send_request(url, data={}, headers=None, method='get'):
     return {'success': False, 'error': "We failed to reach a server: %s" % (e.reason)}
   except Exception as err:
     return {'success': False, 'error': str(err)}
-
 
 def call_sky(url, data={}, method='get'):
 
@@ -159,7 +162,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         fares.append({'depart_date': depart_date, 'return_date': return_date, 'fare': None, 'method': None})
 
 
-
     # cached fare
     res = cached_search(origin, destination, depart_dates, return_dates)
 
@@ -213,10 +215,9 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               if res['min_fare'] > max_live_fare:
                 max_live_fare = res['min_fare']
 
-    #results['fares'] = string_dates(fares)
+    results['fares'] = string_dates(fares)
+    #results = {'fares': None, 'flights': None}
 
-
-    results = {'fares': None, 'flights': None}
     error = ""
     if results['fares']:
       results['success'] = True
@@ -342,8 +343,6 @@ def cached_search(origin, destination, depart_dates, return_dates):
 
 def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
 
-    return {'success': False, 'error': 'test'}
-
     # format inputs
     def pick_time_window(time_list):
 
@@ -375,7 +374,7 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
 
     # create search
-    url = 'k/2/searches'
+    url = 'searches'
     data = {
             "trips": [
               {
@@ -396,7 +395,7 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
     else:
 
         # pull fares
-        url = 'k/2/fares'
+        url = 'fares'
         data = {
                   # general
                   "id": "%s" % (gen_alphanum_key()),
@@ -448,17 +447,21 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
 def call_wan(url, data, method='post'):
 
+  creds = {'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'}
+
   if method == 'post':
-    url = 'http://api.wego.com/flights/api/%s' % (url)
+    url = 'http://api.wego.com/flights/api/k/2/%s' % (url)
+    data.update({'query_params': creds})
   elif method == 'get':
     url = 'http://www.wego.com/flights/api/%s' % (url)
+    data.update(creds)
 
-  data.update({'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'})
   headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
   response = send_request(url, data, headers, method)
   response['source'] = 'wego'
   return response
+
 
 def parse_wan_live(data):
     """
@@ -468,9 +471,59 @@ def parse_wan_live(data):
     for i in data['response']['routes']:
         flight = {}
         flight['fare'] = i['best_fare']['price']
-        flight['link'] = i['best_fare']['deeplink']
+        flight['deeplink'] = i['best_fare']['deeplink']
         flight['cabin'] = i['best_fare']['description']
-        flight.update({'inbound_segments': i['inbound_segments'], 'outbound_segments': i['outbound_segments'],})
+
+        for j in (('departing','outbound'), ('returning','inbound')):
+          flight[j[0]] = {}
+          flight[j[0]]['take_off_airport_code'] = i['%s_segments' % (j[1])][0]['departure_code']
+          flight[j[0]]['take_off_city'] = i['%s_segments' % (j[1])][0]['departure_name']
+          flight[j[0]]['landing_airport_code'] = i['%s_segments' % (j[1])][-1]['arrival_code']
+          flight[j[0]]['landing_city'] = i['%s_segments' % (j[1])][0]['arrival_name']
+          time = i['%s_segments' % (j[1])][0]['departure_time']
+          flight[j[0]]['take_off_time'] = time
+          flight[j[0]]['take_off_weekday'] = parse(time).strftime("%a")
+          time = i['%s_segments' % (j[1])][-1]['arrival_time']
+          flight[j[0]]['landing_time'] = time
+          flight[j[0]]['take_off_weekday'] = parse(time).strftime("%a")
+          flight[j[0]]['number_stops'] = len(i['%s_segments' % (j[1])])-1
+
+          airlines = []
+          for k in i['%s_segments' % (j[1])]:
+            if 'operating_airline_name' in k:
+              if k['operating_airline_name'] not in airlines:
+                airlines.append(k['operating_airline_name'])
+          flight[j[0]]['airline'] = airlines[0] if len(airlines) == 1 else "Multiple"
+
+          flight[j[0]]['detail'] = []
+          flight[j[0]]['layover_times'] = []
+          for ind, k in enumerate(i['%s_segments' % (j[1])]):
+            entry = {}
+            entry['flight_number'] = k['designator_code']
+            entry['take_off_airport_code'] = k['departure_code']
+            entry['take_off_city'] = k['departure_name']
+            entry['landing_airport_code'] = k['arrival_code']
+            entry['landing_city'] = k['arrival_name']
+            dep_time = k['departure_time']
+            entry['take_off_time'] = dep_time
+            entry['take_off_weekday'] = parse(dep_time).strftime("%a")
+
+            # calc layover
+            if ind > 0:
+              minutes = (parse(dep_time)-parse(arr_time)).seconds / 60
+              flight[j[0]]['layover_times'].append(minutes)
+
+            arr_time = k['arrival_time']
+            entry['landing_time'] = arr_time
+            entry['take_off_weekday'] = parse(arr_time).strftime("%a")
+            if 'operating_airline_name' in k:
+              entry['airline'] = k['operating_airline_name']
+            else:
+              entry['airline'] = None
+            entry['airline_code'] = k['airline_code']
+
+            flight[j[0]]['detail'].append(entry)
+
         bank.append(flight)
 
     fare_bank = [i['fare'] for i in bank]

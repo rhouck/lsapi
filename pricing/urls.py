@@ -12,5 +12,6 @@ urlpatterns = patterns('',
     url(r'^search_results/$', demo_search_results),
     url(r'^search/flights/(?P<slug>[-\w]{6})/$', demo_search_results),
     url(r'^sky/$', test_skyscan),
+    url(r'^wan/$', test_wan),
 )
 
