@@ -390,7 +390,7 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
     if not response['success']:
 
-        return HttpResponse(json.dumps({'success': False, 'error': "Could not complete 'Searches' call: %s" % (response['error'])}), mimetype="application/json")
+        return {'success': False, 'error': "Could not complete 'Searches' call: %s" % (response['error'])}
 
     else:
 
@@ -438,8 +438,8 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
                 break
 
 
-    response['flights_count'] = response['response']['filtered_routes_count']
-    return response
+        response['flights_count'] = response['response']['filtered_routes_count']
+        return response
 
 
 
