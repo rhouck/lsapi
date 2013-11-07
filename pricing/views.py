@@ -16,7 +16,17 @@ from pricing.models import Searches
 from sales.models import Platform
 from analysis.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key, conv_to_js_date
-
+try:
+    import czjson as json
+    json.encode = json.dumps
+    json.decode = json.loads
+except ImportError:
+    try:
+        import cjson as json
+    except ImportError:
+        import json
+        json.encode = json.dumps
+        json.decode = json.loads
 
 from functions import *
 from gen_price import *
@@ -42,21 +52,21 @@ def test_wan(request):
               "adults_count": 1
             }
     res = call_wan(url, data, method='post')
-    return HttpResponse(json.dumps(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), mimetype="application/json")
 
 def test_skyscan(request):
     """
     # grid search
     url = 'browsegrid/v1.0/GB/GBP/en-GB/LHR/FRA/2013-12/2014-01'
     res = call_sky(url, data={}, method='get')
-    return HttpResponse(json.dumps(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), mimetype="application/json")
     """
 
     """
     # price caching api - seems to pull cached fare on specific flight
     url = 'pricing/v1.0/GB/GBP/en-GB/LHR/FRA/2013-12/2014-01'
     res = call_sky(url, method='get')
-    return HttpResponse(json.dumps(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), mimetype="application/json")
     """
 
 
@@ -76,7 +86,7 @@ def test_skyscan(request):
             }
 
     res = call_sky(url, data, method='post')
-    return HttpResponse(json.dumps(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), mimetype="application/json")
 
 
 def demo_search_results(request, slug=None):
@@ -84,7 +94,7 @@ def demo_search_results(request, slug=None):
     #res = {'success': True, 'flights': flights}
     res = run_flight_search('SFO', 'MAD', datetime.date(2013,11,20), datetime.date(2013,11,25), 'any', 'any', 'any', 'any')
 
-    return HttpResponse(json.dumps(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), mimetype="application/json")
 
 # start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
@@ -102,7 +112,7 @@ def search_info(request, slug, all=False):
     if not request.user.is_authenticated():
         cred = check_creds(request.GET, Platform)
         if not cred['success']:
-            return HttpResponse(json.dumps(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), mimetype="application/json")
 
     search = get_object_or_404(Searches, key__iexact=slug)
 
@@ -112,7 +122,7 @@ def search_info(request, slug, all=False):
     if not all:
         expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 10) else False
         if expired:
-            return HttpResponse(json.dumps({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), mimetype="application/json")
+            return HttpResponse(json.encode({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), mimetype="application/json")
 
     search_dict = search.__dict__
 
@@ -131,7 +141,7 @@ def search_info(request, slug, all=False):
     search_dict = refund_format_conversion(search_dict)
 
     search_dict['success'] = True
-    return HttpResponse(json.dumps(search_dict), mimetype="application/json")
+    return HttpResponse(json.encode(search_dict), mimetype="application/json")
 
 def select_geography(hub):
     """
@@ -163,7 +173,7 @@ def price_edu_combo(request):
             if clean:
                 cred = check_creds(request.POST, Platform)
                 if not cred['success']:
-                    return HttpResponse(json.dumps(cred), mimetype="application/json")
+                    return HttpResponse(json.encode(cred), mimetype="application/json")
 
 
             form = full_option_info(request.POST)
@@ -171,7 +181,7 @@ def price_edu_combo(request):
                 cd = form.cleaned_data
                 #inp_errors = sim_errors(self.db, cd['origin_code'], cd['destination_code'],self.lockin_per,self.start_date,self.d_date1,self.d_date2,self.r_date1,self.r_date2,self.final_proj_week, self.max_trip_length, self.geography)
                 #flights = pull_fares_range(, , (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
-                #return HttpResponse(json.dumps({'inputs': cd}), mimetype="application/json")
+                #return HttpResponse(json.encode({'inputs': cd}), mimetype="application/json")
 
 
                 open_status = Open.objects.get(pk=1)
@@ -186,7 +196,7 @@ def price_edu_combo(request):
 
                 if open_status.get_status():
                     flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
-                    #return HttpResponse(json.dumps(flights), mimetype="application/json")
+                    #return HttpResponse(json.encode(flights), mimetype="application/json")
                     #flights = {}
                     #flights['flights'] = []
                     #flights['success'] = True
