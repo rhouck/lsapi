@@ -146,7 +146,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     results = {}
     max_live_fare = None
 
-
+    """
     # run search for display flights
     if display_dates:
       results['flights'] = None
@@ -158,7 +158,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
           if display_flights['success']:
             results['flights'] = display_flights['flights']
             max_live_fare = display_flights['min_fare']
-
+    """
 
 
     dep_range = (depart_dates[1] - depart_dates[0]).days
@@ -239,7 +239,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       results['success'] = False
       error += "Couldn't find minimum fares for date combinations."
       results['error'] = error
-
+    """
     if display_dates:
       if not results['flights']:
         results['success'] = False
@@ -247,7 +247,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
           error += " "
         error += "Couldn't build list of current flights for display dates."
         results['error'] = error
-
+    """
     return results
 
 
