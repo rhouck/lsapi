@@ -226,19 +226,18 @@ def price_edu_combo(request):
                 combined = dict(general.items() + model_in.items())
 
                 if open_status.get_status():
-                    flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
-                    #return HttpResponse(json.encode(flights), mimetype="application/json")
-                    #flights = {}
-                    #flights['flights'] = []
-                    #flights['success'] = True
-                    #flights['fares'] = [{'fare': 12},{'fare': 15}]
-                    if flights['success']:
-                        prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
-                        #return HttpResponse(json.encode(prices), mimetype="application/json")
-                        model_out = {'holding_price': prices['holding_price'], 'locked_fare': prices['locked_fare'], 'expected_risk': prices['expected_risk'],
-                                        'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['time_to_departure'], 'error': prices['error'] }
+                    if (cd['depart_date2'] - cd['depart_date1']).days > 1 or (cd['return_date2'] - cd['return_date1']).days > 1:
+                        model_out = {'error': 'Travel date ranges must not be more than one day in length'}
                     else:
-                        model_out = {'error': flights['error']}
+                        flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
+                        #return HttpResponse(json.encode(flights), mimetype="application/json")
+
+                        if flights['success']:
+                            prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
+                            model_out = {'holding_price': prices['holding_price'], 'locked_fare': prices['locked_fare'], 'expected_risk': prices['expected_risk'],
+                                            'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['time_to_departure'], 'error': prices['error'] }
+                        else:
+                            model_out = {'error': flights['error']}
 
 
                 # save in model
@@ -249,7 +248,8 @@ def price_edu_combo(request):
 
 
                 # add current flight list if no errors and 'show_flights' is true
-                model_out = refund_format_conversion(model_out)
+                if not model_out['error']:
+                    model_out = refund_format_conversion(model_out)
                 combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
 
                 if not model_out['error']:

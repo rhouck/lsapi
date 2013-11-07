@@ -491,12 +491,13 @@ def parse_wan_live(data):
           flight[j[0]]['take_off_city'] = i['%s_segments' % (j[1])][0]['departure_name']
           flight[j[0]]['landing_airport_code'] = i['%s_segments' % (j[1])][-1]['arrival_code']
           flight[j[0]]['landing_city'] = i['%s_segments' % (j[1])][0]['arrival_name']
-          time = i['%s_segments' % (j[1])][0]['departure_time']
-          flight[j[0]]['take_off_time'] = time
-          flight[j[0]]['take_off_weekday'] = parse(time).strftime("%a")
-          time = i['%s_segments' % (j[1])][-1]['arrival_time']
-          flight[j[0]]['landing_time'] = time
-          flight[j[0]]['take_off_weekday'] = parse(time).strftime("%a")
+          beg_time = i['%s_segments' % (j[1])][0]['departure_time']
+          flight[j[0]]['take_off_time'] = beg_time
+          flight[j[0]]['take_off_weekday'] = parse(beg_time).strftime("%a")
+          end_time = i['%s_segments' % (j[1])][-1]['arrival_time']
+          flight[j[0]]['landing_time'] = end_time
+          flight[j[0]]['take_off_weekday'] = parse(end_time).strftime("%a")
+          flight[j[0]]['trip_duration'] = (parse(end_time)-parse(beg_time)).seconds / 60
           flight[j[0]]['number_stops'] = len(i['%s_segments' % (j[1])])-1
 
           airlines = []
