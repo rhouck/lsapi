@@ -484,6 +484,9 @@ def parse_wan_live(data):
         flight['fare'] = i['best_fare']['price']
         flight['deeplink'] = i['best_fare']['deeplink']
         flight['cabin'] = i['best_fare']['description']
+        #flight['departing'] = i['outbound_segments']
+        #flight['returning'] = i['inbound_segments']
+
 
         for j in (('departing','outbound'), ('returning','inbound')):
           flight[j[0]] = {}
@@ -496,7 +499,7 @@ def parse_wan_live(data):
           flight[j[0]]['take_off_weekday'] = parse(beg_time).strftime("%a")
           end_time = i['%s_segments' % (j[1])][-1]['arrival_time']
           flight[j[0]]['landing_time'] = end_time
-          flight[j[0]]['take_off_weekday'] = parse(end_time).strftime("%a")
+          flight[j[0]]['landing_weekday'] = parse(end_time).strftime("%a")
           flight[j[0]]['trip_duration'] = (parse(end_time)-parse(beg_time)).seconds / 60
           flight[j[0]]['number_stops'] = len(i['%s_segments' % (j[1])])-1
 
@@ -527,7 +530,9 @@ def parse_wan_live(data):
 
             arr_time = k['arrival_time']
             entry['landing_time'] = arr_time
-            entry['take_off_weekday'] = parse(arr_time).strftime("%a")
+            entry['duration'] = (parse(arr_time)-parse(dep_time)).seconds / 60
+            entry['landing_weekday'] = parse(arr_time).strftime("%a")
+
             if 'operating_airline_name' in k:
               entry['airline'] = k['operating_airline_name']
             else:
