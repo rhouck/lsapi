@@ -1,4 +1,4 @@
-from settings import host, live, mongo_host, mongo_port
+from settings import mongo_host, mongo_port
 
 try:
     import czjson as json
