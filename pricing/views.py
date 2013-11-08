@@ -13,7 +13,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
 from pricing.models import Searches
-from sales.models import Platform
+from sales.models import Platform, Contract
 from analysis.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key, conv_to_js_date
 try:
@@ -89,7 +89,7 @@ def test_skyscan(request):
     return HttpResponse(json.encode(res), mimetype="application/json")
 
 
-def display_current_flights(request, slug):
+def display_current_flights(request, slug, convert=False):
 
     inputs = request.GET if request.GET else None
     form = flights_display(inputs)
@@ -106,20 +106,39 @@ def display_current_flights(request, slug):
 
         cd = form.cleaned_data
         search = Searches.objects.get(key__iexact=slug)
+
+        if convert:
+            # raise error if contract has not outstanding or has already been marked for staging process
+            contract = Contract.objects.get(search__key__iexact=slug)
+            if not contract.outstanding() or contract.staged():
+                raise Exception("This contract is no longer valid or has already been converted.")
+        else:
+            # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
+            # or the purchase occured after too much time had passed, and the quoted price is deemed expired
+            purch_date_time = current_time_aware()
+            search_date_date = search.search_date
+            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+
+            if search.error or not search.get_status() or expired:
+                raise Exception("The search is expired, had an error, or was made while sales were shut off")
+
+
         airlines = 'any'
         res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
 
-        # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
-        # or the purchase occured after too much time had passed, and the quoted price is deemed expired
-        purch_date_time = current_time_aware()
-        search_date_date = search.search_date
-        expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+        if convert:
+            for index, i in enumerate(res['flights']):
+                if i['fare'] < search.locked_fare:
+                    res['flights'][index]['rebate'] = search.locked_fare - i['fare']
+                else:
+                    res['flights'][index]['rebate'] = None
+                del res['flights'][index]['fare']
 
-        if search.error or not search.get_status() or expired:
-            raise Exception("The search is expired, had an error, or was made while sales were shut off")
 
+    except (Contract.DoesNotExist):
+        res = {'success': False, 'error': 'The contract key entered is not valid.'}
     except (Searches.DoesNotExist):
-        res = {'success': False, 'error': 'The option id entered is not valid.'}
+        res = {'success': False, 'error': 'The search key entered is not valid.'}
     except Exception as err:
         res = {'success': False, 'error': str(err)}
 
