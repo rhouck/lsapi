@@ -475,20 +475,31 @@ def call_wan(url, data, method='post'):
 
 
 def parse_wan_live(data):
+
     """
     @summary: parsing function for WeGo api flight search response
     """
+
+    airline_bank = data['response']['airline_filters']
+
+    def get_airline_name(code, airline_bank):
+      airline_name = None
+      for i in airline_bank:
+        if code == i['code']:
+          airline_name = i['name']
+          break
+      return airline_name
+
     bank = []
     for i in data['response']['routes']:
         flight = {}
         flight['fare'] = i['best_fare']['price']
         flight['deeplink'] = i['best_fare']['deeplink']
         flight['cabin'] = i['best_fare']['description']
-        #flight['departing'] = i['outbound_segments']
-        #flight['returning'] = i['inbound_segments']
 
 
         for j in (('departing','outbound'), ('returning','inbound')):
+          # aggregate trip section
           flight[j[0]] = {}
           flight[j[0]]['take_off_airport_code'] = i['%s_segments' % (j[1])][0]['departure_code']
           flight[j[0]]['take_off_city'] = i['%s_segments' % (j[1])][0]['departure_name']
@@ -505,11 +516,17 @@ def parse_wan_live(data):
 
           airlines = []
           for k in i['%s_segments' % (j[1])]:
-            if 'operating_airline_name' in k:
-              if k['operating_airline_name'] not in airlines:
-                airlines.append(k['operating_airline_name'])
-          flight[j[0]]['airline'] = airlines[0] if len(airlines) == 1 else "Multiple"
+            airline_name = get_airline_name(k['airline_code'], airline_bank)
+            if airline_name not in airlines:
+              airlines.append(airline_name)
+          if len(airlines) == 0:
+            flight[j[0]]['airline'] = None
+          elif len(airlines) == 1:
+            flight[j[0]]['airline'] = airlines[0]
+          else:
+            flight[j[0]]['airline'] = "Multiple"
 
+          # detail section
           flight[j[0]]['detail'] = []
           flight[j[0]]['layover_times'] = []
           for ind, k in enumerate(i['%s_segments' % (j[1])]):
@@ -533,10 +550,7 @@ def parse_wan_live(data):
             entry['duration'] = (parse(arr_time)-parse(dep_time)).seconds / 60
             entry['landing_weekday'] = parse(arr_time).strftime("%a")
 
-            if 'operating_airline_name' in k:
-              entry['airline'] = k['operating_airline_name']
-            else:
-              entry['airline'] = None
+            entry['airline'] = get_airline_name(k['airline_code'], airline_bank)
             entry['airline_code'] = k['airline_code']
 
             flight[j[0]]['detail'].append(entry)
@@ -549,7 +563,7 @@ def parse_wan_live(data):
     else:
       min_fare = None
 
-    return {'success': True, 'flights': bank, 'min_fare': min_fare}
+    return {'success': True, 'flights': bank, 'min_fare': min_fare, 'airlines': airline_bank}
 
 def parse_wan_cached(data):
     """
