@@ -204,15 +204,15 @@ def find_open_contracts(request, slug):
 
 
     cust = get_object_or_404(Customer, key__iexact=slug)
-    contracts = Contract.objects.filter(customer__id__iexact=cust.id)
+    contracts = Contract.objects.filter(customer__id__iexact=cust.id).order_by('search__exp_date')
 
-    bank = {}
+    bank = []
     for index, i in enumerate(contracts):
         if i.outstanding() and not i.staged():
-            bank[index] = {}
-            bank[index]['redeem'] = "link to purchase"
-            bank[index]['refund'] = "link to refund"
-            bank[index]['desc'] =  {
+            temp = {}
+            temp['redeem'] = "link to purchase"
+            temp['refund'] = "link to refund"
+            temp['desc'] =  {
                                     'key': i.search.key,
                                     #'platform': i.platform.org_name,
                                     'origin_code': i.search.origin_code,
@@ -229,6 +229,7 @@ def find_open_contracts(request, slug):
                                     'depart_date_2': conv_to_js_date(i.search.depart_date2),
                                     'return_date_2': conv_to_js_date(i.search.return_date2),
                                     }
+            bank.append(temp)
     build = {}
     build['results'] = {'success': True, 'results': bank,}
 
