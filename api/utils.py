@@ -273,13 +273,16 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     data = None
 
     # check if search has already been cached
+    """
     res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
 
     if res.count():
         # return search results if already cached
         data = res[0]
         method = "cached"
-
+    """
+    if 3 < 2:
+      pass
     else:
         # run search if not already cached
         if not cache_only:
