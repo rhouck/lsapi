@@ -295,7 +295,7 @@ def price_edu_combo(request):
                     #if cd['disp_depart_date'] and cd['disp_return_date']:
                     #    combined_results.update({'flights': flights['flights']})
                 else:
-                    combined_results.update({'success': False})
+                    combined_results.update({'success': False, 'error': model_out['error']})
 
                 build = {'form': form, 'results': combined_results}
                 return gen_search_display(request, build, clean, method='post')
