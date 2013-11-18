@@ -36,6 +36,8 @@ from simp_price import *
 
 from api.utils import *
 
+from dateutil.parser import parse
+
 from temp import return_search_res
 
 
@@ -271,6 +273,22 @@ def price_edu_combo(request):
                 if not model_out['error']:
                     model_out = refund_format_conversion(model_out)
                 combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
+
+                # convert all dates into js time-stamp
+                date_bank = {}
+                for i in ('inputs', 'pricing_results'):
+                    date_bank[i] = {}
+                    for k, v in combined_results[i].iteritems():
+                        try:
+                            date = parse(v)
+                            combined_results[i][k] = conv_to_js_date(date)
+                            date_bank[i]["%s_readable" % (k)] = v
+                        except:
+                            pass
+                if date_bank:
+                    for i in ('inputs', 'pricing_results'):
+                        combined_results[i].update(date_bank[i])
+
 
                 if not model_out['error']:
                     combined_results.update({'success': True})
