@@ -38,6 +38,7 @@ from api.utils import *
 
 from temp import return_search_res
 
+
 def test_wan(request):
     url = 'searches'
     data = {

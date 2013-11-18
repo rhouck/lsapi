@@ -32,6 +32,7 @@ from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
 
 from functions import find_sub_index_dict
 
+from images import get_airline_image
 
 def check_creds(inps,model):
     #return HttpResponse(json.encode({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
@@ -521,16 +522,21 @@ def parse_wan_live(data):
           flight[j[0]]['number_stops'] = len(i['%s_segments' % (j[1])])-1
 
           airlines = []
+          airline_codes = []
           for k in i['%s_segments' % (j[1])]:
-            airline_name = get_airline_name(k['airline_code'], airline_bank)
-            if airline_name not in airlines:
+            if k['airline_code'] not in airline_codes:
+              airline_name = get_airline_name(k['airline_code'], airline_bank)
               airlines.append(airline_name)
+              airline_codes.append(k['airline_code'])
           if len(airlines) == 0:
             flight[j[0]]['airline'] = None
+            flight[j[0]]['airline_image'] = None
           elif len(airlines) == 1:
             flight[j[0]]['airline'] = airlines[0]
+            flight[j[0]]['airline_image'] = get_airline_image(flight[j[0]]['airline'])
           else:
             flight[j[0]]['airline'] = "Multiple"
+            flight[j[0]]['airline_image'] = None
 
           # detail section
           flight[j[0]]['detail'] = []
@@ -555,8 +561,11 @@ def parse_wan_live(data):
             entry['landing_time'] = arr_time
             entry['duration'] = (parse(arr_time)-parse(dep_time)).seconds / 60
             entry['landing_weekday'] = parse(arr_time).strftime("%a")
-
-            entry['airline'] = get_airline_name(k['airline_code'], airline_bank)
+            if 'operating_airline_name' in k:
+              entry['airline'] = k['operating_airline_name']
+            else:
+              entry['airline'] = get_airline_name(k['airline_code'], airline_bank)
+            entry['airline_image'] = get_airline_image(entry['airline'])
             entry['airline_code'] = k['airline_code']
 
             flight[j[0]]['detail'].append(entry)
