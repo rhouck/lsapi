@@ -439,14 +439,14 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
 
         data.update({'search_id': response['response']['id'], 'trip_id': response['response']['trips'][0]['id']})
 
-        time.sleep(3)
+        time.sleep(5)
         response = call_wan(url, data)
 
         # if no results, try two more times since it occasionally returns zero routes
         counter = 1
-        while counter <= 2:
+        while counter <= 3:
             if (response['success'] and response['response']['filtered_routes_count'] == 0) or not response['success']:
-                time.sleep(1)
+                time.sleep(1.5)
                 response = call_wan(url, data)
                 counter += 1
             else:
