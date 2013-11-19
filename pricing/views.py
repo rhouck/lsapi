@@ -260,6 +260,8 @@ def price_edu_combo(request):
                                             'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['time_to_departure'], 'error': prices['error'] }
                         else:
                             model_out = {'error': flights['error']}
+                else:
+                    model_out = {'error': 'Sales currently disabled'}
 
 
                 # save in model
