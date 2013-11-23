@@ -37,7 +37,9 @@ from images import get_airline_image
 def check_creds(inps,model):
     #return HttpResponse(json.encode({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
     #platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
-    if 'platform_key' not in inps:
+    if not inps:
+      return {'success': False, 'error': 'platform_key not sent'}
+    elif 'platform_key' not in inps:
         return {'success': False, 'error': 'platform_key not sent'}
     else:
         try:
