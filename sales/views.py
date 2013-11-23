@@ -178,6 +178,7 @@ def customer_info(request, slug):
     if 'Search' in cust_dict:
         del cust_dict['Search']
 
+    cust_dict['success'] = True
 
     build = {'results': cust_dict}
 
