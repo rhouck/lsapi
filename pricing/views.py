@@ -127,7 +127,10 @@ def display_current_flights(request, slug, convert=False):
 
 
         airlines = 'any'
-        res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
+        if cd['dev_test']:
+            res = run_flight_search('SFO', 'JFK', datetime.date(2014,4,1), datetime.date(2014,5,1), 'any', 'any', 'any', airlines=None)
+        else:
+            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
 
         if convert:
             for index, i in enumerate(res['flights']):
@@ -251,7 +254,10 @@ def price_edu_combo(request):
                     if (cd['depart_date2'] - cd['depart_date1']).days > 1 or (cd['return_date2'] - cd['return_date1']).days > 1:
                         model_out = {'error': 'Travel date ranges must not be more than one day in length'}
                     else:
-                        flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
+                        if cd['dev_test']:
+                            flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', airlines=None)
+                        else:
+                            flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
                         #return HttpResponse(json.encode(flights), mimetype="application/json")
 
                         if flights['success']:

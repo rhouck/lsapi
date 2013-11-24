@@ -42,7 +42,9 @@ class full_option_info(forms.Form):
     #disp_depart_date = forms.DateField(required=False)
     #disp_return_date = forms.DateField(required=False)
 
+    dev_test = forms.BooleanField(required=False, initial=False)
 
 class flights_display(forms.Form):
     depart_date = forms.DateField()
     return_date = forms.DateField()
+    dev_test = forms.BooleanField(required=False, initial=False)
