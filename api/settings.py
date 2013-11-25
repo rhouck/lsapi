@@ -63,12 +63,14 @@ STATIC_ROOT = '/home/projects/api.levelskies.net/static/'
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    ('assets', os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'assets'))),
+    os.path.join(BASE_DIR, 'assets/'),
 )
 
 # List of finder classes that know how to find static files in
