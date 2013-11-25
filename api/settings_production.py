@@ -1,4 +1,7 @@
-STATIC_URL = 'https://api.levelskies.net/static/'
+
+STATIC_URL = 'https://api.levelskies.com/static/'
+
+STATIC_ROOT = '/home/projects/api.levelskies.com/static/'
 
 DEBUG = TEMPLATE_DEBUG = True
 
