@@ -1,4 +1,4 @@
-STATIC_URL = 'http://api.levelskies.net/static/'
+STATIC_URL = 'https://api.levelskies.net/static/'
 
 DEBUG = TEMPLATE_DEBUG = True
 
