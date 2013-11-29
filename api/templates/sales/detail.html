@@ -22,30 +22,52 @@
       </div>
       {% if contract.outstanding %}
         <div class="col-md-5">
-          {{contract}}, Expiration: {{contract.search.exp_date}}, Option price: {{contract.search.holding_price}}, Locked Fare: {{contract.search.locked_fare}}
-          {% if contract.staged %}
-            <a style="color: red;" href="{% url staged_item contract.search.key %}">Staged</a>
-          {% else %}
-            <a href="{% url add_to_staging 'exercise' contract.search.key %}">Exercise</a> / <a href="{% url add_to_staging 'refund' contract.search.key %}">Refund</a>
-          {% endif %}
+          <div class="row">
+            <div class="col-md-12">
+              {{contract.search.origin_code}}:{{contract.search.destination_code}} - {{contract}}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              Exp: {{contract.search.exp_date}} - Opt: {{contract.search.holding_price}} - Lock: {{contract.search.locked_fare}}
+              {% if contract.staged %}
+                <a style="color: red;" href="{% url staged_item contract.search.key %}">Staged</a>
+              {% else %}
+                <a href="{% url add_to_staging 'exercise' contract.search.key %}">Exercise</a> / <a href="{% url add_to_staging 'refund' contract.search.key %}">Refund</a>
+              {% endif %}
+            </div>
+          </div>
         </div>
       {% else %}
 
         <div class="col-md-5 col-md-offset-5">
-          {{contract}}, Expiration: {{contract.search.exp_date}}, Option price: {{contract.search.holding_price}}, Locked Fare: {{contract.search.locked_fare}}, Exercised Fare: {{contract.ex_fare}}, , Exercised Date: {{contract.ex_date}}
-        {% if contract.staged %}
-          <a style="color: red;" href="{% url staged_item contract.search.key %}">Staged</a>
-        {% elif not contract.ex_date %}
-            <a style="color: red;" href="{% url add_to_staging 'refund' contract.search.key %}">REFUND</a>
-
-        {% endif %}
+          <div class="row">
+            <div class="col-md-12">
+              {{contract.search.origin_code}}:{{contract.search.destination_code}} - {{contract}}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              Exp: {{contract.search.exp_date}} - Opt: {{contract.search.holding_price}} - Lock: {{contract.search.locked_fare}}
+              {% if contract.staged %}
+                <a style="color: red;" href="{% url staged_item contract.search.key %}">Staged</a>
+              {% elif not contract.ex_date %}
+                  <a style="color: red;" href="{% url add_to_staging 'refund' contract.search.key %}">REFUND</a>
+              {% endif %}
+            </div>
+          </div>
         </div>
       {% endif %}
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <p></p>
+      </div>
     </div>
   {% endfor %}
 
   <div class="row">
-      <div class="col-md-2">
+    <div class="col-md-2">
       <div class="pagination">
         <span class="step-links">
             {% if items.has_previous %}
