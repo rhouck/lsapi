@@ -59,7 +59,7 @@ class AddToStagingForm(forms.Form):
 
 
 class ExerStagingForm(forms.Form):
-    fare = forms.IntegerField()
+    fare = forms.FloatField()
     dep_date = forms.DateField()
     ret_date = forms.DateField()
     flight_choice = forms.CharField(required=False, widget=forms.Textarea)

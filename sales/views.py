@@ -155,7 +155,11 @@ def customer_info(request, slug):
     if inputs and method == 'post':
         cust = get_object_or_404(Customer, key__iexact=slug)
         for key, value in inputs.items():
-            setattr(cust, key, value)
+            if key not in ("key", "platform", "reg_date"):
+                try:
+                    setattr(cust, key, value)
+                except:
+                    pass
         cust.save()
         cust = get_object_or_404(Customer, key__iexact=slug)
         cust_dict = cust.__dict__
@@ -329,6 +333,17 @@ def purchase_option(request):
         if not cred['success']:
             return HttpResponse(json.encode(cred), mimetype="application/json")
 
+    """
+    if inputs and method == 'post':
+        cust = get_object_or_404(Customer, key__iexact=slug)
+        for key, value in inputs.items():
+            setattr(cust, key, value)
+        cust.save()
+        cust = get_object_or_404(Customer, key__iexact=slug)
+        cust_dict = cust.__dict__
+        cust_dict['update'] = True
+    """
+
 
 
     form = Purchase_option(inputs)
@@ -340,7 +355,8 @@ def purchase_option(request):
 
             #find_org = Platform.objects.get(key=cd['platform_key'])
             find_search = Searches.objects.get(key=cd['search_key'])
-            find_cust = Customer.objects.get(key__iexact=cd['cust_key']) # , platform__iexact=cd['platform']
+            find_cust = Customer.objects.get(key__iexact=cd['cust_key'])
+
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
@@ -358,9 +374,9 @@ def purchase_option(request):
             if find_search.error or not find_search.get_status() or expired:
                 raise Exception
 
-        #except (Platform.DoesNotExist):
-        #    build['error_message'] = 'The platform name is not valid.'
-        #    build['results'] = {'success': False, 'error': 'The platform name is not valid.'}
+        except (Customer.DoesNotExist):
+            build['error_message'] = 'The customer key is not valid.'
+            build['results'] = {'success': False, 'error': 'The customer key is not valid.'}
         except (Searches.DoesNotExist):
             build['error_message'] = 'The option id entered is not valid.'
             build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
@@ -368,6 +384,16 @@ def purchase_option(request):
             build['error_message'] = 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'
             build['results'] = {'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}
         else:
+
+            # update customer data if given
+            for key, value in cd.items():
+                if key not in ("key", "platform", "reg_date"):
+                    try:
+                        setattr(find_cust, key, value)
+                    except:
+                        pass
+            find_cust.save()
+
 
             # run credit card
             amount = find_search.locked_fare + find_search.holding_price
