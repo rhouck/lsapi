@@ -5,7 +5,7 @@ from random import randint
 from django.template.loader import get_template
 from django.template import Context
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, render
 from django.core.context_processors import csrf
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
@@ -128,7 +128,9 @@ def display_current_flights(request, slug, convert=False):
 
         airlines = 'any'
         if cd['dev_test']:
-            res = run_flight_search('SFO', 'JFK', datetime.date(2014,4,1), datetime.date(2014,5,1), 'any', 'any', 'any', airlines=None)
+            with open('./flight-search-test-data.json') as data:
+                res = data.read()
+            return render(request, res, content_type='application/json')
         else:
             res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
 
@@ -238,6 +240,11 @@ def price_edu_combo(request):
                 #inp_errors = sim_errors(self.db, cd['origin_code'], cd['destination_code'],self.lockin_per,self.start_date,self.d_date1,self.d_date2,self.r_date1,self.r_date2,self.final_proj_week, self.max_trip_length, self.geography)
                 #flights = pull_fares_range(, , (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
                 #return HttpResponse(json.encode({'inputs': cd}), mimetype="application/json")
+
+                if 'dev_test' in cd and cd['dev_test']:
+                    with open('./flight-pricing-test-data.json') as data:
+                        res = data.read()
+                    return render(request, res, content_type='application/json')
 
 
                 open_status = Open.objects.get(pk=1)
