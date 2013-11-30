@@ -362,9 +362,9 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
         elif time_list == 'evening':
           return (720, 1440) # 12:00pm to 12:00am
         elif time_list == 'evening-no-red-eye':
-          return (720, 1080) # 12:00pm to 6:00pm
+          return (720, 1320) # 12:00pm to 10:00pm
         elif time_list == 'no-red-eye':
-          return (360, 1080) # 6:00am to 6:00pm
+          return (360, 1320) # 6:00am to 10:00pm
         elif time_list == 'any':
           return (0, 1440) # 12:00am to 12:00am
         else:
