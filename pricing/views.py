@@ -128,9 +128,9 @@ def display_current_flights(request, slug, convert=False):
 
         airlines = 'any'
         if cd['dev_test']:
-            with open('./flight-search-test-data.json') as data:
+            with open('/home/projects/api.levelskies.com/test-data/flight-search-test-data.json') as data:
                 res = data.read()
-            return render(request, res, content_type='application/json')
+            return HttpResponse(res, content_type='application/json')
         else:
             res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
 
@@ -242,9 +242,9 @@ def price_edu_combo(request):
                 #return HttpResponse(json.encode({'inputs': cd}), mimetype="application/json")
 
                 if 'dev_test' in cd and cd['dev_test']:
-                    with open('./flight-pricing-test-data.json') as data:
+                    with open('/home/projects/api.levelskies.com/test-data/flight-pricing-test-data.json') as data:
                         res = data.read()
-                    return render(request, res, content_type='application/json')
+                    return HttpResponse(res, content_type='application/json')
 
 
                 open_status = Open.objects.get(pk=1)
