@@ -72,6 +72,8 @@ class Contract(models.Model):
     outstanding.boolean = True
     outstanding.short_description = 'Open and not expired'
 
+    def expired(self):
+        return self.search.exp_date < current_time_aware().date()
 
     def staged(self):
         try:

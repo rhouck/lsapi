@@ -16,10 +16,10 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
         build['results'] = {'success': False, 'error': 'The user id and/or transaction id is not valid.'}
 
     else:
-        if not find_contract.outstanding() and exercise:
-            build['error_message'] = 'The contract selected is either expired or already exercised.'
-            build['results'] = {'success': False, 'error': 'The contract selected is either expired or already exercised.'}
-        elif find_contract.ex_date:
+        if find_contract.expired() and exercise:
+            build['error_message'] = 'The contract selected is expired and connot be converted into a ticket.'
+            build['results'] = {'success': False, 'error': 'The contract selected is expired and connot be converted into a ticket.'}
+        elif find_contract.close_staged_date:
             build['error_message'] = 'The contract has already been closed.'
             build['results'] = {'success': False, 'error': 'The contract has already been closed.'}
         else:
@@ -57,7 +57,7 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
 
 
             exercise_date_time = current_time_aware()
-            find_contract.ex_date = exercise_date_time
+            find_contract.close_staged_date = exercise_date_time
             find_contract.save()
             build['results'] = {'success': True, 'search_key': search_key, 'cust_key': cust_key, 'exercise_fare': find_contract.ex_fare, 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
 
