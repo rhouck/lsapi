@@ -116,7 +116,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
           fares[ind[0]]['method'] = 'api_cached'
     """
 
-
+    """
     # check mongo for existing flight searches
     for i in range(dep_range + 1):
       depart_date = depart_dates[0] + datetime.timedelta(days=i)
@@ -134,7 +134,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
             fares[ind[0]]['method'] = res['method']
             if res['min_fare'] > max_live_fare:
               max_live_fare = res['min_fare']
-
+    """
 
 
     # run live flight searches where no fare exists data exists or api_cached fare is higher than max_live_fare
@@ -198,13 +198,16 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
 
     data = None
-
+    """
     # check if search has already been cached
     res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
     if res.count():
         # return search results if already cached
         data = res[0]
         method = "cached"
+    """
+    if 3<2:
+      pass
     else:
         # run search if not already cached
         if not cache_only:
