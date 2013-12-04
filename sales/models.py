@@ -61,6 +61,7 @@ class Contract(models.Model):
     ret_date = models.DateField('return date', blank=True, null=True)
     flight_choice = models.TextField('flight choice / notes', blank=True, null=True)
     # non-sensitive credit card info
+    close_staged_date = models.DateTimeField('date / time closed staging', blank=True, null=True)
     cc_last_four = models.IntegerField(max_length=4, blank=True, null=True)
     cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
     cc_exp_year = models.IntegerField(max_length=4, blank=True, null=True)

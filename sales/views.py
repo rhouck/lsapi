@@ -32,7 +32,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
-
+from sales.utils import exercise_option
 
 
 def get_cust_list(request):
@@ -85,8 +85,6 @@ def get_staging_list(request):
 
     return render_to_response('sales/staging_list.html', {'items': short_list}, context_instance=RequestContext(request))
 
-
-
 def get_cust_detail(request, slug):
 
     cust = get_object_or_404(Customer, key__iexact=slug)
@@ -123,11 +121,6 @@ def get_plat_detail(request, slug):
 
 
     return render_to_response('sales/detail.html', {'items': short_list, 'name': plat}, context_instance=RequestContext(request))
-
-
-
-
-
 
 def customer_info(request, slug):
 
@@ -196,9 +189,6 @@ def customer_info(request, slug):
     return gen_search_display(request, build, clean)
     #return HttpResponse(json.encode(cust_dict), mimetype="application/json")
 
-
-
-
 def find_open_contracts(request, slug):
 
     if not request.user.is_authenticated():
@@ -240,8 +230,6 @@ def find_open_contracts(request, slug):
 
     return gen_search_display(request, build, True)
 
-
-
 def find_cust_id(request):
 
     if request.user.is_authenticated():
@@ -267,8 +255,6 @@ def find_cust_id(request):
     #check = {'inputs': inputs, 'form_val': form.is_valid()}
     #return HttpResponse(json.encode(check), mimetype="application/json")
     return gen_search_display(request, build, clean)
-
-
 
 def customer_signup(request):
 
@@ -318,7 +304,6 @@ def customer_signup(request):
                 del build['results']['id']
 
     return gen_search_display(request, build, clean, method='post')
-
 
 def purchase_option(request):
 
@@ -444,86 +429,6 @@ def purchase_option(request):
 
     return gen_search_display(request, build, clean, method='post')
 
-
-
-def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, ret_date=None, flight_choice=None, use_gateway=True):
-
-    build = {}
-
-    try:
-
-        find_cust = Customer.objects.get(key__iexact=cust_key)
-        find_contract = Contract.objects.get(customer=find_cust, search__key=search_key)
-
-    except (KeyError, Customer.DoesNotExist, Contract.DoesNotExist):
-        build['error_message'] = 'The user id and/or transaction id is not valid.'
-        build['results'] = {'success': False, 'error': 'The user id and/or transaction id is not valid.'}
-
-    else:
-        if not find_contract.outstanding():
-            build['error_message'] = 'The contract selected is either expired or already exercised.'
-            build['results'] = {'success': False, 'error': 'The contract selected is either expired or already exercised.'}
-
-        else:
-            if exercise:
-                # if option is converted into airline ticket
-                find_contract.ex_fare = fare
-                find_contract.dep_date = dep_date
-                find_contract.ret_date = ret_date
-                find_contract.flight_choice = flight_choice
-
-                # refund partial value if exercised fare below refund value
-                if find_contract.search.locked_fare > fare and use_gateway:
-                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
-                    response = run_authnet_trans(find_contract.search.locked_fare - fare, card_info, trans_id=find_contract.gateway_id)
-                    if not response['success']:
-                        build['results'] = {'success': False, 'error': response['status']}
-                        return build
-
-            else:
-                # if option is refunded
-                if use_gateway:
-                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
-                    response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
-                else:
-                    response = {'success': True}
-                if not response['success']:
-                    build['results'] = {'success': False, 'error': response['status']}
-                    return build
-
-
-                find_contract.ex_fare = None
-                find_contract.dep_date = None
-                find_contract.ret_date = None
-                find_contract.flight_choice = flight_choice
-
-
-            exercise_date_time = current_time_aware()
-            find_contract.ex_date = exercise_date_time
-            find_contract.save()
-            build['results'] = {'success': True, 'search_key': search_key, 'cust_key': cust_key, 'exercise_fare': find_contract.ex_fare, 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
-
-            # augment cash reserve with option price
-            try:
-                if find_contract.ex_fare > find_contract.search.locked_fare:
-                    effect = find_contract.search.locked_fare - find_contract.ex_fare
-                    latest_change = Cash_reserve.objects.latest('action_date')
-                    new_balance = latest_change.cash_balance + effect
-                    add_cash = Cash_reserve(action_date=current_time_aware(), transaction=find_contract, cash_change=effect, cash_balance=new_balance)
-                    add_cash.save()
-
-                    capacity = Additional_capacity.objects.get(pk=1)
-                    capacity.recalc_capacity(new_balance)
-                    capacity.save()
-            except:
-                pass
-
-
-    return build
-    #return gen_search_display(request, build, clean)
-
-
-
 # staging views
 def add_to_staging(request, action, slug):
 
@@ -549,6 +454,9 @@ def add_to_staging(request, action, slug):
     except (Staging.DoesNotExist):
 
         exercise = True if action == 'exercise' else False
+        if exercise and not find_contract.outstanding():
+            return HttpResponse(json.encode({'success': False, 'error': 'Contract expired or already closed.'}), mimetype="application/json")
+
         staged_cont = Staging(contract=find_contract, exercise=exercise)
 
         inputs = request.POST if request.POST else None
@@ -570,6 +478,9 @@ def add_to_staging(request, action, slug):
 
         staged_cont.save()
 
+        find_contract.ex_date = current_time_aware()
+        find_contract.save()
+
         if clean:
             return HttpResponse(json.encode({'success': True}), mimetype="application/json")
         else:
@@ -577,9 +488,6 @@ def add_to_staging(request, action, slug):
 
     except Exception as err:
         return HttpResponse(json.encode({'success': False, 'error': '%s' % (err)}), mimetype="application/json")
-
-
-
 
 def staged_item(request, slug):
 
@@ -632,9 +540,11 @@ def staged_item(request, slug):
                     if 'force_close' in inputs:
                         find_stage.delete()
                         response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'], use_gateway=False)
+                        return HttpResponse(json.encode(response), mimetype="application/json")
                         return HttpResponseRedirect(reverse('staging_view'))
                     else:
                         response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'])
+                        return HttpResponse(json.encode(response), mimetype="application/json")
                         if not response['results']['success']:
                             build['error_message'] = response['results']['error']
                         else:
@@ -648,9 +558,11 @@ def staged_item(request, slug):
             if 'force_close' in inputs:
                 find_stage.delete()
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'], use_gateway=False)
+                return HttpResponse(json.encode(response), mimetype="application/json")
                 return HttpResponseRedirect(reverse('staging_view'))
             else:
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'])
+                return HttpResponse(json.encode(response), mimetype="application/json")
                 if not response['results']['success']:
                         build['error_message'] = response['results']['error']
                 else:
@@ -660,7 +572,6 @@ def staged_item(request, slug):
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))
 
-
 def staging_sweep(request):
     cont_list = []
     full_set = Contract.objects.filter(ex_date=None)
@@ -669,6 +580,8 @@ def staging_sweep(request):
         if not i.outstanding() and not i.staged():
             staged_cont = Staging(contract=i, exercise=False, notes="Forced staging upon expiration")
             staged_cont.save()
+            i.ex_date = current_time_aware()
+            i.save()
             cont_list.append(i)
 
     if not cont_list:
