@@ -35,6 +35,7 @@ from search_summary import *
 from simp_price import *
 
 from api.utils import *
+from pricing.utils import *
 
 from dateutil.parser import parse
 
