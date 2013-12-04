@@ -8,14 +8,14 @@ from django.utils import simplejson
 import copy
 from forms import *
 
-from pricing.views import format_pref_input
+
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 
 from analysis.models import *
 from pricing.models import *
 from sales.models import *
-from api.utils import current_time_aware, conv_to_js_date
+from api.utils import current_time_aware, conv_to_js_date, format_pref_input
 
 from projection import *
 

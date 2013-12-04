@@ -25,13 +25,18 @@ class search_summary_inputs(forms.Form):
     return_times = forms.IntegerField()
     nonstop = forms.IntegerField()
 
-class full_option_info(forms.Form):
-    origin_code = forms.CharField(required=False)
-    destination_code = forms.CharField(required=False)
-    holding_per = forms.IntegerField()
+class flight_search_form(forms.Form):
+    origin_code = forms.CharField()
+    destination_code = forms.CharField()
     depart_date1 = forms.DateField()
-    depart_date2 = forms.DateField()
     return_date1 = forms.DateField()
+    depart_times = forms.CharField()
+    return_times = forms.CharField()
+    convenience = forms.CharField()
+
+class full_option_info(flight_search_form):
+    holding_per = forms.IntegerField()
+    depart_date2 = forms.DateField()
     return_date2 = forms.DateField()
     depart_times = forms.CharField()
     return_times = forms.CharField()
