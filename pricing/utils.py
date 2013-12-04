@@ -1,6 +1,31 @@
 from api.utils import *
 from images import get_airline_image
 
+def select_geography(hub):
+    """
+    @attention: this function determines what geography to set for gen_price function based on the hub. once more than one hub per geography is availalble, another method should be used.
+                it may be best to use the sites model to determine geography, or have the client send the geography in the api pricing call
+    """
+    if hub == "SFO":
+        geography = "us"
+    elif hub == "LHR":
+        geography = "eu"
+    else:
+        geography = ""
+    return geography
+
+
+# start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
+def refund_format_conversion(pricing_results):
+    pricing_results['refund_value'] = pricing_results['locked_fare']
+    if pricing_results['holding_price'] and pricing_results['locked_fare']:
+        pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
+    else:
+        pricing_results['deposit_value'] = ''
+    del pricing_results['holding_price']
+    del pricing_results['locked_fare']
+    return pricing_results
+
 
 def call_sky(url, data={}, method='get'):
 

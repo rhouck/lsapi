@@ -92,6 +92,9 @@ def test_skyscan(request):
     res = call_sky(url, data, method='post')
     return HttpResponse(json.encode(res), mimetype="application/json")
 
+def test_flight_search(request):
+    pass
+    #run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False):
 
 def display_current_flights(request, slug, convert=False):
 
@@ -151,19 +154,6 @@ def display_current_flights(request, slug, convert=False):
 
     return HttpResponse(json.encode(res), mimetype="application/json")
 
-
-
-# start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
-def refund_format_conversion(pricing_results):
-    pricing_results['refund_value'] = pricing_results['locked_fare']
-    if pricing_results['holding_price'] and pricing_results['locked_fare']:
-        pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
-    else:
-        pricing_results['deposit_value'] = ''
-    del pricing_results['holding_price']
-    del pricing_results['locked_fare']
-    return pricing_results
-
 def search_info(request, slug, all=False):
 
     if not request.user.is_authenticated():
@@ -199,20 +189,6 @@ def search_info(request, slug, all=False):
 
     search_dict['success'] = True
     return HttpResponse(json.encode(search_dict), mimetype="application/json")
-
-def select_geography(hub):
-    """
-    @attention: this function determines what geography to set for gen_price function based on the hub. once more than one hub per geography is availalble, another method should be used.
-                it may be best to use the sites model to determine geography, or have the client send the geography in the api pricing call
-    """
-    if hub == "SFO":
-        geography = "us"
-    elif hub == "LHR":
-        geography = "eu"
-    else:
-        geography = ""
-    return geography
-
 
 def price_edu_combo(request):
 
@@ -318,6 +294,33 @@ def price_edu_combo(request):
 
 
             """
+
+            def conv_holding_to_lockin(inputs):
+
+                #@summary: convert holidng_period to lockin_per using today's date.
+                #            This assumes that all pricing done through API will be done in real time at current date.
+                #@todo: find a better way to handle the 'depart_date1' input, it currently is not ensuring proper date format
+
+
+                start = current_time_aware().date()
+
+
+                #if inputs['holding_per']:
+                #    holding_per = int(inputs['holding_per'])
+                #else:
+                #    holding_per = int(inputs['lockin_per'])
+
+                holding_per = int(inputs['holding_per'])
+                expiry = start + datetime.timedelta(days = holding_per*7)
+                #departure = datetime.datetime.strptime(inputs['depart_date1'])
+                departure = inputs['depart_date1']
+                lockin_per = int(floor((departure - expiry).days / 7.0))
+                #lockin_per = ((departure - expiry).days / 7.0)
+
+                return lockin_per
+
+
+
             if (request.GET):
                 form = full_option_info(request.GET)
                 if form.is_valid():
@@ -493,34 +496,3 @@ def price_edu_combo(request):
 
 
 
-def format_pref_input(i):
-    # alters the preferences inputs from website to match format in simulation model
-    if int(i) == 0:
-        return []
-    else:
-        return [int(i)]
-
-
-def conv_holding_to_lockin(inputs):
-    """
-    @summary: convert holidng_period to lockin_per using today's date.
-                This assumes that all pricing done through API will be done in real time at current date.
-    @todo: find a better way to handle the 'depart_date1' input, it currently is not ensuring proper date format
-    """
-
-    start = current_time_aware().date()
-
-    """
-    if inputs['holding_per']:
-        holding_per = int(inputs['holding_per'])
-    else:
-        holding_per = int(inputs['lockin_per'])
-    """
-    holding_per = int(inputs['holding_per'])
-    expiry = start + datetime.timedelta(days = holding_per*7)
-    #departure = datetime.datetime.strptime(inputs['depart_date1'])
-    departure = inputs['depart_date1']
-    lockin_per = int(floor((departure - expiry).days / 7.0))
-    #lockin_per = ((departure - expiry).days / 7.0)
-
-    return lockin_per
