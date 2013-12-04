@@ -93,8 +93,36 @@ def test_skyscan(request):
     return HttpResponse(json.encode(res), mimetype="application/json")
 
 def test_flight_search(request):
-    pass
-    #run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False):
+
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    if (request.POST):
+        if clean:
+            cred = check_creds(request.POST, Platform)
+            if not cred['success']:
+                return HttpResponse(json.encode(cred), mimetype="application/json")
+
+
+        form = flight_search_form(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, cache_only=False)
+            build = {'form': form, 'results': res}
+
+        else:
+            build = {'results': {'success': False, 'error': "Invalid inputs."}}
+
+    else:
+        form = flight_search_form()
+        combined_results = None
+        build = {'form': form, 'results': combined_results}
+
+    return gen_search_display(request, build, clean, method='post')
+
+
 
 def display_current_flights(request, slug, convert=False):
 
