@@ -150,7 +150,7 @@ def display_current_flights(request, slug, convert=False):
             if not contract.outstanding() or contract.staged():
                 raise Exception("This contract is no longer valid or has already been converted.")
 
-            if (contract.search.depart_date1 > cd['depart_date']) or (cd['depart_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['return_date']) or (cd['return_date'] > find_contract.search.return_date2):
+            if (contract.search.depart_date1 > cd['depart_date']) or (cd['depart_date'] > contract.search.depart_date2) or (contract.search.return_date1 > cd['return_date']) or (cd['return_date'] > contract.search.return_date2):
                 raise Exception('Selected travel dates not within locked fare range.')
         else:
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
@@ -170,12 +170,36 @@ def display_current_flights(request, slug, convert=False):
             res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
 
         if convert:
+            # converts prices to rebate values and caps the price level of flights available to choose from
+            bank = []
+            cap = None
             for index, i in enumerate(res['flights']):
-                if i['fare'] < search.locked_fare:
-                    res['flights'][index]['rebate'] = search.locked_fare - i['fare']
+
+                add = False
+
+                if not cap:
+                    add = True
+                    if index == 0:
+                        if i['fare'] < search.locked_fare:
+                            cap = search.locked_fare
+                    else:
+                        if i['fare'] > search.locked_fare:
+                            cap = i['fare']
                 else:
-                    res['flights'][index]['rebate'] = None
-                del res['flights'][index]['fare']
+                    if i['fare'] <= cap + 5:
+                        add = True
+
+                if add:
+
+                    if i['fare'] < search.locked_fare:
+                        res['flights'][index]['rebate'] = search.locked_fare - i['fare']
+                    else:
+                        res['flights'][index]['rebate'] = None
+                    del res['flights'][index]['fare']
+
+                    bank.append(res['flights'][index])
+
+            res['flights'] = bank
 
 
     except (Contract.DoesNotExist):
