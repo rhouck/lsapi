@@ -136,7 +136,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               max_live_fare = res['min_fare']
     """
 
-
+    #raw = []
     # run live flight searches where no fare exists data exists or api_cached fare is higher than max_live_fare
     for i in range(dep_range + 1):
       depart_date = depart_dates[0] + datetime.timedelta(days=i)
@@ -145,15 +145,16 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
         ind = find_sub_index_dict(fares, {'depart_date': depart_date, 'return_date': return_date}, loop=False)
         if ind:
-          if not fares[ind[0]]['fare'] or (fares[ind[0]]['fare'] > max_live_fare and fares[ind[0]]['fare'] == 'api_cached'):
+          if not fares[ind[0]]['fare'] or (fares[ind[0]]['fare'] > max_live_fare and fares[ind[0]]['method'] == 'api_cached'):
             res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False)
-
+            #raw.append(res)
             if res['success']:
               fares[ind[0]]['fare'] = res['min_fare']
               fares[ind[0]]['method'] = res['method']
               if res['min_fare'] > max_live_fare:
                 max_live_fare = res['min_fare']
 
+    #results['raw'] = raw
 
     results['fares'] = string_dates(fares)
     #results = {'fares': None, 'flights': None}
@@ -375,6 +376,23 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
                 counter += 1
             else:
                 break
+
+        # check if more results are coming in, stop once results count is stable
+        if response['success']:
+          found_routes = response['response']['filtered_routes_count']
+
+          time.sleep(1.5)
+          response = call_wan(url, data)
+
+          counter = 1
+          while counter <= 4:
+              if (response['success'] and response['response']['filtered_routes_count'] > found_routes) or not response['success']:
+                  found_routes = response['response']['filtered_routes_count']
+                  time.sleep(1.5)
+                  response = call_wan(url, data)
+                  counter += 1
+              else:
+                  break
 
         try:
           response['flights_count'] = response['response']['filtered_routes_count']

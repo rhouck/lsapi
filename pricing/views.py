@@ -109,6 +109,8 @@ def test_flight_search(request):
         form = flight_search_form(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
+            #res = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date1']), (cd['return_date1'], cd['return_date1']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
+            #return HttpResponse(json.dumps(res), mimetype="application/json")
             res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, cache_only=False)
             build = {'form': form, 'results': res}
 
@@ -270,7 +272,7 @@ def price_edu_combo(request):
                             flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', airlines=None)
                         else:
                             flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
-                        #return HttpResponse(json.encode(flights), mimetype="application/json")
+
 
                         if flights['success']:
                             prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
@@ -312,6 +314,10 @@ def price_edu_combo(request):
 
                 if not model_out['error']:
                     combined_results.update({'success': True})
+
+                    #combined_results['raw'] = flights
+                    #return HttpResponse(json.encode(combined_results), mimetype="application/json")
+
                     #if cd['disp_depart_date'] and cd['disp_return_date']:
                     #    combined_results.update({'flights': flights['flights']})
                 else:
