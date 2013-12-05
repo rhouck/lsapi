@@ -145,10 +145,13 @@ def display_current_flights(request, slug, convert=False):
         search = Searches.objects.get(key__iexact=slug)
 
         if convert:
-            # raise error if contract has not outstanding or has already been marked for staging process
+            # raise error if contract is not outstanding or has already been marked for staging process
             contract = Contract.objects.get(search__key__iexact=slug)
             if not contract.outstanding() or contract.staged():
                 raise Exception("This contract is no longer valid or has already been converted.")
+
+            if (contract.search.depart_date1 > cd['depart_date']) or (cd['depart_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['return_date']) or (cd['return_date'] > find_contract.search.return_date2):
+                raise Exception('Selected travel dates not within locked fare range.')
         else:
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
