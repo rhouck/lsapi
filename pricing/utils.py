@@ -722,7 +722,7 @@ def parse_google_live(data):
         except:
           flight['fare'] = i['saleTotal']
 
-        flight['deeplink'] = "http://www.wego.com/flights/providers/2/deeplinks?search_id=8prE8xT8SLG1aka-Sry3DQ&trip_id=SFO:MAD:2014-01-07:2014-01-21&fare_id=delta.com:2&route=SFO-MAD"
+        flight['deeplink'] = None
         flight['cabin'] = "Economy" if i['slice'][0]['segment'][0]['cabin'] == "COACH" else i['slice'][0]['segment'][0]['cabin']
 
 
