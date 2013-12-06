@@ -41,6 +41,30 @@ from dateutil.parser import parse
 
 from temp import return_search_res
 
+def test_google(request):
+
+    data = {
+              "request": {
+                "passengers": {
+                  "adultCount": 1
+                },
+                "slice": [
+                  {
+                    "origin": "BOS",
+                    "destination": "LAX",
+                    "date": "2014-04-05"
+                  },
+                  {
+                    "origin": "LAX",
+                    "destination": "BOS",
+                    "date": "2014-04-10"
+                  }
+                ]
+              }
+            }
+
+    res = call_google(data)
+    return HttpResponse(json.encode(res), mimetype="application/json")
 
 def test_wan(request):
     url = 'searches'
@@ -109,9 +133,8 @@ def test_flight_search(request):
         form = flight_search_form(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            #res = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date1']), (cd['return_date1'], cd['return_date1']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
-            #return HttpResponse(json.dumps(res), mimetype="application/json")
             res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, cache_only=False)
+            return HttpResponse(json.dumps(res), mimetype="application/json")
             build = {'form': form, 'results': res}
 
         else:
