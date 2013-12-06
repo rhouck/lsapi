@@ -656,7 +656,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
               #"maxPrice": string,
               "saleCountry": "US",
               #"refundable": boolean,
-              "solutions": 1
+              "solutions": 20
             }
           }
 
