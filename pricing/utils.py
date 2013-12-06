@@ -190,7 +190,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     else:
         # run search if not already cached
         if not cache_only:
-          response = live_search_wan(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+          response = live_search_google(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
 
           if response['success']:
             if response['flights_count']:
@@ -656,7 +656,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
               #"maxPrice": string,
               "saleCountry": "US",
               #"refundable": boolean,
-              "solutions": 15
+              "solutions": 1
             }
           }
 
@@ -684,6 +684,7 @@ def parse_google_live(data):
     """
 
     airline_bank = data['response']['trips']['data']['carrier']
+
     def get_airline_name(code, airline_bank):
       airline_name = None
       for i in airline_bank:
@@ -692,6 +693,25 @@ def parse_google_live(data):
           break
       return airline_name
 
+
+    city_bank = data['response']['trips']['data']['city']
+    airport_bank = data['response']['trips']['data']['airport']
+
+    def get_city_name(code, city_bank, airport_bank):
+
+      city_code = None
+      for i in airport_bank:
+        if code == i['code']:
+          city_code = i['city']
+          break
+
+      city_name = None
+      for i in city_bank:
+        if city_code == i['code']:
+          city_name = i['name']
+          break
+
+      return city_name
 
     bank = []
     for i in data['response']['trips']['tripOption']:
@@ -702,16 +722,16 @@ def parse_google_live(data):
           flight['fare'] = i['saleTotal']
 
         flight['deeplink'] = None
-        flight['cabin'] = i['slice'][0]['segment'][0]['cabin']
+        flight['cabin'] = "Economy" if i['slice'][0]['segment'][0]['cabin'] == "COACH" else i['slice'][0]['segment'][0]['cabin']
 
 
         for j in (('departing',0), ('returning',1)):
           # aggregate trip section
           flight[j[0]] = {}
           flight[j[0]]['take_off_airport_code'] = i['slice'][j[1]]['segment'][0]['leg'][0]['origin']
-          flight[j[0]]['take_off_city'] = None
+          flight[j[0]]['take_off_city'] = get_city_name(flight[j[0]]['take_off_airport_code'], city_bank, airport_bank)
           flight[j[0]]['landing_airport_code'] = i['slice'][j[1]]['segment'][-1]['leg'][-1]['origin']
-          flight[j[0]]['landing_city'] = None
+          flight[j[0]]['landing_city'] = get_city_name(flight[j[0]]['landing_airport_code'], city_bank, airport_bank)
           beg_time = i['slice'][j[1]]['segment'][0]['leg'][0]['departureTime']
           flight[j[0]]['take_off_time'] = beg_time
           flight[j[0]]['take_off_weekday'] = parse(beg_time).strftime("%a")
@@ -720,14 +740,15 @@ def parse_google_live(data):
           flight[j[0]]['landing_weekday'] = parse(end_time).strftime("%a")
           flight[j[0]]['trip_duration'] = i['slice'][j[1]]['duration'] # (parse(end_time)-parse(beg_time)).seconds / 60
           flight[j[0]]['number_stops'] = sum( [ len(s['leg']) for s in i['slice'][j[1]]['segment'] ] ) - 1
-        """
+
           airlines = []
           airline_codes = []
-          for k in i['%s_segments' % (j[1])]:
-            if k['airline_code'] not in airline_codes:
-              airline_name = get_airline_name(k['airline_code'], airline_bank)
+          for k in i['slice'][j[1]]['segment']:
+            code = k['flight']['carrier']
+            if code not in airline_codes:
+              airline_name = get_airline_name(code, airline_bank)
               airlines.append(airline_name)
-              airline_codes.append(k['airline_code'])
+              airline_codes.append(code)
           if len(airlines) == 0:
             flight[j[0]]['airline'] = None
             flight[j[0]]['airline_image'] = None
@@ -741,35 +762,38 @@ def parse_google_live(data):
           # detail section
           flight[j[0]]['detail'] = []
           flight[j[0]]['layover_times'] = []
-          for ind, k in enumerate(i['%s_segments' % (j[1])]):
-            entry = {}
-            entry['flight_number'] = k['designator_code']
-            entry['take_off_airport_code'] = k['departure_code']
-            entry['take_off_city'] = k['departure_name']
-            entry['landing_airport_code'] = k['arrival_code']
-            entry['landing_city'] = k['arrival_name']
-            dep_time = k['departure_time']
-            entry['take_off_time'] = dep_time
-            entry['take_off_weekday'] = parse(dep_time).strftime("%a")
+          for ind, k in enumerate(i['slice'][j[1]]['segment']):
+            for l in k['leg']:
 
-            # calc layover
-            if ind > 0:
-              minutes = (parse(dep_time)-parse(arr_time)).seconds / 60
-              flight[j[0]]['layover_times'].append(minutes)
+              entry = {}
 
-            arr_time = k['arrival_time']
-            entry['landing_time'] = arr_time
-            entry['duration'] = (parse(arr_time)-parse(dep_time)).seconds / 60
-            entry['landing_weekday'] = parse(arr_time).strftime("%a")
-            if 'operating_airline_name' in k:
-              entry['airline'] = k['operating_airline_name']
-            else:
-              entry['airline'] = get_airline_name(k['airline_code'], airline_bank)
-            entry['airline_image'] = get_airline_image(entry['airline'])
-            entry['airline_code'] = k['airline_code']
+              entry['flight_number'] = k['flight']['number']
+              entry['take_off_airport_code'] = l['origin']
+              entry['take_off_city'] = get_city_name(entry['take_off_airport_code'], city_bank, airport_bank)
+              entry['landing_airport_code'] = l['destination']
+              entry['landing_city'] = get_city_name(entry['landing_airport_code'], city_bank, airport_bank)
+              dep_time = l['departureTime']
+              entry['take_off_time'] = dep_time
+              entry['take_off_weekday'] = parse(dep_time).strftime("%a")
 
-            flight[j[0]]['detail'].append(entry)
-        """
+              if "connectionDuration" in l:
+                flight[j[0]]['layover_times'].append(l["connectionDuration"])
+
+              arr_time = l['arrivalTime']
+              entry['landing_time'] = arr_time
+              entry['duration'] = (parse(arr_time)-parse(dep_time)).seconds / 60
+              entry['landing_weekday'] = parse(arr_time).strftime("%a")
+
+              code = k['flight']['carrier']
+              entry['airline'] = get_airline_name(code, airline_bank)
+              entry['airline_image'] = get_airline_image(entry['airline'])
+              entry['airline_code'] = code
+
+              flight[j[0]]['detail'].append(entry)
+
+            if "connectionDuration" in k:
+                flight[j[0]]['layover_times'].append(k["connectionDuration"])
+
         bank.append(flight)
 
     fare_bank = [i['fare'] for i in bank]
