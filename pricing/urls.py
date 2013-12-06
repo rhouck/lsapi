@@ -13,5 +13,6 @@ urlpatterns = patterns('',
     url(r'^convert/flights/(?P<slug>[-\w]{6})/$', display_current_flights, {'convert': True}),
     url(r'^sky/$', test_skyscan),
     url(r'^wan/$', test_wan),
+    url(r'^google/$', test_google),
 )
 

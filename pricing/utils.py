@@ -14,7 +14,6 @@ def select_geography(hub):
         geography = ""
     return geography
 
-
 # start date used to calculate price and lock in period b': th need to be change'd to follow ': urrent date, not fix'ed date':
 def refund_format_conversion(pricing_results):
     pricing_results['refund_value'] = pricing_results['locked_fare']
@@ -25,26 +24,6 @@ def refund_format_conversion(pricing_results):
     del pricing_results['holding_price']
     del pricing_results['locked_fare']
     return pricing_results
-
-
-def call_sky(url, data={}, method='get'):
-
-  url = 'http://partners.api.skyscanner.net/apiservices/%s' % (url)
-  data.update({'apikey': 'lvls0948650201236592310165489310', 'locationschema': 'Iata',})
-  #data.update({'apikey': 'prtl6749387986743898559646983194'})
-
-  #return {'data': data, 'url': url}
-  """
-  if method == 'post':
-    pass
-  elif method == 'get':
-    pass
-  """
-
-  headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
-  response = send_request(url, data, headers, method)
-  response['source'] = 'skyscanner'
-  return response
 
 
 
@@ -177,7 +156,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     """
     return results
 
-
 def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False):
     """
     @summary: first searches mongo db for valid cached fare meeting search parameters
@@ -212,28 +190,32 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     else:
         # run search if not already cached
         if not cache_only:
-          response = live_search(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+          response = live_search_google(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
 
           if response['success']:
             if response['flights_count']:
-                search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
-                method = "live"
-                data = response
+              search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+              method = "live"
+              data = response
 
     mongo.disconnect()
 
     # parse data if available
     if not data:
-        data = {'success': False, 'error': 'No data returned'}
+        data = {'success': False, 'error': 'No data returned, or no flights available for these search parameters.'}
     else:
         if data['source'] == 'wego':
             data = parse_wan_live(data)
             data['method'] = method
+
+        elif data['source'] == 'google':
+            data = parse_google_live(data)
+            data['method'] = method
+
         else:
             data = {'success': False, 'error': 'Data was not parsed'}
 
     return data
-
 
 def cached_search(origin, destination, depart_dates, return_dates):
 
@@ -280,7 +262,27 @@ def cached_search(origin, destination, depart_dates, return_dates):
     return data
 
 
-def live_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
+
+
+# wego affiliate network API
+def call_wan(url, data, method='post'):
+
+  creds = {'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'}
+
+  if method == 'post':
+    url = 'http://api.wego.com/flights/api/k/2/%s' % (url)
+    data.update({'query_params': creds})
+  elif method == 'get':
+    url = 'http://www.wego.com/flights/api/%s' % (url)
+    data.update(creds)
+
+  headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+  response = send_request(url, data, headers, method)
+  response['source'] = 'wego'
+  return response
+
+def live_search_wan(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
 
     # format inputs
     def pick_time_window(time_list):
@@ -400,28 +402,6 @@ def live_search(origin, destination, depart_date, return_date, depart_times, ret
           pass
 
         return response
-
-
-
-
-
-def call_wan(url, data, method='post'):
-
-  creds = {'api_key': 'da9792caf6eae5490aef', 'ts_code': '9edfc'}
-
-  if method == 'post':
-    url = 'http://api.wego.com/flights/api/k/2/%s' % (url)
-    data.update({'query_params': creds})
-  elif method == 'get':
-    url = 'http://www.wego.com/flights/api/%s' % (url)
-    data.update(creds)
-
-  headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-
-  response = send_request(url, data, headers, method)
-  response['source'] = 'wego'
-  return response
-
 
 def parse_wan_live(data):
 
@@ -545,3 +525,282 @@ def parse_wan_cached(data):
       max_fare = None
 
     return {'success': True, 'fares': bank, 'max_fare': max_fare}
+
+
+
+# skyscanner api
+def call_sky(url, data={}, method='get'):
+
+  url = 'http://partners.api.skyscanner.net/apiservices/%s' % (url)
+  data.update({'apikey': 'lvls0948650201236592310165489310', 'locationschema': 'Iata',})
+  #data.update({'apikey': 'prtl6749387986743898559646983194'})
+
+  #return {'data': data, 'url': url}
+  """
+  if method == 'post':
+    pass
+  elif method == 'get':
+    pass
+  """
+
+  headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
+  response = send_request(url, data, headers, method)
+  response['source'] = 'skyscanner'
+  return response
+
+
+
+# QPX express API
+def call_google(data):
+
+  creds = {'key': 'AIzaSyAfxxN8Gztwa-KEM9gjJO6TSNkW_bzLk1c'}
+
+  url = 'https://www.googleapis.com/qpxExpress/v1/trips/search'
+
+  data.update({'query_params': creds})
+
+  headers = {'Content-Type': 'application/json'} # , 'Accept': 'application/json'
+
+  response = send_request(url, data, headers, method='post')
+
+  response['source'] = 'google'
+
+  return response
+
+def live_search_google(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
+
+    # format inputs
+    def pick_time_window(time_list):
+
+        if time_list == 'morning':
+          return ("00:00", "12:00") # 12:00am to 12:00pm
+        elif time_list == 'morning-no-red-eye':
+          return ("06:00", "12:00") # 6:00am to 12:00pm
+        elif time_list == 'evening':
+          return ("12:00", "23:59") # 12:00pm to 12:00am
+        elif time_list == 'evening-no-red-eye':
+          return ("12:00", "22:00") # 12:00pm to 10:00pm
+        elif time_list == 'no-red-eye':
+          return ("06:00", "22:00") # 6:00am to 10:00pm
+        elif time_list == 'any':
+          return ("00:00", "23:59") # 12:00am to 12:00am
+        else:
+          return ("00:00", "23:59") # 12:00am to 12:00am
+
+    depart_times = pick_time_window(depart_times)
+    return_times = pick_time_window(return_times)
+
+    if num_stops == "none":
+        num_stops = 0
+    elif num_stops == "none-one":
+        num_stops = 1
+    elif num_stops == "any":
+        num_stops = 10
+    else:
+      num_stops = 10
+
+
+    data = {
+            "request": {
+              "passengers": {
+                "kind": "qpxexpress#passengerCounts",
+                "adultCount": 1,
+                #"childCount": integer,
+                #"infantInLapCount": integer,
+                #"infantInSeatCount": integer,
+                #"seniorCount": integer
+              },
+              "slice": [
+                {
+                  "kind": "qpxexpress#sliceInput",
+                  "origin": str(origin),
+                  "destination": str(destination),
+                  "date": "%s" % (depart_date),
+                  "maxStops": num_stops,
+                  "maxConnectionDuration": 240,
+                  "preferredCabin": "COACH",
+                  "permittedDepartureTime": {
+                    "kind": "qpxexpress#timeOfDayRange",
+                    "earliestTime": depart_times[0],
+                    "latestTime": depart_times[1]
+                  },
+                  #"permittedCarrier": [
+                  #  string
+                  #],
+                  #"alliance": string,
+                  #"prohibitedCarrier": [
+                  #  string
+                  #]
+                },
+                {
+                  "kind": "qpxexpress#sliceInput",
+                  "origin": str(destination),
+                  "destination": str(origin),
+                  "date": "%s" % (return_date),
+                  "maxStops": num_stops,
+                  "maxConnectionDuration": 240,
+                  "preferredCabin": "COACH",
+                  "permittedDepartureTime": {
+                    "kind": "qpxexpress#timeOfDayRange",
+                    "earliestTime": return_times[0],
+                    "latestTime": return_times[1]
+                  },
+                  #"permittedCarrier": [
+                  #  string
+                  #],
+                  #"alliance": string,
+                  #"prohibitedCarrier": [
+                  #  string
+                  #]
+                }
+              ],
+              #"maxPrice": string,
+              "saleCountry": "US",
+              #"refundable": boolean,
+              "solutions": 20
+            }
+          }
+
+    response = call_google(data)
+
+    if not response['success']:
+
+        return {'success': False, 'error': "Could not complete 'search' call: %s" % (response['error'])}
+
+    else:
+
+        try:
+          response['flights_count'] = len(response['response']['trips']['tripOption'])
+        except:
+          response['flights_count'] = None
+
+        return response
+
+def parse_google_live(data):
+
+    #return data
+
+    """
+    @summary: parsing function for QPX Express api flight search response
+    """
+
+    airline_bank = data['response']['trips']['data']['carrier']
+
+    def get_airline_name(code, airline_bank):
+      airline_name = None
+      for i in airline_bank:
+        if code == i['code']:
+          airline_name = i['name']
+          break
+      return airline_name
+
+
+    city_bank = data['response']['trips']['data']['city']
+    airport_bank = data['response']['trips']['data']['airport']
+
+    def get_city_name(code, city_bank, airport_bank):
+
+      city_code = None
+      for i in airport_bank:
+        if code == i['code']:
+          city_code = i['city']
+          break
+
+      city_name = None
+      for i in city_bank:
+        if city_code == i['code']:
+          city_name = i['name']
+          break
+
+      return city_name
+
+    bank = []
+    for i in data['response']['trips']['tripOption']:
+        flight = {}
+        try:
+          flight['fare'] = float(i['saleTotal'][3:])
+        except:
+          flight['fare'] = i['saleTotal']
+
+        flight['deeplink'] = None
+        flight['cabin'] = "Economy" if i['slice'][0]['segment'][0]['cabin'] == "COACH" else i['slice'][0]['segment'][0]['cabin']
+
+
+        for j in (('departing',0), ('returning',1)):
+          # aggregate trip section
+          flight[j[0]] = {}
+          flight[j[0]]['take_off_airport_code'] = i['slice'][j[1]]['segment'][0]['leg'][0]['origin']
+          flight[j[0]]['take_off_city'] = get_city_name(flight[j[0]]['take_off_airport_code'], city_bank, airport_bank)
+          flight[j[0]]['landing_airport_code'] = i['slice'][j[1]]['segment'][-1]['leg'][-1]['origin']
+          flight[j[0]]['landing_city'] = get_city_name(flight[j[0]]['landing_airport_code'], city_bank, airport_bank)
+          beg_time = i['slice'][j[1]]['segment'][0]['leg'][0]['departureTime']
+          flight[j[0]]['take_off_time'] = beg_time
+          flight[j[0]]['take_off_weekday'] = parse(beg_time).strftime("%a")
+          end_time = i['slice'][j[1]]['segment'][-1]['leg'][-1]['arrivalTime']
+          flight[j[0]]['landing_time'] = end_time
+          flight[j[0]]['landing_weekday'] = parse(end_time).strftime("%a")
+          flight[j[0]]['trip_duration'] = i['slice'][j[1]]['duration'] # (parse(end_time)-parse(beg_time)).seconds / 60
+          flight[j[0]]['number_stops'] = sum( [ len(s['leg']) for s in i['slice'][j[1]]['segment'] ] ) - 1
+
+          airlines = []
+          airline_codes = []
+          for k in i['slice'][j[1]]['segment']:
+            code = k['flight']['carrier']
+            if code not in airline_codes:
+              airline_name = get_airline_name(code, airline_bank)
+              airlines.append(airline_name)
+              airline_codes.append(code)
+          if len(airlines) == 0:
+            flight[j[0]]['airline'] = None
+            flight[j[0]]['airline_image'] = None
+          elif len(airlines) == 1:
+            flight[j[0]]['airline'] = airlines[0]
+            flight[j[0]]['airline_image'] = get_airline_image(flight[j[0]]['airline'])
+          else:
+            flight[j[0]]['airline'] = "Multiple"
+            flight[j[0]]['airline_image'] = None
+
+          # detail section
+          flight[j[0]]['detail'] = []
+          flight[j[0]]['layover_times'] = []
+          for ind, k in enumerate(i['slice'][j[1]]['segment']):
+            for l in k['leg']:
+
+              entry = {}
+
+              entry['flight_number'] = k['flight']['number']
+              entry['take_off_airport_code'] = l['origin']
+              entry['take_off_city'] = get_city_name(entry['take_off_airport_code'], city_bank, airport_bank)
+              entry['landing_airport_code'] = l['destination']
+              entry['landing_city'] = get_city_name(entry['landing_airport_code'], city_bank, airport_bank)
+              dep_time = l['departureTime']
+              entry['take_off_time'] = dep_time
+              entry['take_off_weekday'] = parse(dep_time).strftime("%a")
+
+              if "connectionDuration" in l:
+                flight[j[0]]['layover_times'].append(l["connectionDuration"])
+
+              arr_time = l['arrivalTime']
+              entry['landing_time'] = arr_time
+              entry['duration'] = (parse(arr_time)-parse(dep_time)).seconds / 60
+              entry['landing_weekday'] = parse(arr_time).strftime("%a")
+
+              code = k['flight']['carrier']
+              entry['airline'] = get_airline_name(code, airline_bank)
+              entry['airline_image'] = get_airline_image(entry['airline'])
+              entry['airline_code'] = code
+
+              flight[j[0]]['detail'].append(entry)
+
+            if "connectionDuration" in k:
+                flight[j[0]]['layover_times'].append(k["connectionDuration"])
+
+        bank.append(flight)
+
+    fare_bank = [i['fare'] for i in bank]
+    if fare_bank:
+      min_fare = min(fare_bank)
+    else:
+      min_fare = None
+
+    return {'success': True, 'flights': bank, 'min_fare': min_fare, 'airlines': airline_bank}
