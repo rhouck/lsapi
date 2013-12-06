@@ -190,7 +190,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     else:
         # run search if not already cached
         if not cache_only:
-          response = live_search_wan(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+          response = live_search_google(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
 
           if response['success']:
             if response['flights_count']:
