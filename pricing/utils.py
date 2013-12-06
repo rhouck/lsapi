@@ -590,8 +590,9 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
     depart_times = pick_time_window(depart_times)
     return_times = pick_time_window(return_times)
 
-
-    if num_stops == "none-one":
+    if num_stops == "none":
+        num_stops = 0
+    elif num_stops == "none-one":
         num_stops = 1
     elif num_stops == "any":
         num_stops = 10
