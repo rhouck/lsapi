@@ -190,7 +190,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     else:
         # run search if not already cached
         if not cache_only:
-          response = live_search_wan(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+          response = live_search_google(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
 
           if response['success']:
             if response['flights_count']:
@@ -722,7 +722,7 @@ def parse_google_live(data):
         except:
           flight['fare'] = i['saleTotal']
 
-        flight['deeplink'] = "http://www.wego.com/flights/providers/2/deeplinks?search_id=8prE8xT8SLG1aka-Sry3DQ&trip_id=SFO:MAD:2014-01-07:2014-01-21&fare_id=delta.com:2&route=SFO-MAD"
+        flight['deeplink'] = None
         flight['cabin'] = "Economy" if i['slice'][0]['segment'][0]['cabin'] == "COACH" else i['slice'][0]['segment'][0]['cabin']
 
 
