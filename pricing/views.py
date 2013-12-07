@@ -134,7 +134,6 @@ def test_flight_search(request):
         if form.is_valid():
             cd = form.cleaned_data
             res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, cache_only=False)
-            return HttpResponse(json.dumps(res), mimetype="application/json")
             build = {'form': form, 'results': res}
 
         else:
