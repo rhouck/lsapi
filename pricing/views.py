@@ -184,8 +184,6 @@ def display_current_flights(request, slug, convert=False):
             if search.error or not search.get_status() or expired:
                 raise Exception("The search is expired, had an error, or was made while sales were shut off")
 
-
-
         if cd['dev_test']:
             with open('/home/projects/api.levelskies.com/test-data/flight-search-test-data.json') as data:
                 res = data.read()
