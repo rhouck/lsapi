@@ -133,6 +133,8 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               fares[ind[0]]['method'] = res['method']
               if res['min_fare'] > max_live_fare:
                 max_live_fare = res['min_fare']
+            else:
+              fares[ind[0]]['error'] = res['error']
 
     #results['raw'] = raw
 
@@ -140,12 +142,14 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     #results = {'fares': None, 'flights': None}
 
     error = ""
-    if results['fares']:
-      results['success'] = True
-    else:
-      results['success'] = False
-      error += "Couldn't find minimum fares for date combinations."
+    results['success'] = True
+    for i in results['fares']:
+      if 'error' in i:
+        results['success'] = False
+        error += "Departing: %s and returning: %s - %s" % (i['depart_date'], i['return_date'], i['error'])
+    if not results['success']:
       results['error'] = error
+
     """
     if display_dates:
       if not results['flights']:
@@ -178,6 +182,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
 
     data = None
+    error = None
     """
     # check if search has already been cached
     res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
@@ -195,15 +200,20 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
 
           if response['success']:
             if response['flights_count']:
-              search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
-              method = "live"
               data = response
+            search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+            method = "live"
+          else:
+            error = response['error']
+
 
     mongo.disconnect()
 
     # parse data if available
-    if not data:
-        data = {'success': False, 'error': 'No data returned, or no flights available for these search parameters.'}
+    if error:
+        data = {'success': False, 'error': error}
+    elif not data:
+        data = {'success': False, 'error': 'Did not find flights matching search parameters.'}
     else:
         if data['source'] == 'wego':
             data = parse_wan_live(data)
