@@ -146,7 +146,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     for i in results['fares']:
       if 'error' in i:
         results['success'] = False
-        error += "Departing: %s and returning: %s - %s" % (i['depart_date'], i['return_date'], i['error'])
+        error += "Departing: %s and returning: %s - %s " % (i['depart_date'], i['return_date'], i['error'])
     if not results['success']:
       results['error'] = error
 
