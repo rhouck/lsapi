@@ -17,6 +17,7 @@ class Searches(models.Model):
     depart_times = models.CharField('departure time preference', max_length=25)
     return_times = models.CharField('return time preference', max_length=25)
     convenience = models.CharField('non-stop flight preference', max_length=25)
+    airlines = models.CharField('airline preference', max_length=25)
 
     # returned from search results
     exp_date = models.DateField('expiration date', blank=True, null=True)

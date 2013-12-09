@@ -1,5 +1,6 @@
 from api.utils import *
 from images import get_airline_image
+from budget import budget_carriers
 
 def select_geography(hub):
     """
@@ -567,9 +568,9 @@ def call_google(data):
 
   return response
 
-def live_search_google(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines=None):
+def live_search_google(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines):
 
-    # format inputs
+    # set travel time values
     def pick_time_window(time_list):
 
         if time_list == 'morning':
@@ -590,6 +591,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
     depart_times = pick_time_window(depart_times)
     return_times = pick_time_window(return_times)
 
+    # set convenience values
     if num_stops == "none":
         num_stops = 0
     elif num_stops == "none-one":
@@ -598,6 +600,17 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
         num_stops = 10
     else:
       num_stops = 10
+
+
+    budget_carriers = []
+
+    # set airline inputs
+    if airlines == "major":
+        prohib_car = budget_carriers
+    elif num_stops == "any":
+        prohib_car = []
+    else:
+      prohib_car = []
 
 
     data = {
@@ -628,9 +641,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
                   #  string
                   #],
                   #"alliance": string,
-                  #"prohibitedCarrier": [
-                  #  string
-                  #]
+                  "prohibitedCarrier": prohib_car,
                 },
                 {
                   "kind": "qpxexpress#sliceInput",
@@ -649,9 +660,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
                   #  string
                   #],
                   #"alliance": string,
-                  #"prohibitedCarrier": [
-                  #  string
-                  #]
+                  "prohibitedCarrier": prohib_car,
                 }
               ],
               #"maxPrice": string,

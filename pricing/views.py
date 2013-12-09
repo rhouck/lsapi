@@ -133,7 +133,7 @@ def test_flight_search(request):
         form = flight_search_form(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, cache_only=False)
+            res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'], cache_only=False)
             build = {'form': form, 'results': res}
 
         else:
@@ -185,11 +185,11 @@ def display_current_flights(request, slug, convert=False):
                 raise Exception("The search is expired, had an error, or was made while sales were shut off")
 
 
-        airlines = 'any'
+
         if cd['dev_test']:
-            res = run_flight_search('SFO', 'JFK', datetime.date(2014,4,1), datetime.date(2014,5,1), 'any', 'any', 'any', airlines=None)
+            res = run_flight_search('SFO', 'JFK', datetime.date(2014,4,1), datetime.date(2014,5,1), 'any', 'any', 'any', airlines='any')
         else:
-            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, airlines)
+            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines)
 
         if convert:
             # converts prices to rebate values and caps the price level of flights available to choose from
@@ -302,7 +302,7 @@ def price_edu_combo(request):
 
                 model_in = {'origin_code': cd['origin_code'], 'destination_code': cd['destination_code'], 'holding_per': cd['holding_per'],
                             'depart_date1': str(cd['depart_date1']), 'depart_date2': str(cd['depart_date2']), 'return_date1': str(cd['return_date1']), 'return_date2': str(cd['return_date2']),
-                            'search_type': 'rt', 'depart_times': cd['depart_times'], 'return_times': cd['return_times'], 'convenience': cd['convenience'],}
+                            'search_type': 'rt', 'depart_times': cd['depart_times'], 'return_times': cd['return_times'], 'convenience': cd['convenience'], 'airlines': cd['airlines']}
 
                 combined = dict(general.items() + model_in.items())
 
@@ -311,9 +311,9 @@ def price_edu_combo(request):
                         model_out = {'error': 'Travel date ranges must not be more than one day in length'}
                     else:
                         if cd['dev_test']:
-                            flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', airlines=None)
+                            flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', airlines='any')
                         else:
-                            flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None)
+                            flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'])
 
 
                         if flights['success']:
