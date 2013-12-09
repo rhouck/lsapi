@@ -1,3 +1,8 @@
+import Queue
+import threading
+import time
+import random
+
 from api.utils import *
 from images import get_airline_image
 from budget import budget_carriers
@@ -55,19 +60,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     results = {}
     max_live_fare = None
 
-    """
-    # run search for display flights
-    if display_dates:
-      results['flights'] = None
-      if len(display_dates) == 2:
-        if display_dates[1] > display_dates[0]:
-          display_flights = run_flight_search(origin, destination, display_dates[0], display_dates[1], depart_times, return_times, num_stops, airlines)
-
-          #return display_flights
-          if display_flights['success']:
-            results['flights'] = display_flights['flights']
-            max_live_fare = display_flights['min_fare']
-    """
 
 
     dep_range = (depart_dates[1] - depart_dates[0]).days
@@ -116,7 +108,19 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               max_live_fare = res['min_fare']
     """
 
-    #raw = []
+
+
+
+
+
+
+
+
+
+
+
+
+    """
     # run live flight searches where no fare exists data exists or api_cached fare is higher than max_live_fare
     for i in range(dep_range + 1):
       depart_date = depart_dates[0] + datetime.timedelta(days=i)
@@ -127,7 +131,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         if ind:
           if not fares[ind[0]]['fare'] or (fares[ind[0]]['fare'] > max_live_fare and fares[ind[0]]['method'] == 'api_cached'):
             res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False)
-            #raw.append(res)
             if res['success']:
               fares[ind[0]]['fare'] = res['min_fare']
               fares[ind[0]]['method'] = res['method']
@@ -135,8 +138,55 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
                 max_live_fare = res['min_fare']
             else:
               fares[ind[0]]['error'] = res['error']
+    """
 
-    #results['raw'] = raw
+
+    class searchThread(threading.Thread):
+
+        def __init__(self, threadID, fare, q):
+            threading.Thread.__init__(self)
+            self.threadID = threadID
+            self.q = q
+            self.fare = fare
+
+        def run(self):
+            process_data(self.threadID, self.fare, self.q, origin, destination, depart_times, return_times, num_stops, airlines)
+
+
+    def process_data(threadName, fare, q, origin, destination, depart_times, return_times, num_stops, airlines):
+        #time.sleep(random.randrange(2))
+        #q.put(fare)
+        res = run_flight_search(origin, destination, fare['depart_date'], fare['return_date'], depart_times, return_times, num_stops, airlines, cache_only=False)
+        if res['success']:
+          fare['fare'] = res['min_fare']
+          fare['method'] = res['method']
+        else:
+          fare['error'] = res['error']
+        q.put(fare)
+
+    #queueLock = threading.Lock()
+    resQueue = Queue.Queue()
+
+    threads = []
+    threadID = 1
+
+    # Create new threads
+    for t in fares:
+        thread = searchThread(threadID, t, resQueue)
+        thread.start()
+        threads.append(thread)
+        threadID += 1
+
+
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+
+
+    result = []
+    while not resQueue.empty():
+        result.append(resQueue.get())
+    fares = result
 
     results['fares'] = string_dates(fares)
     #results = {'fares': None, 'flights': None}
@@ -150,16 +200,15 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     if not results['success']:
       results['error'] = error
 
-    """
-    if display_dates:
-      if not results['flights']:
-        results['success'] = False
-        if error:
-          error += " "
-        error += "Couldn't build list of current flights for display dates."
-        results['error'] = error
-    """
     return results
+
+
+
+
+
+
+
+
 
 def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False):
     """
