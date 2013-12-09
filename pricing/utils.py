@@ -1,6 +1,6 @@
 from api.utils import *
 from images import get_airline_image
-from budget import budget_carriers
+#from budget import budget_carriers
 
 def select_geography(hub):
     """
@@ -612,7 +612,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
       num_stops = 10
 
 
-    budget_carriers = []
+    budget_carriers = ['UA', 'DL']
 
     # set airline inputs
     if airlines == "major":
