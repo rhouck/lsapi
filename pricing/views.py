@@ -41,6 +41,10 @@ from dateutil.parser import parse
 
 from temp import return_search_res
 
+import random
+
+
+
 def test_google(request):
 
     data = {
@@ -133,7 +137,8 @@ def test_flight_search(request):
         form = flight_search_form(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'], cache_only=False)
+            res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'], cached=False)
+            #return HttpResponse(json.dumps(res), mimetype="application/json")
             build = {'form': form, 'results': res}
 
         else:
@@ -149,10 +154,11 @@ def test_flight_search(request):
 
 
 def display_current_flights(request, slug, convert=False):
-
-    inputs = request.GET if request.GET else None
-    form = flights_display(inputs)
-
+    """
+    @summary: use this to find flights associated with a particular search_key
+                if convert - must supply two travel dates and one flight search will be provided
+                if not convert - this will automatically return all flights in the date ranges searched, trying cached searches first
+    """
 
     if not request.user.is_authenticated():
         cred = check_creds(inputs, Platform)
@@ -160,39 +166,31 @@ def display_current_flights(request, slug, convert=False):
             return HttpResponse(json.dumps(cred), mimetype="application/json")
 
     try:
-        if not form.is_valid():
-            raise Exception("Valid travel dates not provided: depart_date & return_date")
 
-        cd = form.cleaned_data
         search = Searches.objects.get(key__iexact=slug)
 
         if convert:
+
+            inputs = request.GET if request.GET else None
+            form = flights_display(inputs)
+
+            if not form.is_valid():
+                raise Exception("Valid travel dates not provided: depart_date & return_date")
+
             # raise error if contract is not outstanding or has already been marked for staging process
             contract = Contract.objects.get(search__key__iexact=slug)
             if not contract.outstanding() or contract.staged():
                 raise Exception("This contract is no longer valid or has already been converted.")
 
-            if (contract.search.depart_date1 > cd['depart_date']) or (cd['depart_date'] > contract.search.depart_date2) or (contract.search.return_date1 > cd['return_date']) or (cd['return_date'] > contract.search.return_date2):
+            cd = form.cleaned_data
+            if (search.depart_date1 > cd['depart_date']) or (cd['depart_date'] > search.depart_date2) or (search.return_date1 > cd['return_date']) or (cd['return_date'] > search.return_date2):
                 raise Exception('Selected travel dates not within locked fare range.')
-        else:
-            # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
-            # or the purchase occured after too much time had passed, and the quoted price is deemed expired
-            purch_date_time = current_time_aware()
-            search_date_date = search.search_date
-            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
 
-            if search.error or not search.get_status() or expired:
-                raise Exception("The search is expired, had an error, or was made while sales were shut off")
 
-        if cd['dev_test']:
-            with open('/home/projects/api.levelskies.com/test-data/flight-search-test-data.json') as data:
-                res = data.read()
-            return HttpResponse(res, content_type='application/json')
 
-        else:
-            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines)
+            # run search and format results
+            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=False)
 
-        if convert:
             # converts prices to rebate values and caps the price level of flights available to choose from
             bank = []
             cap = None
@@ -225,6 +223,39 @@ def display_current_flights(request, slug, convert=False):
             res['flights'] = bank
 
 
+        else:
+            # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
+            # or the purchase occured after too much time had passed, and the quoted price is deemed expired
+            purch_date_time = current_time_aware()
+            search_date_date = search.search_date
+            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+
+            if search.error or not search.get_status() or expired:
+                raise Exception("The search is expired, had an error, or was made while sales were shut off")
+
+            # run search and format data
+            res = {'success': True}
+            error = None
+
+            dep_range = (search.depart_date2 - search.depart_date1).days
+            ret_range = (search.return_date2 - search.return_date1).days
+
+            # build empty list of fares for each flight date combination
+            for i in range(dep_range + 1):
+              depart_date = search.depart_date1 + datetime.timedelta(days=i)
+              for k in range(ret_range + 1):
+
+                return_date = search.return_date1 + datetime.timedelta(days=k)
+                one_res = run_flight_search(search.origin_code, search.destination_code, depart_date, return_date, search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=True)
+                res['%s-%s' % (depart_date, return_date)] = one_res
+
+                if not one_res['success']:
+                    res['success'] = False
+                    error += one_res['error']
+            if not res['success']:
+                res['error'] = error
+
+
     except (Contract.DoesNotExist):
         res = {'success': False, 'error': 'The contract key entered is not valid.'}
     except (Searches.DoesNotExist):
@@ -233,6 +264,7 @@ def display_current_flights(request, slug, convert=False):
         res = {'success': False, 'error': str(err)}
 
     return HttpResponse(json.encode(res), mimetype="application/json")
+
 
 def search_info(request, slug, all=False):
 
@@ -293,8 +325,6 @@ def price_edu_combo(request):
             if form.is_valid():
                 cd = form.cleaned_data
                 #inp_errors = sim_errors(self.db, cd['origin_code'], cd['destination_code'],self.lockin_per,self.start_date,self.d_date1,self.d_date2,self.r_date1,self.r_date2,self.final_proj_week, self.max_trip_length, self.geography)
-                #flights = pull_fares_range(, , (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=None, display_dates=(cd['disp_depart_date'], cd['disp_return_date']))
-                #return HttpResponse(json.encode({'inputs': cd}), mimetype="application/json")
 
                 if 'dev_test' in cd and cd['dev_test']:
                     with open('/home/projects/api.levelskies.com/test-data/flight-pricing-test-data.json') as data:
@@ -313,13 +343,13 @@ def price_edu_combo(request):
                 combined = dict(general.items() + model_in.items())
 
                 if open_status.get_status():
-                    if (cd['depart_date2'] - cd['depart_date1']).days > 1 or (cd['return_date2'] - cd['return_date1']).days > 1:
-                        model_out = {'error': 'Travel date ranges must not be more than one day in length'}
+                    if (cd['depart_date2'] - cd['depart_date1']).days > 2 or (cd['return_date2'] - cd['return_date1']).days > 2:
+                        model_out = {'error': 'Travel date ranges must not be more than two days in length'}
                     else:
                         if cd['dev_test']:
-                            flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', airlines='any')
+                            flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', 'any')
                         else:
-                            flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'])
+                            flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], cd['airlines'], search_key=combined['key'])
                             #return HttpResponse(json.encode(flights), mimetype="application/json")
 
                         if flights['success']:
@@ -329,7 +359,7 @@ def price_edu_combo(request):
                         else:
                             model_out = {'error': flights['error']}
                 else:
-                    model_out = {'error': 'Sales currently disabled'}
+                    model_out = {'error': 'Due to high demand, we are currently not making any additional sales. Please chekc again later.'}
 
 
                 # save in model

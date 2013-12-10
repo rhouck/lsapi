@@ -26,7 +26,7 @@ class Searches(models.Model):
     expected_risk = models.FloatField(blank=True, null=True)
     total_flexibility = models.IntegerField(max_length=3, blank=True, null=True)
     time_to_departure = models.IntegerField(max_length=3, blank=True, null=True)
-    error = models.CharField(max_length=200, blank=True, null=True)
+    error = models.CharField(max_length=1000, blank=True, null=True)
     """
     buffer = models.FloatField(blank=True, null=True)
     correl_coef = models.FloatField(blank=True, null=True)
@@ -58,7 +58,7 @@ class Searches(models.Model):
         return bool(self.open_status)
 
     def __unicode__(self):
-        return "%s - %s:%s" % (self.search_date, self.origin_code, self.destination_code)
+        return "%s - %s - %s:%s" % (self.key, self.search_date, self.origin_code, self.destination_code)
 
     def deposit_value(self):
         return self.locked_fare + self.holding_price
