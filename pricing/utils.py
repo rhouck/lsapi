@@ -736,8 +736,6 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
 
 def parse_google_live(data):
 
-    #return data
-
     """
     @summary: parsing function for QPX Express api flight search response
     """
@@ -789,7 +787,7 @@ def parse_google_live(data):
           flight[j[0]] = {}
           flight[j[0]]['take_off_airport_code'] = i['slice'][j[1]]['segment'][0]['leg'][0]['origin']
           flight[j[0]]['take_off_city'] = get_city_name(flight[j[0]]['take_off_airport_code'], city_bank, airport_bank)
-          flight[j[0]]['landing_airport_code'] = i['slice'][j[1]]['segment'][-1]['leg'][-1]['origin']
+          flight[j[0]]['landing_airport_code'] = i['slice'][j[1]]['segment'][-1]['leg'][-1]['destination']
           flight[j[0]]['landing_city'] = get_city_name(flight[j[0]]['landing_airport_code'], city_bank, airport_bank)
           beg_time = i['slice'][j[1]]['segment'][0]['leg'][0]['departureTime']
           flight[j[0]]['take_off_time'] = beg_time

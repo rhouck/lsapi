@@ -138,6 +138,7 @@ def test_flight_search(request):
         if form.is_valid():
             cd = form.cleaned_data
             res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'], cached=False)
+            #return HttpResponse(json.encode(res), mimetype="application/json")
             build = {'form': form, 'results': res}
 
         else:
@@ -224,6 +225,7 @@ def display_current_flights(request, slug, convert=False):
 
 
         else:
+
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
             purch_date_time = current_time_aware()
@@ -247,6 +249,7 @@ def display_current_flights(request, slug, convert=False):
 
                 return_date = search.return_date1 + datetime.timedelta(days=k)
                 one_res = run_flight_search(search.origin_code, search.destination_code, depart_date, return_date, search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=True)
+
                 res['%s-%s' % (depart_date, return_date)] = one_res
 
                 if not one_res['success']:
