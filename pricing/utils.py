@@ -34,7 +34,8 @@ def refund_format_conversion(pricing_results):
 
 
 
-def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines):
+def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, search_key=None):
+
     """
     @summary:
       1. *** to do *** run live search on one likely expensive pair of dates
@@ -64,8 +65,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
     dep_range = (depart_dates[1] - depart_dates[0]).days
     ret_range = (return_dates[1] - return_dates[0]).days
-
-
 
     # build empty list of fares for each flight date combination
     fares = []
@@ -108,18 +107,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               max_live_fare = res['min_fare']
     """
 
-
-
-
-
-
-
-
-
-
-
-
-
     """
     # run live flight searches where no fare exists data exists or api_cached fare is higher than max_live_fare
     for i in range(dep_range + 1):
@@ -150,19 +137,19 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
             self.fare = fare
 
         def run(self):
-            process_data(self.threadID, self.fare, self.q, origin, destination, depart_times, return_times, num_stops, airlines)
+            process_data(self.threadID, self.fare, self.q, origin, destination, depart_times, return_times, num_stops, airlines, search_key)
 
 
-    def process_data(threadName, fare, q, origin, destination, depart_times, return_times, num_stops, airlines):
-        #time.sleep(random.randrange(2))
-        #q.put(fare)
-        res = run_flight_search(origin, destination, fare['depart_date'], fare['return_date'], depart_times, return_times, num_stops, airlines, cache_only=False)
+    def process_data(threadName, fare, q, origin, destination, depart_times, return_times, num_stops, airlines, search_key):
+
+        res = run_flight_search(origin, destination, fare['depart_date'], fare['return_date'], depart_times, return_times, num_stops, airlines, search_key, cache_only=False)
         if res['success']:
           fare['fare'] = res['min_fare']
           fare['method'] = res['method']
         else:
           fare['error'] = res['error']
         q.put(fare)
+
 
     #queueLock = threading.Lock()
     resQueue = Queue.Queue()
@@ -188,15 +175,20 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         result.append(resQueue.get())
     fares = result
 
+
     results['fares'] = string_dates(fares)
     #results = {'fares': None, 'flights': None}
 
     error = ""
     results['success'] = True
-    for i in results['fares']:
-      if 'error' in i:
-        results['success'] = False
-        error += "Departing: %s and returning: %s - %s " % (i['depart_date'], i['return_date'], i['error'])
+    if not results['fares']:
+      results['success'] = False
+      error += "Flight search did not return any results."
+    else:
+      for i in results['fares']:
+        if 'error' in i:
+          results['success'] = False
+          error += "Departing: %s and returning: %s - %s " % (i['depart_date'], i['return_date'], i['error'])
     if not results['success']:
       results['error'] = error
 
@@ -210,7 +202,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
 
 
-def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False):
+def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, search_key=None, cache_only=False):
     """
     @summary: first searches mongo db for valid cached fare meeting search parameters
               calls external api if no cached search available
@@ -225,6 +217,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
             'return_times': return_times,
             'num_stops': num_stops,
             'airlines': airlines,
+            'search_key': search_key,
             }
 
     current_time = current_time_aware()
@@ -232,28 +225,27 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
 
     data = None
     error = None
-    """
-    # check if search has already been cached
-    res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
-    if res.count():
-        # return search results if already cached
-        data = res[0]
-        method = "cached"
-    """
-    if 3<2:
-      pass
-    else:
-        # run search if not already cached
-        if not cache_only:
-          response = live_search_google(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
 
-          if response['success']:
-            if response['flights_count']:
-              data = response
-            search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
-            method = "live"
-          else:
-            error = response['error']
+    # check if search has already been cached
+    if cache_only:
+      res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
+      if res.count():
+          # return search results if already cached
+          data = res[0]
+          method = "cached"
+
+
+    if not data:
+        # run search if not already cached
+        response = live_search_google(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
+
+        if response['success']:
+          if response['flights_count']:
+            data = response
+          search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+          method = "live"
+        else:
+          error = response['error']
 
 
     mongo.disconnect()
