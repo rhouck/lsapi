@@ -68,7 +68,7 @@ def test_google(request):
             }
 
     res = call_google(data)
-    return HttpResponse(json.encode(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), content_type="application/json")
 
 def test_wan(request):
     url = 'searches'
@@ -84,21 +84,21 @@ def test_wan(request):
               "adults_count": 1
             }
     res = call_wan(url, data, method='post')
-    return HttpResponse(json.encode(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), content_type="application/json")
 
 def test_skyscan(request):
     """
     # grid search
     url = 'browsegrid/v1.0/GB/GBP/en-GB/LHR/FRA/2013-12/2014-01'
     res = call_sky(url, data={}, method='get')
-    return HttpResponse(json.encode(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), content_type="application/json")
     """
 
     """
     # price caching api - seems to pull cached fare on specific flight
     url = 'pricing/v1.0/GB/GBP/en-GB/LHR/FRA/2013-12/2014-01'
     res = call_sky(url, method='get')
-    return HttpResponse(json.encode(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), content_type="application/json")
     """
 
 
@@ -118,7 +118,7 @@ def test_skyscan(request):
             }
 
     res = call_sky(url, data, method='post')
-    return HttpResponse(json.encode(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), content_type="application/json")
 
 def test_flight_search(request):
 
@@ -131,14 +131,13 @@ def test_flight_search(request):
         if clean:
             cred = check_creds(request.POST, Platform)
             if not cred['success']:
-                return HttpResponse(json.encode(cred), mimetype="application/json")
+                return HttpResponse(json.encode(cred), content_type="application/json")
 
 
         form = flight_search_form(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'], cached=False)
-            #return HttpResponse(json.dumps(res), mimetype="application/json")
             build = {'form': form, 'results': res}
 
         else:
@@ -165,7 +164,7 @@ def display_current_flights(request, slug, convert=False):
     if not request.user.is_authenticated():
         cred = check_creds(inputs, Platform)
         if not cred['success']:
-            return HttpResponse(json.dumps(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), content_type="application/json")
 
     try:
 
@@ -264,7 +263,7 @@ def display_current_flights(request, slug, convert=False):
     except Exception as err:
         res = {'success': False, 'error': str(err)}
 
-    return HttpResponse(json.encode(res), mimetype="application/json")
+    return HttpResponse(json.encode(res), content_type="application/json")
 
 
 def search_info(request, slug, all=False):
@@ -272,7 +271,7 @@ def search_info(request, slug, all=False):
     if not request.user.is_authenticated():
         cred = check_creds(request.GET, Platform)
         if not cred['success']:
-            return HttpResponse(json.encode(cred), mimetype="application/json")
+            return HttpResponse(json.encode(cred), content_type="application/json")
 
     search = get_object_or_404(Searches, key__iexact=slug)
 
@@ -282,7 +281,7 @@ def search_info(request, slug, all=False):
     if not all:
         expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
         if expired:
-            return HttpResponse(json.encode({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), mimetype="application/json")
+            return HttpResponse(json.encode({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), content_type="application/json")
 
     search_dict = search.__dict__
 
@@ -301,7 +300,7 @@ def search_info(request, slug, all=False):
     search_dict = refund_format_conversion(search_dict)
 
     search_dict['success'] = True
-    return HttpResponse(json.encode(search_dict), mimetype="application/json")
+    return HttpResponse(json.encode(search_dict), content_type="application/json")
 
 def price_edu_combo(request):
 
@@ -319,7 +318,7 @@ def price_edu_combo(request):
             if clean:
                 cred = check_creds(request.POST, Platform)
                 if not cred['success']:
-                    return HttpResponse(json.encode(cred), mimetype="application/json")
+                    return HttpResponse(json.encode(cred), content_type="application/json")
 
 
             form = full_option_info(request.POST)
@@ -351,7 +350,7 @@ def price_edu_combo(request):
                             flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', 'any')
                         else:
                             flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], cd['airlines'], search_key=combined['key'])
-                            #return HttpResponse(json.encode(flights), mimetype="application/json")
+                            #return HttpResponse(json.encode(flights), content_type="application/json")
 
                         if flights['success']:
                             prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']])
@@ -395,7 +394,7 @@ def price_edu_combo(request):
                     combined_results.update({'success': True})
 
                     #combined_results['raw'] = flights
-                    #return HttpResponse(json.encode(combined_results), mimetype="application/json")
+                    #return HttpResponse(json.encode(combined_results), content_type="application/json")
 
                     #if cd['disp_depart_date'] and cd['disp_return_date']:
                     #    combined_results.update({'flights': flights['flights']})
