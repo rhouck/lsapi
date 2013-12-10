@@ -137,7 +137,7 @@ def test_flight_search(request):
         form = flight_search_form(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'], cache_only=False)
+            res = run_flight_search(cd['origin_code'], cd['destination_code'], cd['depart_date1'], cd['return_date1'], cd['depart_times'], cd['return_times'], cd['convenience'], airlines=cd['airlines'], cached=False)
             #return HttpResponse(json.dumps(res), mimetype="application/json")
             build = {'form': form, 'results': res}
 
@@ -188,7 +188,7 @@ def display_current_flights(request, slug, convert=False):
 
 
             # run search and format results
-            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines, slug, cache_only=False)
+            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=False)
 
             # converts prices to rebate values and caps the price level of flights available to choose from
             bank = []
@@ -245,7 +245,7 @@ def display_current_flights(request, slug, convert=False):
               for k in range(ret_range + 1):
 
                 return_date = search.return_date1 + datetime.timedelta(days=k)
-                one_res = run_flight_search(search.origin_code, search.destination_code, depart_date, return_date, search.depart_times, search.return_times, search.convenience, search.airlines, slug, cache_only=True)
+                one_res = run_flight_search(search.origin_code, search.destination_code, depart_date, return_date, search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=True)
                 res['%s-%s' % (depart_date, return_date)] = one_res
 
                 if not one_res['success']:

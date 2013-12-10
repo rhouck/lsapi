@@ -98,7 +98,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         ind = find_sub_index_dict(fares, {'depart_date': depart_date, 'return_date': return_date}, loop=False)
         if ind:
           #if not fares[ind[0]]['fare'] or fares[ind[0]]['fare'] > max_live_fare:
-          res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=True)
+          res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cached=True)
 
           if res['success']:
             fares[ind[0]]['fare'] = res['min_fare']
@@ -117,7 +117,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         ind = find_sub_index_dict(fares, {'depart_date': depart_date, 'return_date': return_date}, loop=False)
         if ind:
           if not fares[ind[0]]['fare'] or (fares[ind[0]]['fare'] > max_live_fare and fares[ind[0]]['method'] == 'api_cached'):
-            res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cache_only=False)
+            res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cached=False)
             if res['success']:
               fares[ind[0]]['fare'] = res['min_fare']
               fares[ind[0]]['method'] = res['method']
@@ -142,7 +142,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
     def process_data(threadName, fare, q, origin, destination, depart_times, return_times, num_stops, airlines, search_key):
 
-        res = run_flight_search(origin, destination, fare['depart_date'], fare['return_date'], depart_times, return_times, num_stops, airlines, search_key, cache_only=False)
+        res = run_flight_search(origin, destination, fare['depart_date'], fare['return_date'], depart_times, return_times, num_stops, airlines, search_key, cached=False)
         if res['success']:
           fare['fare'] = res['min_fare']
           fare['method'] = res['method']
@@ -202,7 +202,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
 
 
-def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, search_key=None, cache_only=False):
+def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, search_key=None, cached=False):
     """
     @summary: first searches mongo db for valid cached fare meeting search parameters
               calls external api if no cached search available
@@ -227,7 +227,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     error = None
 
     # check if search has already been cached
-    if cache_only:
+    if cached:
       res = mongo.flight_search.live.find({'date_created': current_date, 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
       if res.count():
           # return search results if already cached
