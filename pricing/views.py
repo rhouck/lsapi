@@ -160,6 +160,8 @@ def display_current_flights(request, slug, convert=False):
                 if not convert - this will automatically return all flights in the date ranges searched, trying cached searches first
     """
 
+    inputs = request.GET if request.GET else None
+
     if not request.user.is_authenticated():
         cred = check_creds(inputs, Platform)
         if not cred['success']:
@@ -171,7 +173,6 @@ def display_current_flights(request, slug, convert=False):
 
         if convert:
 
-            inputs = request.GET if request.GET else None
             form = flights_display(inputs)
 
             if not form.is_valid():
