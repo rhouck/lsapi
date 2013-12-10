@@ -780,7 +780,7 @@ def parse_google_live(data):
         except:
           flight['fare'] = i['saleTotal']
 
-        flight['deeplink'] = None
+        flight['deeplink'] = ""
         flight['cabin'] = "Economy" if i['slice'][0]['segment'][0]['cabin'] == "COACH" else i['slice'][0]['segment'][0]['cabin']
 
 
