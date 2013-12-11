@@ -19,24 +19,12 @@ class Platform(models.Model):
 
 class Customer(models.Model):
     key = models.CharField(max_length=10)
-    email = models.EmailField(max_length=75)
-    #password = models.CharField(max_length=200)
     platform = models.ForeignKey(Platform)
     reg_date = models.DateField('date registered')
+    email = models.EmailField(max_length=75)
+    phone = models.CharField(max_length=20, blank=True, null=True)
     first_name = models.CharField(max_length=200, blank=True, null=True)
     last_name = models.CharField(max_length=200, blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    address1 = models.CharField(max_length=50, blank=True, null=True)
-    city = models.CharField(max_length=60, blank=True, null=True)
-    state_province = models.CharField('state / province', max_length=30, blank=True, null=True)
-    postal_code = models.CharField(max_length=50, blank=True, null=True)
-    country = models.CharField(max_length=50, blank=True, null=True)
-    # billing information
-    billing_address1 = models.CharField(max_length=50, blank=True, null=True)
-    billing_city = models.CharField(max_length=60, blank=True, null=True)
-    billing_state_province = models.CharField('state / province', max_length=30, blank=True, null=True)
-    billing_postal_code = models.CharField(max_length=50, blank=True, null=True)
-    billing_country = models.CharField(max_length=50, blank=True, null=True)
 
 
     def __unicode__(self):
@@ -48,9 +36,7 @@ class Customer(models.Model):
 
 
 
-
 class Contract(models.Model):
-    #platform = models.ForeignKey(Platform)
     customer = models.ForeignKey(Customer)
     purch_date = models.DateTimeField('date / time purchased')
     search = models.OneToOneField('pricing.Searches') # , primary_key=True
@@ -59,12 +45,37 @@ class Contract(models.Model):
     gateway_id = models.CharField(max_length=20, blank=True, null=True)
     dep_date = models.DateField('depart date', blank=True, null=True)
     ret_date = models.DateField('return date', blank=True, null=True)
-    flight_choice = models.TextField('flight choice / notes', blank=True, null=True)
-    # non-sensitive credit card info
     close_staged_date = models.DateTimeField('date / time closed staging', blank=True, null=True)
+
+    flight_choice = models.TextField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+
+    # traveler information
+    first_name = models.CharField(max_length=200, blank=True, null=True)
+    middle_name = models.CharField(max_length=200, blank=True, null=True)
+    last_name = models.CharField(max_length=200, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    infant = models.BooleanField('travel w/ infant')
+    gender = models.CharField(max_length=20, blank=True, null=True)
+    birth_date = models.DateField('birth date', blank=True, null=True)
+    passport_country = models.CharField(max_length=20, blank=True, null=True)
+    seat_pref = models.CharField(max_length=20, blank=True, null=True)
+    rewards_program = models.CharField(max_length=100, blank=True, null=True)
+
+    # billing information
+    first_name = models.CharField(max_length=200, blank=True, null=True)
+    middle_name = models.CharField(max_length=200, blank=True, null=True)
+    last_name = models.CharField(max_length=200, blank=True, null=True)
+    billing_address1 = models.CharField(max_length=50, blank=True, null=True)
+    billing_address2 = models.CharField(max_length=50, blank=True, null=True)
+    billing_city = models.CharField(max_length=60, blank=True, null=True)
+    billing_state_province = models.CharField('billing state / province', max_length=30, blank=True, null=True)
+    billing_postal_code = models.CharField(max_length=50, blank=True, null=True)
+    billing_country = models.CharField(max_length=50, blank=True, null=True)
     cc_last_four = models.IntegerField(max_length=4, blank=True, null=True)
     cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
     cc_exp_year = models.IntegerField(max_length=4, blank=True, null=True)
+
 
     def outstanding(self):
         return self.search.exp_date >= current_time_aware().date() and not self.ex_date
