@@ -318,18 +318,6 @@ def purchase_option(request):
         if not cred['success']:
             return HttpResponse(json.encode(cred), mimetype="application/json")
 
-    """
-    if inputs and method == 'post':
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        for key, value in inputs.items():
-            setattr(cust, key, value)
-        cust.save()
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        cust_dict = cust.__dict__
-        cust_dict['update'] = True
-    """
-
-
 
     form = Purchase_option(inputs)
     build = {'form': form, 'cust_title': "Purchase option"}
