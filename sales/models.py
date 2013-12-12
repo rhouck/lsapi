@@ -51,16 +51,16 @@ class Contract(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     # traveler information
-    trveler_first_name = models.CharField(max_length=200, blank=True, null=True)
-    trveler_middle_name = models.CharField(max_length=200, blank=True, null=True)
-    trveler_last_name = models.CharField(max_length=200, blank=True, null=True)
-    trveler_infant = models.BooleanField('travel w/ infant')
-    trveler_gender = models.CharField(max_length=20, blank=True, null=True)
-    trveler_birth_date = models.DateField(blank=True, null=True)
-    trveler_passport_country = models.CharField(max_length=20, blank=True, null=True)
-    trveler_seat_pref = models.CharField(max_length=20, blank=True, null=True)
-    trveler_rewards_program = models.CharField(max_length=100, blank=True, null=True)
-    trveler_contact_email = models.EmailField(max_length=75)
+    traveler_first_name = models.CharField(max_length=200, blank=True, null=True)
+    traveler_middle_name = models.CharField(max_length=200, blank=True, null=True)
+    traveler_last_name = models.CharField(max_length=200, blank=True, null=True)
+    traveler_infant = models.BooleanField('travel w/ infant')
+    traveler_gender = models.CharField(max_length=20, blank=True, null=True)
+    traveler_birth_date = models.DateField(blank=True, null=True)
+    traveler_passport_country = models.CharField(max_length=20, blank=True, null=True)
+    traveler_seat_pref = models.CharField(max_length=20, blank=True, null=True)
+    traveler_rewards_program = models.CharField(max_length=100, blank=True, null=True)
+    traveler_contact_email = models.EmailField(max_length=75, blank=True, null=True)
 
     # billing information
     billing_first_name = models.CharField(max_length=200, blank=True, null=True)
@@ -70,7 +70,7 @@ class Contract(models.Model):
     billing_address1 = models.CharField(max_length=50, blank=True, null=True)
     billing_address2 = models.CharField(max_length=50, blank=True, null=True)
     billing_city = models.CharField(max_length=60, blank=True, null=True)
-    billing_state_province = models.CharField('billing state / province', max_length=30, blank=True, null=True)
+    billing_province = models.CharField('billing state / province', max_length=30, blank=True, null=True)
     billing_postal_code = models.CharField(max_length=50, blank=True, null=True)
     billing_country = models.CharField(max_length=50, blank=True, null=True)
 

@@ -326,10 +326,20 @@ def purchase_option(request):
         cd = form.cleaned_data
         try:
 
-            #find_org = Platform.objects.get(key=cd['platform_key'])
             find_search = Searches.objects.get(key=cd['search_key'])
-            find_cust = Customer.objects.get(key__iexact=cd['cust_key'])
+            find_platform = Platform.objects.get(key=cd['platform_key'])
 
+            # either find the existing customer associated with the platform and email addres or create it
+            try:
+                find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+            except:
+                inps = {}
+                inps['key'] = gen_alphanum_key()
+                inps['reg_date'] = current_time_aware().date()
+                inps['platform'] = find_platform
+                inps['email'] = cd['email']
+                find_cust = Customer(**inps)
+                find_cust.save()
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
@@ -347,9 +357,9 @@ def purchase_option(request):
             if find_search.error or not find_search.get_status() or expired:
                 raise Exception
 
-        except (Customer.DoesNotExist):
-            build['error_message'] = 'The customer key is not valid.'
-            build['results'] = {'success': False, 'error': 'The customer key is not valid.'}
+        #except (Customer.DoesNotExist):
+        #    build['error_message'] = 'The customer key is not valid.'
+        #    build['results'] = {'success': False, 'error': 'The customer key is not valid.'}
         except (Searches.DoesNotExist):
             build['error_message'] = 'The option id entered is not valid.'
             build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
@@ -358,29 +368,34 @@ def purchase_option(request):
             build['results'] = {'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}
         else:
 
-            # update customer data if given
+            # update customer data
+            """
             for key, value in cd.items():
                 if key not in ("key", "platform", "reg_date"):
                     try:
                         setattr(find_cust, key, value)
                     except:
                         pass
+            """
+            setattr(find_cust, 'phone', cd['billing_phone'])
             find_cust.save()
 
 
             # run credit card
             amount = find_search.locked_fare + find_search.holding_price
-            card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+            # can we include middle name here?
+            card_info = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
             cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
-            address = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'phone': find_cust.phone, 'address1': find_cust.billing_address1, 'city': find_cust.billing_city, 'state_province': find_cust.billing_state_province, 'country': find_cust.billing_country, 'postal_code': find_cust.billing_postal_code}
+            address = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'phone': cd['billing_phone'], 'address1': cd['billing_address1'], 'address2': cd['billing_address2'], 'city': cd['billing_city'], 'state_province': cd['billing_province'], 'country': cd['billing_country'], 'postal_code': cd['billing_postal_code'], 'country': cd['billing_country']}
             try:
                 for i in (card_info, cust_info, address):
-                    for v in i.itervalues():
-                        if v == "" or v is None:
-                            raise Exception
-            except (Exception):
-                build['error_message'] = 'Not all of the required customer information is available.'
-                build['results'] = {'success': False, 'error': 'Not all of the required customer information is available.'}
+                    for k, v in i.iteritems():
+                        if k is not 'address2':
+                            if v == "" or v is None:
+                                raise Exception("need '%s' - input '%s'" % (k,v))
+            except (Exception) as err:
+                build['error_message'] = 'Not all of the required customer information is available: %s' % (err)
+                build['results'] = {'success': False, 'error': 'Not all of the required customer information is available: %s' % (err)}
 
             else:
 
@@ -389,13 +404,26 @@ def purchase_option(request):
                 if response['success']:
 
                     new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search, gateway_id=response['trans_id'])
-                    # save non-sensitive cc data
+
+                    # save non-sensitive cc data and billing info
+                    new_contract.billing_first_name = cd['billing_first_name']
+                    new_contract.billing_middle_name = cd['billing_middle_name']
+                    new_contract.billing_last_name = cd['billing_last_name']
+                    new_contract.billing_phone = cd['billing_phone']
+                    new_contract.billing_address1 = cd['billing_address1']
+                    new_contract.billing_address2 = cd['billing_address2']
+                    new_contract.billing_city = cd['billing_city']
+                    new_contract.billing_province = cd['billing_province']
+                    new_contract.billing_postal_code = cd['billing_postal_code']
+                    new_contract.billing_country = cd['billing_country']
+
                     new_contract.cc_last_four = cd['number'][-4:]
                     new_contract.cc_exp_month = cd['month']
                     new_contract.cc_exp_year = cd['year']
                     new_contract.save()
+
                     confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-                    build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': cd['cust_key'], 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status']}
+                    build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status']}
 
                     # augment cash reserve with option price and update option inventory capacity
                     try:
