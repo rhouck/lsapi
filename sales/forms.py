@@ -63,12 +63,35 @@ class AddToStagingForm(forms.Form):
     dep_date = forms.DateField()
     ret_date = forms.DateField()
 
+    traveler_first_name = forms.CharField()
+    traveler_middle_name = forms.CharField(required=False)
+    traveler_last_name = forms.CharField()
+    traveler_infant = forms.BooleanField(required=False, initial=False)
+    traveler_gender = forms.CharField()
+    traveler_birth_date = forms.DateField()
+    traveler_passport_country = forms.CharField()
+    traveler_seat_pref = forms.CharField(required=False)
+    traveler_rewards_program = forms.CharField(required=False)
+    traveler_contact_email = forms.EmailField(required=False)
 
 class ExerStagingForm(forms.Form):
     fare = forms.FloatField()
     dep_date = forms.DateField()
     ret_date = forms.DateField()
-    flight_choice = forms.CharField(required=False, widget=forms.Textarea)
+    flight_purchased = forms.CharField(widget=forms.Textarea)
+
+    traveler_first_name = forms.CharField()
+    traveler_middle_name = forms.CharField(required=False)
+    traveler_last_name = forms.CharField()
+    traveler_infant = forms.BooleanField(required=False, initial=False)
+    traveler_gender = forms.CharField()
+    traveler_birth_date = forms.DateField()
+    traveler_passport_country = forms.CharField()
+    traveler_seat_pref = forms.CharField(required=False)
+    traveler_rewards_program = forms.CharField(required=False)
+    traveler_contact_email = forms.EmailField(required=False)
+
+    notes = forms.CharField(required=False, widget=forms.Textarea)
 
 class RefundStagingForm(forms.Form):
     notes = forms.CharField(required=False, widget=forms.Textarea)

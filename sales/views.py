@@ -459,10 +459,7 @@ def add_to_staging(request, action, slug):
         if not cred['success']:
             return HttpResponse(json.encode(cred), mimetype="application/json")
 
-
-
     find_contract = get_object_or_404(Contract, search__key__iexact=slug)
-
 
     try:
         find_stage = Staging.objects.get(contract=find_contract)
@@ -483,6 +480,7 @@ def add_to_staging(request, action, slug):
             if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
                 return HttpResponse(json.encode({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
 
+            """
             if 'dep_date' in cd:
                 staged_cont.dep_date = cd['dep_date']
             if 'ret_date' in cd:
@@ -491,7 +489,8 @@ def add_to_staging(request, action, slug):
                 staged_cont.notes = cd['notes']
             if 'flight_choice' in cd:
                 staged_cont.flight_choice = cd['flight_choice']
-
+            """
+            staged_cont(**cd)
         staged_cont.save()
 
         find_contract.ex_date = current_time_aware()
@@ -520,7 +519,19 @@ def staged_item(request, slug):
         if inputs:
             form = ExerStagingForm(inputs)
         else:
-            data = {'dep_date': find_stage.dep_date, 'ret_date': find_stage.ret_date}
+            data = {'dep_date': find_stage.dep_date,
+                    'ret_date': find_stage.ret_date,
+                    'traveler_first_name': find_stage.traveler_first_name,
+                    'traveler_middle_name': find_stage.traveler_middle_name,
+                    'traveler_last_name': find_stage.traveler_last_name,
+                    'traveler_infant': find_stage.traveler_infant,
+                    'traveler_gender': find_stage.traveler_gender,
+                    'traveler_birth_date': find_stage.traveler_birth_date,
+                    'traveler_passport_country': find_stage.traveler_passport_country,
+                    'traveler_seat_pref': find_stage.traveler_seat_pref,
+                    'traveler_rewards_program': find_stage.traveler_rewards_program,
+                    'traveler_contact_email': find_stage.traveler_contact_email,
+                    }
             form = ExerStagingForm(initial=data)
 
     else:
@@ -556,9 +567,11 @@ def staged_item(request, slug):
                     build['error_message'] = 'Selected travel dates not within locked fare range'
                 else:
                     if 'force_close' in inputs:
-                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'], use_gateway=False)
+                        #response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_purchased=cd['flight_purchased'], notes=cd['notes'], use_gateway=False)
+                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, use_gateway=False)
                     else:
-                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_choice=cd['flight_choice'])
+                        # response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_purchased=cd['flight_purchased'], notes=cd['notes'])
+                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd)
 
                     if not response['results']['success']:
                         build['error_message'] = response['results']['error']
@@ -571,9 +584,11 @@ def staged_item(request, slug):
         # refund the contract
         else:
             if 'force_close' in inputs:
-                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'], use_gateway=False)
+                #response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, notes=cd['notes'], use_gateway=False)
+                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, use_gateway=False)
             else:
-                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'])
+                # response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, notes=cd['notes'])
+                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd)
 
             if not response['results']['success']:
                     build['error_message'] = response['results']['error']
@@ -583,6 +598,7 @@ def staged_item(request, slug):
 
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))
+
 
 def staging_sweep(request):
     cont_list = []

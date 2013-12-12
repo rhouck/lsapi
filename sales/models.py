@@ -49,12 +49,13 @@ class Contract(models.Model):
 
     flight_choice = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    flight_purchased = models.TextField(blank=True, null=True)
 
     # traveler information
     traveler_first_name = models.CharField(max_length=200, blank=True, null=True)
     traveler_middle_name = models.CharField(max_length=200, blank=True, null=True)
     traveler_last_name = models.CharField(max_length=200, blank=True, null=True)
-    traveler_infant = models.BooleanField('travel w/ infant')
+    traveler_infant = models.BooleanField('travel w/ infant', blank=True)
     traveler_gender = models.CharField(max_length=20, blank=True, null=True)
     traveler_birth_date = models.DateField(blank=True, null=True)
     traveler_passport_country = models.CharField(max_length=20, blank=True, null=True)
@@ -111,6 +112,17 @@ class Staging(models.Model):
     exercise = models.BooleanField(blank=True)
     dep_date = models.DateField('depart date', blank=True, null=True)
     ret_date = models.DateField('return date', blank=True, null=True)
+
+    traveler_first_name = models.CharField(max_length=200, blank=True, null=True)
+    traveler_middle_name = models.CharField(max_length=200, blank=True, null=True)
+    traveler_last_name = models.CharField(max_length=200, blank=True, null=True)
+    traveler_infant = models.BooleanField('travel w/ infant', blank=True)
+    traveler_gender = models.CharField(max_length=20, blank=True, null=True)
+    traveler_birth_date = models.DateField(blank=True, null=True)
+    traveler_passport_country = models.CharField(max_length=20, blank=True, null=True)
+    traveler_seat_pref = models.CharField(max_length=20, blank=True, null=True)
+    traveler_rewards_program = models.CharField(max_length=100, blank=True, null=True)
+    traveler_contact_email = models.EmailField(max_length=75, blank=True, null=True)
 
     def __unicode__(self):
         uni_name = '%s' % (self.contract)

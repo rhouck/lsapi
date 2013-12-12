@@ -2,7 +2,9 @@ from sales.models import *
 from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
 
 
-def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, ret_date=None, flight_choice=None, use_gateway=True):
+def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):
+
+    # fare=None, dep_date=None, ret_date=None, flight_purchased=None, notes=None,
 
     build = {}
 
@@ -25,15 +27,23 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
         else:
             if exercise:
                 # if option is converted into airline ticket
-                find_contract.ex_fare = fare
-                find_contract.dep_date = dep_date
-                find_contract.ret_date = ret_date
-                find_contract.flight_choice = flight_choice
+                find_contract.ex_fare = inputs['fare']
+                find_contract.dep_date = inputs['dep_date']
+                find_contract.ret_date = inputs['ret_date']
+                find_contract.flight_purchased = inputs['flight_purchased']
+                find_contract.notes = inputs['notes']
+
+                # set traveler information from staging model to contract model
+                for t in('traveler_first_name','traveler_middle_name','traveler_last_name','traveler_infant','traveler_gender','traveler_birth_date','traveler_passport_country','traveler_seat_pref','traveler_rewards_program','traveler_contact_email',):
+                    try:
+                        setattr(find_contract, t, inputs[t])
+                    except:
+                        pass
 
                 # refund partial value if exercised fare below refund value
-                if find_contract.search.locked_fare > fare and use_gateway:
+                if find_contract.search.locked_fare > inputs['fare'] and use_gateway:
                     card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
-                    response = run_authnet_trans(find_contract.search.locked_fare - fare, card_info, trans_id=find_contract.gateway_id)
+                    response = run_authnet_trans(find_contract.search.locked_fare - inputs['fare'], card_info, trans_id=find_contract.gateway_id)
                     if not response['success']:
                         build['results'] = {'success': False, 'error': response['status']}
                         return build
@@ -53,7 +63,8 @@ def exercise_option(cust_key, search_key, exercise, fare=None, dep_date=None, re
                 find_contract.ex_fare = None
                 find_contract.dep_date = None
                 find_contract.ret_date = None
-                find_contract.flight_choice = flight_choice
+                find_contract.flight_purchased = None
+                find_contract.notes = inputs['notes']
 
 
             exercise_date_time = current_time_aware()
