@@ -417,9 +417,9 @@ def purchase_option(request):
                     new_contract.billing_postal_code = cd['billing_postal_code']
                     new_contract.billing_country = cd['billing_country']
 
-                    new_contract.cc_last_four = cd['number'][-4:]
-                    new_contract.cc_exp_month = cd['month']
-                    new_contract.cc_exp_year = cd['year']
+                    new_contract.cc_last_four = cd['card_number'][-4:]
+                    new_contract.cc_exp_month = cd['card_month']
+                    new_contract.cc_exp_year = cd['card_year']
                     new_contract.save()
 
                     confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
