@@ -50,7 +50,7 @@ def check_creds(inps,model):
     else:
         try:
             platform = model.objects.get(key=inps['platform_key'])
-            return {'success': True, 'error': 'valid credentials submitted'}
+            return {'success': True}
         except:
             return {'success': False, 'error': 'platform_key not valid'}
 

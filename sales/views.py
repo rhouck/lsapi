@@ -442,6 +442,8 @@ def purchase_option(request):
                     form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
                     #build['error_message'] = response['status']
                     build['results'] = {'success': False, 'error': response['status']}
+    else:
+        build['results'] = {'success': False, 'error': form.errors}
 
     return gen_search_display(request, build, clean, method='post')
 
