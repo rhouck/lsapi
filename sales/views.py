@@ -450,7 +450,6 @@ def purchase_option(request):
 # staging views
 def add_to_staging(request, action, slug):
 
-
     if request.user.is_authenticated():
         clean = False
     else:
@@ -472,28 +471,25 @@ def add_to_staging(request, action, slug):
         if exercise and not find_contract.outstanding():
             return HttpResponse(json.encode({'success': False, 'error': 'Contract expired or already closed.'}), mimetype="application/json")
 
-        staged_cont = Staging(contract=find_contract, exercise=exercise)
 
         inputs = request.POST if request.POST else None
         form = AddToStagingForm(inputs)
 
-        if form.is_valid():
-            cd = form.cleaned_data
-            if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
-                return HttpResponse(json.encode({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
+        if clean and not form.is_valid():
+            # dont add contract to staging if form is invalid unless done from api interface
+            return HttpResponse(json.encode({'success': False, 'error': form.errors}), mimetype="application/json")
+        elif clean:
 
-            """
-            if 'dep_date' in cd:
-                staged_cont.dep_date = cd['dep_date']
-            if 'ret_date' in cd:
-                staged_cont.ret_date = cd['ret_date']
-            if 'notes' in cd:
-                staged_cont.notes = cd['notes']
-            if 'flight_choice' in cd:
-                staged_cont.flight_choice = cd['flight_choice']
-            """
-            staged_cont(**cd)
-        staged_cont.save()
+            if form.is_valid():
+                cd = form.cleaned_data
+                if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
+                    return HttpResponse(json.encode({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
+                staged_cont = Staging(contract=find_contract, exercise=exercise)
+                staged_cont(**cd)
+                staged_cont.save()
+        else:
+            staged_cont = Staging(contract=find_contract, exercise=exercise)
+            staged_cont.save()
 
         find_contract.ex_date = current_time_aware()
         find_contract.save()
