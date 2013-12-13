@@ -384,7 +384,7 @@ def purchase_option(request):
             # run credit card
             amount = find_search.locked_fare + find_search.holding_price
             # can we include middle name here?
-            card_info = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'number': cd['number'], 'month': cd['month'], 'year': cd['year'], 'code': cd['code']}
+            card_info = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'number': cd['card_number'], 'month': cd['card_month'], 'year': cd['card_year'], 'code': cd['card_code']}
             cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
             address = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'phone': cd['billing_phone'], 'address1': cd['billing_address1'], 'address2': cd['billing_address2'], 'city': cd['billing_city'], 'state_province': cd['billing_province'], 'country': cd['billing_country'], 'postal_code': cd['billing_postal_code'], 'country': cd['billing_country']}
             try:

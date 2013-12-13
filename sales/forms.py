@@ -48,10 +48,10 @@ class Purchase_option(forms.Form):
     billing_postal_code = forms.CharField()
     billing_country = forms.CharField()
 
-    number = forms.CharField(max_length=16, label="card number")
-    month = forms.CharField(max_length=2, label="expiration month")
-    year = forms.CharField(max_length=4, label="expiration year")
-    code = forms.CharField(max_length=4, label="security code")
+    card_number = forms.CharField(max_length=16, label="card number")
+    card_month = forms.CharField(max_length=2, label="expiration month")
+    card_year = forms.CharField(max_length=4, label="expiration year")
+    card_code = forms.CharField(max_length=4, label="security code")
 
 
 
