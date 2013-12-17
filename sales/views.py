@@ -423,17 +423,17 @@ def purchase_option(request):
                     new_contract.save()
 
 
-                    full_contract_info = new_contract.search.__dict__
-                    contract_info = {}
-                    for k, v in full_contract_info.iteritems():
+                    full_search_info = new_contract.search.__dict__
+                    search_info = {}
+                    for k, v in full_search_info.iteritems():
                         if v and k not in ('time_to_departure', '_state', 'id', 'open_status', 'key', 'expected_risk', 'search_type'):
                             try:
-                                contract_info[k] = conv_to_js_date(v)
+                                search_info[k] = conv_to_js_date(v)
                             except:
-                                contract_info[k] = v
+                                search_info[k] = v
 
                     confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-                    build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status'], 'contract_info': contract_info}
+                    build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status'], 'search_info': search_info}
 
                     # augment cash reserve with option price and update option inventory capacity
                     try:
