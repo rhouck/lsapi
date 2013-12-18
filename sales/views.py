@@ -493,12 +493,11 @@ def add_to_staging(request, action, slug):
 
         staged_cont = Staging(contract=find_contract, exercise=exercise)
 
-        if clean and not form.is_valid():
-            # dont add contract to staging if form is invalid unless done from api interface
-            return HttpResponse(json.encode({'success': False, 'error': form.errors}), mimetype="application/json")
-        elif clean:
-
-            if form.is_valid():
+        if clean and exercise:
+            if not form.is_valid():
+                # dont add contract to staging if form is invalid unless done from api interface
+                return HttpResponse(json.encode({'success': False, 'error': form.errors}), mimetype="application/json")
+            else:
                 cd = form.cleaned_data
                 if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
                     return HttpResponse(json.encode({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
