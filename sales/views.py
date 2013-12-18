@@ -475,9 +475,16 @@ def add_to_staging(request, action, slug):
     try:
         find_stage = Staging.objects.get(contract=find_contract)
         return HttpResponse(json.encode({'success': False, 'error': 'Already staged'}), mimetype="application/json")
+
     except (Staging.DoesNotExist):
 
-        exercise = True if action == 'exercise' else False
+        if action == 'exercise':
+            exercise = True
+        elif action == 'refund':
+            exercise = False
+        else:
+            raise Http404
+
         if exercise and not find_contract.outstanding():
             return HttpResponse(json.encode({'success': False, 'error': 'Contract expired or already closed.'}), mimetype="application/json")
 
