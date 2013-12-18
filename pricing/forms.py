@@ -33,7 +33,7 @@ class flight_search_form(forms.Form):
     depart_times = forms.CharField()
     return_times = forms.CharField()
     convenience = forms.CharField()
-    airlines = forms.CharField(required=False)
+    airlines = forms.CharField()
 
 class full_option_info(flight_search_form):
     holding_per = forms.IntegerField()
