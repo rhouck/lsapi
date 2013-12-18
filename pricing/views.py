@@ -362,7 +362,7 @@ def price_edu_combo(request):
                         else:
                             model_out = {'error': flights['error']}
                 else:
-                    model_out = {'error': 'Due to high demand, we are currently not making any additional sales. Please chekc again later.'}
+                    model_out = {'error': 'Due to high demand, we are currently not making any additional sales. Please check again later.'}
 
 
                 # save in model
