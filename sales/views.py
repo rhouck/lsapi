@@ -522,11 +522,35 @@ def add_to_staging(request, action, slug):
 
         # send confirmation email on success
         if SITE_ID == 1:
-            send_mail('Just added to staging - %s' % (action),
-                '%s (%s) just elected to %s contract with key: %s.' % (find_contract.customer, find_contract.customer.key, action, find_contract.search.key),
-                'sysadmin@levelskies.com',
-                ['sales@levelskies.com'],
-                fail_silently=False)
+
+            try:
+                # sends alert email to sales@levelskies
+                send_mail('Just added to staging - %s' % (action),
+                    '%s (%s) just elected to %s contract with key: %s.' % (find_contract.customer, find_contract.customer.key, action, find_contract.search.key),
+                    'sysadmin@levelskies.com',
+                    ['sales@levelskies.com'],
+                    fail_silently=False)
+            except:
+                pass
+
+            try:
+                # sends confirmation to customer
+                if action == 'exercise':
+                    subject = 'We recieved your ticket request'
+                    message = 'Thanks again for using Level Skies. We are now processing your request and will send you your airline ticket shortly.'
+                else:
+                    subject = 'We recieved your refund request'
+                    message = 'Thanks again for using Level Skies. We are processing your request and will send you your refund shortly.'
+
+                send_mail(subject,
+                    message,
+                    'sales@levelskies.com',
+                    ['%s' % (find_contract.customer.email)],
+                    fail_silently=False,
+                    auth_user='sales@levelskies.com',
+                    auth_password='_second&mission_')
+            except:
+                pass
 
         if clean:
             return HttpResponse(json.encode({'success': True}), mimetype="application/json")

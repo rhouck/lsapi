@@ -189,7 +189,6 @@ EMAIL_HOST = 'smtp.gmail.com'
 #EMAIL_PORT = 587
 EMAIL_HOST_USER = 'sysadmin@levelskies.com'
 EMAIL_HOST_PASSWORD = 'buttwatercruises'
-#EMAIL_SUBJECT_PREFIX = 'Level Skies - '
 DEFAULT_FROM_EMAIL = 'sysadmin@levelskies.com'
 
 
