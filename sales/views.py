@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
@@ -34,6 +35,7 @@ from django.views.generic import DetailView, ListView
 
 from sales.utils import exercise_option
 
+from api.settings import SITE_ID
 
 def get_cust_list(request):
 
@@ -515,6 +517,16 @@ def add_to_staging(request, action, slug):
 
         find_contract.ex_date = current_time_aware()
         find_contract.save()
+
+
+
+        # send confirmation email on success
+        if SITE_ID == 1:
+            send_mail('Just added to staging - %s' % (action),
+                '%s (%s) just elected to %s contract with key: %s.' % (find_contract.customer, find_contract.customer.key, action, find_contract.search.key),
+                'sysadmin@levelskies.com',
+                ['sales@levelskies.com'],
+                fail_silently=False)
 
         if clean:
             return HttpResponse(json.encode({'success': True}), mimetype="application/json")

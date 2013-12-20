@@ -182,6 +182,19 @@ XS_SHARING_ALLOWED_METHODS = ['POST','GET','OPTIONS', 'PUT', 'DELETE']
 XS_SHARING_ALLOWED_HEADERS = ['Origin', 'Content-Type', 'Accept']
 XS_SHARING_ALLOWED_CREDENTIALS = 'true'
 
+
+# email setup
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+#EMAIL_PORT = 587
+EMAIL_HOST_USER = 'sysadmin@levelskies.com'
+EMAIL_HOST_PASSWORD = 'buttwatercruises'
+#EMAIL_SUBJECT_PREFIX = 'Level Skies - '
+DEFAULT_FROM_EMAIL = 'sysadmin@levelskies.com'
+
+
+
+
 # for debug toolbar
 #INTERNAL_IPS = ('127.0.0.1',)
 
