@@ -1,4 +1,4 @@
-from settings import mongo_host, mongo_port
+from settings import mongo_host, mongo_port, SITE_ID
 
 try:
     import czjson as json
@@ -111,9 +111,12 @@ def send_request(url, data={}, headers=None, method='get'):
 def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
     gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
-    #gateway.use_test_mode = True
-    # gateway.use_test_url = True
+
     # use gateway.authorize() for an "authorize only" transaction
+    # gateway.use_test_url = True
+
+    # ensures all transactions done on local servers or the dev server are in test mode
+    gateway.use_test_mode = False if SITE_ID == 1 else True
 
     # number, month, year, first_name, last_name, code
     card = CreditCard(**card_info)
