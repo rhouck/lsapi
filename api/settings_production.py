@@ -3,7 +3,7 @@ STATIC_URL = 'https://api.levelskies.com/static/'
 
 STATIC_ROOT = '/home/projects/api.levelskies.com/static/'
 
-DEBUG = TEMPLATE_DEBUG = True
+DEBUG = TEMPLATE_DEBUG = False
 
 SITE_ID = 1
 

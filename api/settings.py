@@ -7,8 +7,7 @@ live = 'scheduler.levelskies.com'
 mongo_host = 'localhost'
 mongo_port = 27017
 
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+TEMPLATE_DEBUG = DEBUG = True
 
 ADMINS = (
     ('Ryan Houck', 'ryan@levelskies.com'),
