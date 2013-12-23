@@ -35,7 +35,7 @@ from django.views.generic import DetailView, ListView
 
 from sales.utils import exercise_option
 
-from api.settings import SITE_ID
+from api.settings import MODE
 
 def get_cust_list(request):
 
@@ -521,7 +521,7 @@ def add_to_staging(request, action, slug):
 
 
         # send confirmation email on success
-        if SITE_ID == 1:
+        if MODE == 'live':
 
             try:
                 # sends alert email to sales@levelskies
