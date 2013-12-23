@@ -1,9 +1,32 @@
 # Django settings for api project.
+
+import sys
 import os.path
 from socket import gethostname
-import sys
+from re import search
+# Django settings for levelskies project.
+
 host = gethostname()
-live = 'scheduler.levelskies.com'
+live = 'api.levelskies.com'
+dev = 'api.dev.levelskies.com'
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+
+MODE = 'local'
+protocol = 'http://'
+
+if search(live, BASE_DIR):
+    MODE = 'live'
+    protocol = 'https://'
+
+# this overwrites the false positives from the previous
+if search(dev, BASE_DIR):
+    MODE = 'dev'
+    protocol = 'https://'
+
+is_local = False if (MODE != 'local') else True
+
+
 mongo_host = 'localhost'
 mongo_port = 27017
 
@@ -167,10 +190,11 @@ LOGGING = {
 
 # this path contains all simualtion and valuation models and scripts
 sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localweb/projects/analysis')
-sys.path.insert(1, '/home/humbert/analysis')
-sys.path.insert(2, '/home/develop/analysis')
-sys.path.insert(3, '/home/bitnami/analysis')
-sys.path.insert(4, '/home/projects/api')
+sys.path.insert(1, '/home/projects/api')
+#sys.path.insert(1, '/home/humbert/analysis')
+#sys.path.insert(2, '/home/develop/analysis')
+#sys.path.insert(3, '/home/bitnami/analysis')
+
 
 
 
@@ -197,8 +221,10 @@ DEFAULT_FROM_EMAIL = 'sysadmin@levelskies.com'
 #INTERNAL_IPS = ('127.0.0.1',)
 
 # Use site-specific settings
-local_settings_path = os.path.join(os.path.dirname(__file__), 'local_settings.py')
-if host == live:
-    from settings_production import *
+if MODE == 'live':
+    from settings_live import *
+elif MODE == 'dev':
+    from settings_dev import *
 else:
-    from local_settings import *
+    from settings_local import *
+
