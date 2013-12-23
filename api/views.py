@@ -38,6 +38,7 @@ sys.path.insert(3, '/home/bitnami/analysis')
 sys.path.insert(4, '/home/projects/api')
 """
 
+
 def gen_search_display(request, build, clean, method=None):
     if 'results' in build:
         if type(build['results']) is list:
@@ -54,28 +55,30 @@ def gen_search_display(request, build, clean, method=None):
             return render_to_response('general_form.html', build, context_instance=RequestContext(request))
 
 
-
 def hello(request):
     url = "https://www.google.com/"
     ex = {'url': url}
     return HttpResponse(json.encode(ex), mimetype="application/json")
-    #return HttpResponse(request.path)
+    # return HttpResponse(request.path)
 
 
 @login_required()
 def splash(request):
     return render_to_response('base.html')
 
+
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse('login'))
+
 
 def login_view(request):
     inputs = request.POST if request.POST else None
     form = Login(inputs)
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
-        user = auth.authenticate(username=cd['username'], password=cd['password'])
+        user = auth.authenticate(
+            username=cd['username'], password=cd['password'])
         if user is not None and user.is_active:
             auth.login(request, user)
             return render_to_response('base.html')
@@ -84,5 +87,3 @@ def login_view(request):
             return render_to_response('login.html', {'form': form}, context_instance=RequestContext(request))
     else:
         return render_to_response('login.html', {'form': form}, context_instance=RequestContext(request))
-
-
