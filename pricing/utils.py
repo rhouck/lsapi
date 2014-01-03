@@ -195,6 +195,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               resQueue.put(job['fare'])
               queue.task_done()
           except:
+              pass
               #print "Failed to operate on job"
 
 
