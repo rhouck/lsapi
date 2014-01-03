@@ -1,3 +1,4 @@
+import sys
 import Queue
 import threading
 import time
@@ -127,7 +128,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               fares[ind[0]]['error'] = res['error']
     """
 
-
+    """
     class searchThread(threading.Thread):
 
         def __init__(self, threadID, fare, q):
@@ -138,6 +139,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
         def run(self):
             process_data(self.threadID, self.fare, self.q, origin, destination, depart_times, return_times, num_stops, airlines, search_key)
+
 
 
     def process_data(threadName, fare, q, origin, destination, depart_times, return_times, num_stops, airlines, search_key):
@@ -168,6 +170,65 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     # Wait for all threads to complete
     for t in threads:
         t.join()
+
+    """
+
+
+
+    """this function will process the items in the queue, in serial"""
+    def processor():
+        #if queue.empty() == True:
+        #    print "the Queue is empty!"
+        #    sys.exit(1)
+        while True:
+          try:
+              job = queue.get()
+              print "I'm operating on job item: %s"%(job)
+
+              res = run_flight_search(job['origin'], job['destination'], job['fare']['depart_date'], job['fare']['return_date'], job['depart_times'], job['return_times'], job['num_stops'], job['airlines'], job['search_key'], cached=False)
+              if res['success']:
+                job['fare']['fare'] = res['min_fare']
+                job['fare']['method'] = res['method']
+              else:
+                job['fare']['error'] = res['error']
+
+              resQueue.put(job['fare'])
+              queue.task_done()
+          except:
+              print "Failed to operate on job"
+
+
+    resQueue = Queue.Queue()
+
+    """set variables"""
+    queue = Queue.Queue()
+    threads = 3
+
+    """a list of job items. you would want this to be more advanced, like reading from a file or database"""
+    #jobs = []
+    for fare in fares:
+      inps = {'fare': fare, 'origin': origin, 'destination': destination, 'depart_times': depart_times, 'return_times': return_times, 'num_stops': num_stops, 'airlines': airlines, 'search_key': search_key}
+      print "inserting job into the queue: %s"%(inps)
+      queue.put(inps)
+      #jobs.append(inps)
+
+
+    """iterate over jobs and put each into the queue in sequence"""
+    #for job in jobs:
+    #     print "inserting job into the queue: %s"%(job)
+    #     queue.put(job)
+
+    """start some threads, each one will process one job from the queue"""
+    for i in range(threads):
+         th = threading.Thread(target=processor)
+         th.setDaemon(True)
+         th.start()
+
+    """wait until all jobs are processed before quitting"""
+    queue.join()
+
+
+
 
 
     result = []
