@@ -183,7 +183,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         while True:
           try:
               job = queue.get()
-              print "I'm operating on job item: %s"%(job)
+              #print "I'm operating on job item: %s"%(job)
 
               res = run_flight_search(job['origin'], job['destination'], job['fare']['depart_date'], job['fare']['return_date'], job['depart_times'], job['return_times'], job['num_stops'], job['airlines'], job['search_key'], cached=False)
               if res['success']:
@@ -195,7 +195,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               resQueue.put(job['fare'])
               queue.task_done()
           except:
-              print "Failed to operate on job"
+              #print "Failed to operate on job"
 
 
     resQueue = Queue.Queue()
@@ -208,7 +208,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     #jobs = []
     for fare in fares:
       inps = {'fare': fare, 'origin': origin, 'destination': destination, 'depart_times': depart_times, 'return_times': return_times, 'num_stops': num_stops, 'airlines': airlines, 'search_key': search_key}
-      print "inserting job into the queue: %s"%(inps)
+      #print "inserting job into the queue: %s"%(inps)
       queue.put(inps)
       #jobs.append(inps)
 
