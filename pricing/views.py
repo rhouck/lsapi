@@ -375,7 +375,7 @@ def price_edu_combo(request):
                 # add current flight list if no errors and 'show_flights' is true
                 if not model_out['error']:
                     model_out = refund_format_conversion(model_out)
-                combined_results = {'pricing_results': model_out, 'inputs': model_in, 'key': search_key,}
+                combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
 
                 # convert all dates into js time-stamp
                 date_bank = {}
@@ -401,7 +401,7 @@ def price_edu_combo(request):
 
                     #if cd['disp_depart_date'] and cd['disp_return_date']:
                     #    combined_results.update({'flights': flights['flights']})
-
+                    
                 else:
                     # checks for short error if generated in pull_fares_range function
                     try:
