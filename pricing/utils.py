@@ -250,9 +250,15 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       for i in results['fares']:
         if 'error' in i:
           results['success'] = False
+          
+          if not error:
+            short_error = i['error']
+          
           error += "Departing: %s and returning: %s - %s " % (i['depart_date'], i['return_date'], i['error'])
+    
     if not results['success']:
       results['error'] = error
+      results['short_error'] = short_error
 
     return results
 
@@ -316,7 +322,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     if error:
         data = {'success': False, 'error': error}
     elif not data:
-        data = {'success': False, 'error': 'Did not find flights matching search parameters.'}
+        data = {'success': False, 'error': 'Did not find flights matching search parameters. Consider relaxing search preferences.'}
     else:
         if data['source'] == 'wego':
             data = parse_wan_live(data)
