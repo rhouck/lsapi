@@ -705,7 +705,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
     return_times = pick_time_window(return_times)
 
     # set convenience values
-    if num_stops == "none":
+    if num_stops == "nonstop" or num_stops == "none":
         num_stops = 0
     elif num_stops == "none-one":
         num_stops = 1
