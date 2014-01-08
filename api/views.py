@@ -81,7 +81,8 @@ def login_view(request):
             username=cd['username'], password=cd['password'])
         if user is not None and user.is_active:
             auth.login(request, user)
-            return render_to_response('base.html')
+            #return render_to_response('base.html')
+            return HttpResponseRedirect(reverse('fare_changes'))
         else:
             form.invalid = "Sorry, that's not a valid username / password combination"
             return render_to_response('login.html', {'form': form}, context_instance=RequestContext(request))
