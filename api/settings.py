@@ -188,17 +188,6 @@ LOGGING = {
 }
 
 
-# this path contains all simualtion and valuation models and scripts
-sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localweb/projects/analysis')
-sys.path.insert(1, '/home/projects/api')
-sys.path.insert(2, '/Users/ryanchouck/Desktop/dev/pricing-model')
-#sys.path.insert(1, '/home/humbert/analysis')
-#sys.path.insert(2, '/home/develop/analysis')
-#sys.path.insert(3, '/home/bitnami/analysis')
-
-
-
-
 # cross domain xhr settings
 XS_SHARING_ALLOWED_ORIGINS = '*'
 #XS_SHARING_ALLOWED_ORIGINS = "http://127.0.0.1:8000"
