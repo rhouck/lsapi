@@ -1,3 +1,4 @@
+import sys
 
 STATIC_URL = 'https://api.dev.levelskies.com/static/'
 
@@ -26,3 +27,5 @@ DATABASES = {
 
 mongo_host = 'localhost'
 mongo_port = 27017
+
+sys.path.insert(0, '/home/projects/dev-pricing-model')
