@@ -81,13 +81,13 @@ class Contract(models.Model):
 
 
     def outstanding(self):
-        return self.search.exp_date >= current_time_aware().date() and not self.ex_date
+        return self.search.exp_date >= current_time_aware() and not self.ex_date
     outstanding.admin_order_field = 'search__exp_date'
     outstanding.boolean = True
     outstanding.short_description = 'Open and not expired'
 
     def expired(self):
-        return self.search.exp_date < current_time_aware().date()
+        return self.search.exp_date < current_time_aware()
 
     def staged(self):
         try:
