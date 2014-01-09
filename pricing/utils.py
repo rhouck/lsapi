@@ -32,9 +32,6 @@ def refund_format_conversion(pricing_results):
     del pricing_results['locked_fare']
     return pricing_results
 
-
-
-
 def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, search_key=None):
 
     """
@@ -261,14 +258,6 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       results['short_error'] = short_error
 
     return results
-
-
-
-
-
-
-
-
 
 def run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, search_key=None, cached=False):
     """
@@ -648,6 +637,7 @@ def parse_wan_cached(data):
 
 
 
+
 # skyscanner api
 def call_sky(url, data={}, method='get'):
 
@@ -667,6 +657,7 @@ def call_sky(url, data={}, method='get'):
   response = send_request(url, data, headers, method)
   response['source'] = 'skyscanner'
   return response
+
 
 
 

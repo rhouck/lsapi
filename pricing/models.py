@@ -20,7 +20,7 @@ class Searches(models.Model):
     airlines = models.CharField('airline preference', max_length=25)
 
     # returned from search results
-    exp_date = models.DateField('expiration date', blank=True, null=True)
+    exp_date = models.DateTimeField('expiration date', blank=True, null=True)
     locked_fare = models.FloatField(blank=True, null=True)
     holding_price = models.FloatField(blank=True, null=True)
     expected_risk = models.FloatField(blank=True, null=True)
