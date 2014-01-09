@@ -521,8 +521,8 @@ def add_to_staging(request, action, slug):
 
 
         # send confirmation email on success
-        if MODE == 'live':
-
+        #if MODE == 'live':
+        if 3>1:
             try:
                 # sends alert email to sales@levelskies
                 send_mail('Just added to staging - %s' % (action),
