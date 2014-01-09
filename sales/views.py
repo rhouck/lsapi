@@ -450,6 +450,34 @@ def purchase_option(request):
                     except:
                         pass
 
+                    # send confirmation email on success
+                    #if MODE == 'live':
+                    if 3>1:
+                        try: 
+                            subject = "You've successfully made your Level Skies Lock-in"
+                            
+                            if (find_search.depart_date2 - find_search.depart_date1).days > 0:
+                                dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
+                            else:
+                                dep = "on %s" % (find_search.depart_date1.strftime("%B %d, %Y"))
+
+                            if (find_search.return_date2 - find_search.return_date1).days > 0:
+                                ret = "between %s and %s" % (find_search.return_date1.strftime("%B %d, %Y"), find_search.return_date2.strftime("%B %d, %Y"))
+                            else:
+                                ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
+
+                            message = """Thanks for using Level Skies!\n\nYou now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+                        
+                            send_mail(subject,
+                                message,
+                                'sales@levelskies.com',
+                                ['%s' % (new_contract.customer.email)],
+                                fail_silently=False,
+                                auth_user='sales@levelskies.com',
+                                auth_password='_second&mission_')
+                        except:
+                            pass
+
                 else:
                     form._errors[forms.forms.NON_FIELD_ERRORS] = form.error_class([response['status']])
                     #build['error_message'] = response['status']
@@ -537,10 +565,10 @@ def add_to_staging(request, action, slug):
                 # sends confirmation to customer
                 if action == 'exercise':
                     subject = 'We recieved your ticket request'
-                    message = 'Thanks again for using Level Skies. We are now processing your request and will send you your airline ticket shortly.'
+                    message = "Thanks again for using Level Skies!\n\nWe are now processing your request and will send you %s %s's ticket from %s to %s shortly.\n\nThe Level Skies Team" % (find_contract.traveler_first_name, find_contract.traveler_last_name, find_contract.search.origin_code, find_contract.search.destination_code)
                 else:
-                    subject = 'We recieved your refund request'
-                    message = 'Thanks again for using Level Skies. We are processing your request and will send you your refund shortly.'
+                    subject = 'Your Level Skies Lock-in is being refunded'
+                    message = "Thanks again for using Level Skies!\n\nWe are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
                 send_mail(subject,
                     message,
