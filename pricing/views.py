@@ -214,7 +214,8 @@ def display_current_flights(request, slug, convert=False):
                 if add:
 
                     if i['fare'] < search.locked_fare:
-                        res['flights'][index]['rebate'] = search.locked_fare - i['fare']
+                        #res['flights'][index]['rebate'] = search.locked_fare - i['fare']
+                        res['flights'][index]['rebate'] = None
                     else:
                         res['flights'][index]['rebate'] = None
                     del res['flights'][index]['fare']
