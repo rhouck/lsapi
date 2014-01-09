@@ -203,7 +203,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
     """set variables"""
     queue = Queue.Queue()
-    threads = 3
+    threads = len(fares) if len(fares) < 10 else 10 
 
     """a list of job items. you would want this to be more advanced, like reading from a file or database"""
     #jobs = []
