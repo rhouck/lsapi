@@ -566,10 +566,10 @@ def add_to_staging(request, action, slug):
                 if action == 'exercise':
                     subject = 'We recieved your ticket request'
                     
-                    if not (find_contract.traveler_first_name and find_contract.traveler_last_name):
+                    if not (staged_cont.traveler_first_name and staged_cont.traveler_last_name):
                         target = "your"
                     else:
-                        target = "%s %s's" % (find_contract.traveler_first_name, find_contract.traveler_last_name)
+                        target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
 
                     message = "Thanks again for using Level Skies!\n\nWe are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
                 else:
