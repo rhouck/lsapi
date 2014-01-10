@@ -565,7 +565,13 @@ def add_to_staging(request, action, slug):
                 # sends confirmation to customer
                 if action == 'exercise':
                     subject = 'We recieved your ticket request'
-                    message = "Thanks again for using Level Skies!\n\nWe are now processing your request and will send you %s %s's ticket from %s to %s shortly.\n\nThe Level Skies Team" % (find_contract.traveler_first_name, find_contract.traveler_last_name, find_contract.search.origin_code, find_contract.search.destination_code)
+                    
+                    if not (find_contract.traveler_first_name and find_contract.traveler_last_name):
+                        target = "your"
+                    else:
+                        target = "%s %s's" % (find_contract.traveler_first_name, find_contract.traveler_last_name)
+
+                    message = "Thanks again for using Level Skies!\n\nWe are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
                 else:
                     subject = 'Your Level Skies Lock-in is being refunded'
                     message = "Thanks again for using Level Skies!\n\nWe are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
