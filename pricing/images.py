@@ -22,7 +22,7 @@ def get_airline_image(name):
     'SEY' : {'name': 'Air Seychelles', 'image': 'air-seychelles.png'},
     'TSC' : {'name': 'Air Transat', 'image': 'air-transat.jpg'},
     'TRS' : {'name': 'AirTran Airways', 'image': 'airtran.jpg'},
-    'PAK' : {'name': 'Pacific Alaska Airlines', 'image': 'alaska-airlines.gif'},
+    'PAK' : {'name': 'Alaska Airlines', 'image': 'alaska-airlines.gif'},
     'AZA' : {'name': 'Alitalia', 'image': 'alitalia.gif'},
     'AAY' : {'name': 'Allegiant Air', 'image': 'allegiant-air.gif'},
     'AAL' : {'name': 'American Airlines', 'image': 'american-airlines.jpg'},
