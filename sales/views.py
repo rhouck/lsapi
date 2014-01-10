@@ -89,7 +89,7 @@ def get_staging_list(request):
 
 def get_cust_detail(request, slug):
 
-    cust = get_object_or_404(Customer, key__iexact=slug)
+    cust = get_object_or_404(Customer, key=slug)
     contracts = Contract.objects.filter(customer__key=slug).order_by('-purch_date')
 
     paginator = Paginator(contracts, 25)
@@ -107,7 +107,7 @@ def get_cust_detail(request, slug):
 
 def get_plat_detail(request, slug):
 
-    plat = get_object_or_404(Platform, key__iexact=slug)
+    plat = get_object_or_404(Platform, key=slug)
     contracts = Contract.objects.filter(customer__platform__key=slug).order_by('-purch_date')
 
     paginator = Paginator(contracts, 25)
@@ -146,44 +146,49 @@ def customer_info(request, slug):
         if 'platform_key' in inputs:
             del inputs['platform_key']
 
-
-    if inputs and method == 'post':
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        for key, value in inputs.items():
-            if key not in ("key", "platform", "reg_date"):
-                try:
-                    setattr(cust, key, value)
-                except:
-                    pass
-        cust.save()
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        cust_dict = cust.__dict__
-        cust_dict['update'] = True
-    else:
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        cust_dict = cust.__dict__
-        cust_dict['update'] = False
-
-
-    del cust_dict['_state']
-    del cust_dict['platform_id']
-    del cust_dict['reg_date']
-    del cust_dict['key']
-    del cust_dict['id']
+    try:
+        if inputs and method == 'post':
+            cust = Customer.objects.get(key=slug)
+            for key, value in inputs.items():
+                if key not in ("key", "platform", "reg_date"):
+                    try:
+                        setattr(cust, key, value)
+                    except:
+                        pass
+            cust.save()
+            cust = Customer.objects.get(key=slug)
+            cust_dict = cust.__dict__
+            cust_dict['update'] = True
+        else:
+            cust = Customer.objects.get(key=slug)
+            cust_dict = cust.__dict__
+            cust_dict['update'] = False
 
 
-    if 'csrfmiddlewaretoken' in cust_dict:
-        del cust_dict['csrfmiddlewaretoken']
-    if 'Search' in cust_dict:
-        del cust_dict['Search']
+        del cust_dict['_state']
+        del cust_dict['platform_id']
+        del cust_dict['reg_date']
+        del cust_dict['key']
+        del cust_dict['id']
 
-    cust_dict['success'] = True
 
-    build = {'results': cust_dict}
+        if 'csrfmiddlewaretoken' in cust_dict:
+            del cust_dict['csrfmiddlewaretoken']
+        if 'Search' in cust_dict:
+            del cust_dict['Search']
+
+        cust_dict['success'] = True
+        
+        build = {'results': cust_dict}
+
+    except:
+        build = {'results': {'success': False, 'error': 'Slug provided does not correspond to existing customer.'}}
+    
 
     if request.user.is_authenticated():
         clean = False
-        del build['results']['update']
+        if 'update' in build['results']: 
+            del build['results']['update']
     else:
         clean = True
 
@@ -200,8 +205,8 @@ def find_open_contracts(request, slug):
 
 
 
-    cust = get_object_or_404(Customer, key__iexact=slug)
-    contracts = Contract.objects.filter(customer__id__iexact=cust.id).order_by('search__exp_date')
+    cust = get_object_or_404(Customer, key=slug)
+    contracts = Contract.objects.filter(customer__id=cust.id).order_by('search__exp_date')
 
     bank = []
     for index, i in enumerate(contracts):
@@ -500,7 +505,7 @@ def add_to_staging(request, action, slug):
         if not cred['success']:
             return HttpResponse(json.encode(cred), mimetype="application/json")
 
-    find_contract = get_object_or_404(Contract, search__key__iexact=slug)
+    find_contract = get_object_or_404(Contract, search__key=slug)
 
     try:
         find_stage = Staging.objects.get(contract=find_contract)
@@ -596,7 +601,7 @@ def add_to_staging(request, action, slug):
 
 def staged_item(request, slug):
 
-    find_contract = get_object_or_404(Contract, search__key__iexact=slug)
+    find_contract = get_object_or_404(Contract, search__key=slug)
     find_stage = get_object_or_404(Staging, contract=find_contract)
 
     inputs = request.POST if request.POST else None

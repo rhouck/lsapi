@@ -42,7 +42,7 @@ def format_pref_input(i):
 
 def check_creds(inps,model):
     #return HttpResponse(json.encode({'success': False, 'error': 'platform_key not sent'}), mimetype="application/json")
-    #platform = get_object_or_404(Platform, key__iexact=request.POST['platform_key'])
+    #platform = get_object_or_404(Platform, key=request.POST['platform_key'])
     if not inps:
       return {'success': False, 'error': 'platform_key not sent'}
     elif 'platform_key' not in inps:
