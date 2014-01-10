@@ -105,7 +105,7 @@ def get_airline_image(name):
     'WZZ' : {'name': 'Wizz Air', 'image': 'wizz-air.jpg'},
   }
 
-  images = [ i['image'] for i in airlines.itervalues() if i['name'] in name ]
+  images = [ i['image'] for i in airlines.itervalues() if i['name'].lower() in name.lower() ]
 
   if len(images) == 1:
     return images[0]
