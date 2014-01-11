@@ -34,6 +34,12 @@ from django.core.mail import send_mail
 
 def email_template(request):
     
+    send_mail('Just added to staging',
+    'lksadjf',
+    'sysadmin@levelskies.com',
+    ['ryanchouck@gmail.com'],
+    fail_silently=False)
+    """
     send_mail("subject",
     "message",
     'sales@levelskies.com',
@@ -41,7 +47,8 @@ def email_template(request):
     fail_silently=False,
     auth_user='sales@levelskies.com',
     auth_password='_second&mission_')
-
+    """
+    
     build = {'title': 'test title', 'body': 'test body copy'}
     return render_to_response('email_template/index.html', build, context_instance=RequestContext(request))
 
