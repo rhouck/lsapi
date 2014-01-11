@@ -32,6 +32,7 @@ from quix.pay.transaction import CreditCard, Address, Customer as AuthCustomer
 
 from functions import find_sub_index_dict
 
+
 def format_pref_input(i):
     # alters the preferences inputs from website to match format in simulation model
     if int(i) == 0:

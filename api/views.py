@@ -29,14 +29,24 @@ from django.contrib.auth.views import login
 from forms import *
 from utils import *
 
-"""
-# this path contains all simualtion and valuation models and scripts
-sys.path.insert(0, 'C:/Program Files (x86)/EasyPHP-DevServer-13.1VC9/data/localweb/projects/analysis')
-sys.path.insert(1, '/home/humbert/analysis')
-sys.path.insert(2, '/home/develop/analysis')
-sys.path.insert(3, '/home/bitnami/analysis')
-sys.path.insert(4, '/home/projects/api')
-"""
+
+from django.core.mail import send_mail
+
+def email_template(request):
+    
+    send_mail("subject",
+    "message",
+    'sales@levelskies.com',
+    ['%s' % ('ryanchouck@gmail.com')],
+    fail_silently=False,
+    auth_user='sales@levelskies.com',
+    auth_password='_second&mission_')
+
+    build = {'title': 'test title', 'body': 'test body copy'}
+    return render_to_response('email_template/index.html', build, context_instance=RequestContext(request))
+
+    
+
 
 
 def gen_search_display(request, build, clean, method=None):

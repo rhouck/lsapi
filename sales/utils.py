@@ -1,5 +1,45 @@
+from django.core.mail import send_mail
 from sales.models import *
 from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
+
+from django.template.loader import render_to_string
+
+def send_template_email(to_email, subject, title, body):
+
+    """
+
+    emails = []
+    for email in queryset.get().listing.emails.all():
+        if email.is_valid():
+            emails.append(email.email)
+
+    from django.core.mail import EmailMultiAlternatives
+    from django.template.loader import render_to_string
+
+    template_data = {
+        'body': '<p style="color:red">asdasdas</p>'
+    }
+
+    html_body = render_to_string("template.html", template_data)
+    from_email = "%s <%s>" % (queryset.get().from_identity.full_name, queryset.get().from_identity.email)
+    msg = EmailMultiAlternatives(subject=queryset.get().subject, from_email=from_email, to=emails, headers={})
+    msg.attach_alternative(html_body, "text/html")
+
+    msg.send()
+
+    """
+
+
+    #html_body = render_to_string('email_template/index.html', {'title': title, 'body': body})
+    html_body = "lkasjdfasldkj"
+    send_mail(subject,
+    html_body,
+    'sales@levelskies.com',
+    ['%s' % (to_email)],
+    fail_silently=False,
+    auth_user='sales@levelskies.com',
+    auth_password='_second&mission_')
+
 
 
 def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):

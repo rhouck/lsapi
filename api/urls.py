@@ -16,6 +16,9 @@ urlpatterns = patterns('',
     url(r'^accounts/login/$', login_view, name='login'),
     url(r'^accounts/logout/$', logout_view, name='logout'),
 
+    url(r'^email/$', email_template, name='email_template'),
+
+
     # 'pricing' app urls
     url(r'^pricing/', include('pricing.urls')),
 

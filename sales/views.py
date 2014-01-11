@@ -33,7 +33,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
-from sales.utils import exercise_option
+from sales.utils import exercise_option, send_template_email
 
 from api.settings import MODE
 
@@ -460,7 +460,7 @@ def purchase_option(request):
                     if 3>1:
                         try: 
                             subject = "You've successfully made your Level Skies Lock-in"
-                            
+                            title = "Congrats on locking in your airfare. That was a good move."                        
                             if (find_search.depart_date2 - find_search.depart_date1).days > 0:
                                 dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
                             else:
@@ -472,7 +472,7 @@ def purchase_option(request):
                                 ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
                             message = """Thanks for using Level Skies!\n\nYou now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
-                        
+                            
                             send_mail(subject,
                                 message,
                                 'sales@levelskies.com',
@@ -480,6 +480,7 @@ def purchase_option(request):
                                 fail_silently=False,
                                 auth_user='sales@levelskies.com',
                                 auth_password='_second&mission_')
+                            
                         except:
                             pass
 
