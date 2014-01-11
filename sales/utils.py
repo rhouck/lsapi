@@ -5,7 +5,7 @@ from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, che
 from django.template.loader import render_to_string
 
 def send_template_email(to_email, subject, title, body):
-
+    pass
     """
 
     emails = []
@@ -29,7 +29,7 @@ def send_template_email(to_email, subject, title, body):
 
     """
 
-
+    """
     #html_body = render_to_string('email_template/index.html', {'title': title, 'body': body})
     html_body = "lkasjdfasldkj"
     send_mail(subject,
@@ -39,7 +39,7 @@ def send_template_email(to_email, subject, title, body):
     fail_silently=False,
     auth_user='sales@levelskies.com',
     auth_password='_second&mission_')
-
+    """
 
 
 def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):

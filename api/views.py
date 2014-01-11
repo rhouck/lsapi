@@ -37,8 +37,9 @@ def email_template(request):
     send_mail('Just added to staging',
     'lksadjf',
     'sysadmin@levelskies.com',
-    ['ryanchouck@gmail.com'],
+    ['ryank@levelskies.com'],
     fail_silently=False)
+    
     """
     send_mail("subject",
     "message",
