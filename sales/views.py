@@ -33,9 +33,20 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
-from sales.utils import exercise_option
+from sales.utils import exercise_option, send_template_email
 
 from api.settings import MODE
+
+"""
+def email(request):
+    #send_mail('Subject here', 'Here is the message.', 'sysadmin@levelskies.com',
+    #['ryanchouck@gmail.com'], fail_silently=False)
+    
+    send_template_email('ryanchouck@gmail.com', 'subject', 'title', 'body')
+    #return HttpResponse('done')
+    body = "here is some line\n\nhere is a <b>new</b> line"
+    return render_to_response('email_template/index_no_image.html', {'title': 'title', 'body': body}, context_instance=RequestContext(request))
+"""
 
 def get_cust_list(request):
 
@@ -89,7 +100,7 @@ def get_staging_list(request):
 
 def get_cust_detail(request, slug):
 
-    cust = get_object_or_404(Customer, key__iexact=slug)
+    cust = get_object_or_404(Customer, key=slug)
     contracts = Contract.objects.filter(customer__key=slug).order_by('-purch_date')
 
     paginator = Paginator(contracts, 25)
@@ -107,7 +118,7 @@ def get_cust_detail(request, slug):
 
 def get_plat_detail(request, slug):
 
-    plat = get_object_or_404(Platform, key__iexact=slug)
+    plat = get_object_or_404(Platform, key=slug)
     contracts = Contract.objects.filter(customer__platform__key=slug).order_by('-purch_date')
 
     paginator = Paginator(contracts, 25)
@@ -146,44 +157,49 @@ def customer_info(request, slug):
         if 'platform_key' in inputs:
             del inputs['platform_key']
 
-
-    if inputs and method == 'post':
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        for key, value in inputs.items():
-            if key not in ("key", "platform", "reg_date"):
-                try:
-                    setattr(cust, key, value)
-                except:
-                    pass
-        cust.save()
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        cust_dict = cust.__dict__
-        cust_dict['update'] = True
-    else:
-        cust = get_object_or_404(Customer, key__iexact=slug)
-        cust_dict = cust.__dict__
-        cust_dict['update'] = False
-
-
-    del cust_dict['_state']
-    del cust_dict['platform_id']
-    del cust_dict['reg_date']
-    del cust_dict['key']
-    del cust_dict['id']
+    try:
+        if inputs and method == 'post':
+            cust = Customer.objects.get(key=slug)
+            for key, value in inputs.items():
+                if key not in ("key", "platform", "reg_date"):
+                    try:
+                        setattr(cust, key, value)
+                    except:
+                        pass
+            cust.save()
+            cust = Customer.objects.get(key=slug)
+            cust_dict = cust.__dict__
+            cust_dict['update'] = True
+        else:
+            cust = Customer.objects.get(key=slug)
+            cust_dict = cust.__dict__
+            cust_dict['update'] = False
 
 
-    if 'csrfmiddlewaretoken' in cust_dict:
-        del cust_dict['csrfmiddlewaretoken']
-    if 'Search' in cust_dict:
-        del cust_dict['Search']
+        del cust_dict['_state']
+        del cust_dict['platform_id']
+        del cust_dict['reg_date']
+        del cust_dict['key']
+        del cust_dict['id']
 
-    cust_dict['success'] = True
 
-    build = {'results': cust_dict}
+        if 'csrfmiddlewaretoken' in cust_dict:
+            del cust_dict['csrfmiddlewaretoken']
+        if 'Search' in cust_dict:
+            del cust_dict['Search']
+
+        cust_dict['success'] = True
+        
+        build = {'results': cust_dict}
+
+    except:
+        build = {'results': {'success': False, 'error': 'Slug provided does not correspond to existing customer.'}}
+    
 
     if request.user.is_authenticated():
         clean = False
-        del build['results']['update']
+        if 'update' in build['results']: 
+            del build['results']['update']
     else:
         clean = True
 
@@ -200,8 +216,8 @@ def find_open_contracts(request, slug):
 
 
 
-    cust = get_object_or_404(Customer, key__iexact=slug)
-    contracts = Contract.objects.filter(customer__id__iexact=cust.id).order_by('search__exp_date')
+    cust = get_object_or_404(Customer, key=slug)
+    contracts = Contract.objects.filter(customer__id=cust.id).order_by('search__exp_date')
 
     bank = []
     for index, i in enumerate(contracts):
@@ -455,7 +471,7 @@ def purchase_option(request):
                     if 3>1:
                         try: 
                             subject = "You've successfully made your Level Skies Lock-in"
-                            
+                            title = "Congrats on locking in your airfare. That was a good move."                        
                             if (find_search.depart_date2 - find_search.depart_date1).days > 0:
                                 dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
                             else:
@@ -466,8 +482,10 @@ def purchase_option(request):
                             else:
                                 ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-                            message = """Thanks for using Level Skies!\n\nYou now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
-                        
+                            body = """You now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+                            
+                            send_template_email(new_contract.customer.email, subject, title, body)
+                            """
                             send_mail(subject,
                                 message,
                                 'sales@levelskies.com',
@@ -475,6 +493,7 @@ def purchase_option(request):
                                 fail_silently=False,
                                 auth_user='sales@levelskies.com',
                                 auth_password='_second&mission_')
+                            """
                         except:
                             pass
 
@@ -500,7 +519,7 @@ def add_to_staging(request, action, slug):
         if not cred['success']:
             return HttpResponse(json.encode(cred), mimetype="application/json")
 
-    find_contract = get_object_or_404(Contract, search__key__iexact=slug)
+    find_contract = get_object_or_404(Contract, search__key=slug)
 
     try:
         find_stage = Staging.objects.get(contract=find_contract)
@@ -563,6 +582,7 @@ def add_to_staging(request, action, slug):
 
             try:
                 # sends confirmation to customer
+                title = "Thanks again for using Level Skies!"
                 if action == 'exercise':
                     subject = 'We recieved your ticket request'
                     
@@ -570,12 +590,14 @@ def add_to_staging(request, action, slug):
                         target = "your"
                     else:
                         target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
-
-                    message = "Thanks again for using Level Skies!\n\nWe are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
+                    body = "We are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
+                    
                 else:
                     subject = 'Your Level Skies Lock-in is being refunded'
-                    message = "Thanks again for using Level Skies!\n\nWe are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
+                    body = "We are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
+                send_template_email(find_contract.customer.email, subject, title, body)
+                """
                 send_mail(subject,
                     message,
                     'sales@levelskies.com',
@@ -583,6 +605,7 @@ def add_to_staging(request, action, slug):
                     fail_silently=False,
                     auth_user='sales@levelskies.com',
                     auth_password='_second&mission_')
+                """
             except:
                 pass
 
@@ -596,7 +619,7 @@ def add_to_staging(request, action, slug):
 
 def staged_item(request, slug):
 
-    find_contract = get_object_or_404(Contract, search__key__iexact=slug)
+    find_contract = get_object_or_404(Contract, search__key=slug)
     find_stage = get_object_or_404(Staging, contract=find_contract)
 
     inputs = request.POST if request.POST else None

@@ -169,7 +169,7 @@ def display_current_flights(request, slug, convert=False):
 
     try:
 
-        search = Searches.objects.get(key__iexact=slug)
+        search = Searches.objects.get(key=slug)
 
         if convert:
 
@@ -179,7 +179,7 @@ def display_current_flights(request, slug, convert=False):
                 raise Exception("Valid travel dates not provided: depart_date & return_date")
 
             # raise error if contract is not outstanding or has already been marked for staging process
-            contract = Contract.objects.get(search__key__iexact=slug)
+            contract = Contract.objects.get(search__key=slug)
             if not contract.outstanding() or contract.staged():
                 raise Exception("This contract is no longer valid or has already been converted.")
 
@@ -277,7 +277,7 @@ def search_info(request, slug, all=False):
         if not cred['success']:
             return HttpResponse(json.encode(cred), content_type="application/json")
 
-    search = get_object_or_404(Searches, key__iexact=slug)
+    search = get_object_or_404(Searches, key=slug)
 
     purch_date_time = current_time_aware()
     search_date_date = search.search_date
