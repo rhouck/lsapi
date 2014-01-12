@@ -6,7 +6,7 @@ from django.views.generic.simple import direct_to_template
 from sales.views import *
 
 urlpatterns = patterns('',
-
+    
     # sales
     url(r'^test/$', login_required(test_trans), name='test_trans'),
     url(r'^purchase/$', purchase_option, name='purchase'),

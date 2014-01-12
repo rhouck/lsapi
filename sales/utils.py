@@ -1,35 +1,18 @@
-from django.core.mail import send_mail
 from sales.models import *
 from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
 
-from django.template.loader import render_to_string
+# maybe don't need anymore
+from django.core.mail import send_mail, get_connection
+#from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import get_template
+from django.template import Context
+
 
 def send_template_email(to_email, subject, title, body):
-    pass
-    """
+    
 
-    emails = []
-    for email in queryset.get().listing.emails.all():
-        if email.is_valid():
-            emails.append(email.email)
-
-    from django.core.mail import EmailMultiAlternatives
-    from django.template.loader import render_to_string
-
-    template_data = {
-        'body': '<p style="color:red">asdasdas</p>'
-    }
-
-    html_body = render_to_string("template.html", template_data)
-    from_email = "%s <%s>" % (queryset.get().from_identity.full_name, queryset.get().from_identity.email)
-    msg = EmailMultiAlternatives(subject=queryset.get().subject, from_email=from_email, to=emails, headers={})
-    msg.attach_alternative(html_body, "text/html")
-
-    msg.send()
-
-    """
-
-    """
+    """    
     #html_body = render_to_string('email_template/index.html', {'title': title, 'body': body})
     html_body = "lkasjdfasldkj"
     send_mail(subject,
@@ -39,7 +22,24 @@ def send_template_email(to_email, subject, title, body):
     fail_silently=False,
     auth_user='sales@levelskies.com',
     auth_password='_second&mission_')
+    
     """
+    plaintext = get_template('email_template/plain_text.txt')
+    htmly     = get_template('email_template/index.html')
+    d = Context({'title': title, 'body': body})
+    text_content = plaintext.render(d)
+    html_content = htmly.render(d)
+
+
+    from_email = 'sales@levelskies.com'
+    from_password = '_second&mission_'
+    connection = get_connection(username=from_email, password=from_password, fail_silently=False)                        
+    msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email], connection=connection) 
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+    
+
+
 
 
 def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):

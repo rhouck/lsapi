@@ -173,7 +173,7 @@ body, td { font-family: 'Helvetica Neue', Arial, Helvetica, Geneva, sans-serif; 
                                 <td class="w580" width="580">
                                     <p align="left" class="article-title"><singleline label="Title">{{ title }}</singleline></p>
                                     <div align="left" class="article-content">
-                                        <multiline label="Description">{{ body }}</multiline>
+                                        <multiline label="Description">{{ body|linebreaks }}</multiline>
                                     </div>
                                 </td>
                             </tr>

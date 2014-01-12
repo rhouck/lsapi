@@ -37,6 +37,17 @@ from sales.utils import exercise_option, send_template_email
 
 from api.settings import MODE
 
+"""
+def email(request):
+    #send_mail('Subject here', 'Here is the message.', 'sysadmin@levelskies.com',
+    #['ryanchouck@gmail.com'], fail_silently=False)
+    
+    send_template_email('ryanchouck@gmail.com', 'subject', 'title', 'body')
+    #return HttpResponse('done')
+    body = "here is some line\n\nhere is a <b>new</b> line"
+    return render_to_response('email_template/index_no_image.html', {'title': 'title', 'body': body}, context_instance=RequestContext(request))
+"""
+
 def get_cust_list(request):
 
     items = Customer.objects.all()
@@ -471,8 +482,10 @@ def purchase_option(request):
                             else:
                                 ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-                            message = """Thanks for using Level Skies!\n\nYou now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+                            body = """You now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
                             
+                            send_template_email(new_contract.customer.email, subject, title, body)
+                            """
                             send_mail(subject,
                                 message,
                                 'sales@levelskies.com',
@@ -480,7 +493,7 @@ def purchase_option(request):
                                 fail_silently=False,
                                 auth_user='sales@levelskies.com',
                                 auth_password='_second&mission_')
-                            
+                            """
                         except:
                             pass
 
@@ -569,6 +582,7 @@ def add_to_staging(request, action, slug):
 
             try:
                 # sends confirmation to customer
+                title = "Thanks again for using Level Skies!"
                 if action == 'exercise':
                     subject = 'We recieved your ticket request'
                     
@@ -576,12 +590,14 @@ def add_to_staging(request, action, slug):
                         target = "your"
                     else:
                         target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
-
-                    message = "Thanks again for using Level Skies!\n\nWe are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
+                    body = "We are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
+                    
                 else:
                     subject = 'Your Level Skies Lock-in is being refunded'
-                    message = "Thanks again for using Level Skies!\n\nWe are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
+                    body = "We are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
+                send_template_email(find_contract.customer.email, subject, title, body)
+                """
                 send_mail(subject,
                     message,
                     'sales@levelskies.com',
@@ -589,6 +605,7 @@ def add_to_staging(request, action, slug):
                     fail_silently=False,
                     auth_user='sales@levelskies.com',
                     auth_password='_second&mission_')
+                """
             except:
                 pass
 
