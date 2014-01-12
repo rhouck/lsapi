@@ -42,10 +42,10 @@ def email(request):
     #send_mail('Subject here', 'Here is the message.', 'sysadmin@levelskies.com',
     #['ryanchouck@gmail.com'], fail_silently=False)
     
-    send_template_email('ryanchouck@gmail.com', 'subject', 'title', 'body')
+    #send_template_email('ryanchouck@gmail.com', 'subject', 'title', 'body')
     #return HttpResponse('done')
     body = "here is some line\n\nhere is a <b>new</b> line"
-    return render_to_response('email_template/index_no_image.html', {'title': 'title', 'body': body}, context_instance=RequestContext(request))
+    return render_to_response('email_template/index.html', {'title': 'title', 'body': body}, context_instance=RequestContext(request))
 """
 
 def get_cust_list(request):

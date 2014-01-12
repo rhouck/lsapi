@@ -14,14 +14,20 @@
       <div class="col-md-3">
         <h2>{{ detail.contract.customer|title }}</h2>
       </div>
+  </div>
+  <div class="row">
       <div class="col-md-3">
-        </br></br>
         <p>{{ detail.contract.customer.email }}</p>
       </div>
+  </div>
+  <div class="row">
       <div class="col-md-3">
-        </br></br>
         <p>{{ detail.contract.customer.phone }}</p>
       </div>
+  </div>
+
+  <div class="row">
+      <div><p></p></div>
   </div>
 
   <div class="row">
@@ -48,20 +54,23 @@
       </div>
   </div>
 
+  <div class="row">
+      <div><p></p></div>
+  </div>
 
   <div class="row">
     <div class="col-md-3">
       {% if detail.exercise %}
-        <h3>Exercise</h3>
+        <h4>Exercise</h4>
       {% else %}
-        <h3>Refund</h3>
+        <h4>Refund</h4>
       {% endif %}
     </div>
   </div>
 
 
   <div class="row">
-    <div class="col-md-3">
+    <div class="col-md-4">
       {% if detail.exercise %}
           <p>Selected Departure: {{ detail.dep_date }}</p>
           <p>Selected Return:    {{ detail.ret_date }}</p>
@@ -76,27 +85,83 @@
         <p>Expiration Year:  {{ detail.contract.cc_exp_year }}</p>
       {% endif %}
     </div>
-    <div class="col-md-6">
+    <div class="col-md-8">
       {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
 
       <form action="" method="post">
+        <!--
         {% csrf_token %}
-        {% for field in form %}
+        
+        {% if detail.exercise %}
+        
+        {% else %}
           <div class="row">
-            <div class="col-md-9">
+            <div class="col-md-12">
               <div class="form-group">
-                <label>{{ field.label_tag }}</label>
-                {{ field|add_class:"form-control" }}
+                <label>{{ form.note.label_tag }}</label>
+                {{ form.note|add_class:"form-control" }}
               </div>
             </div>
-            <div class="col-md-3">
-              {% if field.name == 'fare' %}
-                </br></br>
-                <div id="calc_ref" style="color: red;"></div>
-              {% endif %}
-            </div>
           </div>
+        {% endif %}
+        -->
+        
+        {% for field in form %}
+          
+          {% if detail.exercise %}
+
+            {% if field.name == 'fare' %}
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>{{ field.label_tag }}</label>
+                    {{ field|add_class:"form-control" }}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  {% if field.name == 'fare' %}
+                    </br></br>
+                    <div id="calc_ref" style="color: red;"></div>
+                  {% endif %}
+                </div>
+              </div>
+            {% else %}
+
+              {% if forloop.counter|divisibleby:2 %}
+                <div class="row">
+              {% endif %}
+                  
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>{{ field.label_tag }}</label>
+                    {{ field|add_class:"form-control" }}
+                  </div>
+                </div>
+
+              {% if forloop.counter0|divisibleby:2 %}
+                </div>
+              {% elif forloop.last %}
+                </div>
+              {% endif %}
+            {% endif %}
+          
+          {% else %}
+            <div class="row">    
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>{{ field.label_tag }}</label>
+                    {{ field|add_class:"form-control" }}
+                  </div>
+                </div>
+            </div>
+          
+          {% endif %}
+              
+              
+          
         {% endfor %}
+        
+
         <input type="submit" class="btn btn-success btn-sm confirm-submit" name="Search" data-msg="Are you sure?">
         <input type="submit" class="btn btn-primary btn-sm confirm-submit" name="force_close" value="Force Close" data-msg="Are you sure?">
         <input type="submit" class="btn btn-danger btn-sm confirm-submit" name="remove" value="Remove" data-msg="Are you sure?">
