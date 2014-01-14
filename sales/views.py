@@ -567,11 +567,9 @@ def add_to_staging(request, action, slug):
 
 
 
-        # send confirmation email on success
-        #if MODE == 'live':
-        if 3>1:
+        # sends alert email to sales@levelskies
+        if MODE == 'live':
             try:
-                # sends alert email to sales@levelskies
                 send_mail('Just added to staging - %s' % (action),
                     '%s (%s) just elected to %s contract with key: %s.' % (find_contract.customer, find_contract.customer.key, action, find_contract.search.key),
                     'sysadmin@levelskies.com',
@@ -579,9 +577,9 @@ def add_to_staging(request, action, slug):
                     fail_silently=False)
             except:
                 pass
-
+        # sends confirmation to customer
+        if 3>1:
             try:
-                # sends confirmation to customer
                 title = "Thanks again for using Level Skies!"
                 if action == 'exercise':
                     subject = 'We recieved your ticket request'
@@ -626,6 +624,7 @@ def staged_item(request, slug):
 
     build = {}
     build['detail'] = find_stage
+    #build['detail'].flight_choice = json.decode(build['detail'].flight_choice)
 
     if find_stage.exercise:
 
