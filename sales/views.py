@@ -363,7 +363,7 @@ def purchase_option(request):
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
             purch_date_time = current_time_aware()
             search_date_date = find_search.search_date
-            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
 
             try:
                 existing = Contract.objects.get(search__key=cd['search_key'])
