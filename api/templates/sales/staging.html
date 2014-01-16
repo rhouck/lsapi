@@ -75,7 +75,15 @@
           <p>Selected Departure: {{ detail.dep_date }}</p>
           <p>Selected Return:    {{ detail.ret_date }}</p>
           <p>Notes: {{ detail.notes }}</p>
-          <p>Flight Choice: {{ detail.flight_choice }}</p>
+          
+          <p>Flight Choice:</p>
+          
+          
+          {% for flight in detail.flight_choice %}
+            
+            {{ flight }}
+          {% endfor %}
+
       {% else %}
         {% if detail.notes %}
           <p>Notes: {{ detail.notes }}</p>
@@ -89,22 +97,6 @@
       {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
 
       <form action="" method="post">
-        <!--
-        {% csrf_token %}
-        
-        {% if detail.exercise %}
-        
-        {% else %}
-          <div class="row">
-            <div class="col-md-12">
-              <div class="form-group">
-                <label>{{ form.note.label_tag }}</label>
-                {{ form.note|add_class:"form-control" }}
-              </div>
-            </div>
-          </div>
-        {% endif %}
-        -->
         
         {% for field in form %}
           

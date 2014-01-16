@@ -231,7 +231,7 @@ def display_current_flights(request, slug, convert=False):
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
             purch_date_time = current_time_aware()
             search_date_date = search.search_date
-            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
 
             if search.error or not search.get_status() or expired:
                 raise Exception("The search is expired, had an error, or was made while sales were shut off")
@@ -283,7 +283,7 @@ def search_info(request, slug, all=False):
     search_date_date = search.search_date
     """
     if not all:
-        expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+        expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
         if expired:
             return HttpResponse(json.encode({'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}), content_type="application/json")
     """

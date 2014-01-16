@@ -363,7 +363,7 @@ def purchase_option(request):
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
             purch_date_time = current_time_aware()
             search_date_date = find_search.search_date
-            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 30) else False
+            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
 
             try:
                 existing = Contract.objects.get(search__key=cd['search_key'])
@@ -567,11 +567,9 @@ def add_to_staging(request, action, slug):
 
 
 
-        # send confirmation email on success
-        #if MODE == 'live':
-        if 3>1:
+        # sends alert email to sales@levelskies
+        if MODE == 'live':
             try:
-                # sends alert email to sales@levelskies
                 send_mail('Just added to staging - %s' % (action),
                     '%s (%s) just elected to %s contract with key: %s.' % (find_contract.customer, find_contract.customer.key, action, find_contract.search.key),
                     'sysadmin@levelskies.com',
@@ -579,35 +577,35 @@ def add_to_staging(request, action, slug):
                     fail_silently=False)
             except:
                 pass
-
-            try:
-                # sends confirmation to customer
-                title = "Thanks again for using Level Skies!"
-                if action == 'exercise':
-                    subject = 'We recieved your ticket request'
-                    
-                    if not (staged_cont.traveler_first_name and staged_cont.traveler_last_name):
-                        target = "your"
-                    else:
-                        target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
-                    body = "We are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
-                    
+        # sends confirmation to customer
+        
+        try:
+            title = "Thanks again for using Level Skies!"
+            if action == 'exercise':
+                subject = 'We recieved your ticket request'
+                
+                if not (staged_cont.traveler_first_name and staged_cont.traveler_last_name):
+                    target = "your"
                 else:
-                    subject = 'Your Level Skies Lock-in is being refunded'
-                    body = "We are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
+                    target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
+                body = "We are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
+                
+            else:
+                subject = 'Your Level Skies Lock-in is being refunded'
+                body = "We are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
-                send_template_email(find_contract.customer.email, subject, title, body)
-                """
-                send_mail(subject,
-                    message,
-                    'sales@levelskies.com',
-                    ['%s' % (find_contract.customer.email)],
-                    fail_silently=False,
-                    auth_user='sales@levelskies.com',
-                    auth_password='_second&mission_')
-                """
-            except:
-                pass
+            send_template_email(find_contract.customer.email, subject, title, body)
+            """
+            send_mail(subject,
+                message,
+                'sales@levelskies.com',
+                ['%s' % (find_contract.customer.email)],
+                fail_silently=False,
+                auth_user='sales@levelskies.com',
+                auth_password='_second&mission_')
+            """
+        except:
+            pass
 
         if clean:
             return HttpResponse(json.encode({'success': True}), mimetype="application/json")
@@ -626,6 +624,7 @@ def staged_item(request, slug):
 
     build = {}
     build['detail'] = find_stage
+    #build['detail'].flight_choice = json.decode(build['detail'].flight_choice)
 
     if find_stage.exercise:
 
