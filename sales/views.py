@@ -578,34 +578,34 @@ def add_to_staging(request, action, slug):
             except:
                 pass
         # sends confirmation to customer
-        if 3>1:
-            try:
-                title = "Thanks again for using Level Skies!"
-                if action == 'exercise':
-                    subject = 'We recieved your ticket request'
-                    
-                    if not (staged_cont.traveler_first_name and staged_cont.traveler_last_name):
-                        target = "your"
-                    else:
-                        target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
-                    body = "We are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
-                    
+        
+        try:
+            title = "Thanks again for using Level Skies!"
+            if action == 'exercise':
+                subject = 'We recieved your ticket request'
+                
+                if not (staged_cont.traveler_first_name and staged_cont.traveler_last_name):
+                    target = "your"
                 else:
-                    subject = 'Your Level Skies Lock-in is being refunded'
-                    body = "We are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
+                    target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
+                body = "We are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
+                
+            else:
+                subject = 'Your Level Skies Lock-in is being refunded'
+                body = "We are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
-                send_template_email(find_contract.customer.email, subject, title, body)
-                """
-                send_mail(subject,
-                    message,
-                    'sales@levelskies.com',
-                    ['%s' % (find_contract.customer.email)],
-                    fail_silently=False,
-                    auth_user='sales@levelskies.com',
-                    auth_password='_second&mission_')
-                """
-            except:
-                pass
+            send_template_email(find_contract.customer.email, subject, title, body)
+            """
+            send_mail(subject,
+                message,
+                'sales@levelskies.com',
+                ['%s' % (find_contract.customer.email)],
+                fail_silently=False,
+                auth_user='sales@levelskies.com',
+                auth_password='_second&mission_')
+            """
+        except:
+            pass
 
         if clean:
             return HttpResponse(json.encode({'success': True}), mimetype="application/json")

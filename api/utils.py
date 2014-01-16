@@ -111,13 +111,19 @@ def send_request(url, data={}, headers=None, method='get'):
 
 def run_authnet_trans(amt, card_info, cust_info=None, address=None, trans_id=None):
 
-    gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
-
+    
     # use gateway.authorize() for an "authorize only" transaction
-    # gateway.use_test_url = True
+    
 
     # ensures all transactions done on local servers or the dev server are in test mode
-    gateway.use_test_mode = False if MODE == 'live' else True
+    if MODE == 'live':
+        gateway = AimGateway('3r34zx5KELcc', '29wm596EuWHG72PB')
+        gateway.use_test_mode = False    
+    else:    
+        gateway = AimGateway('8waT6w553B9A', '4PaadH8578MbC42T')
+        gateway.use_test_url = True
+        # gateway.use_test_mode = True
+
 
     # number, month, year, first_name, last_name, code
     card = CreditCard(**card_info)
