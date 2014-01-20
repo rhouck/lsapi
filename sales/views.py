@@ -41,7 +41,7 @@ from api.settings import MODE
 def email(request):
     #send_mail('Subject here', 'Here is the message.', 'sysadmin@levelskies.com',
     #['ryanchouck@gmail.com'], fail_silently=False)
-    
+
     #send_template_email('ryanchouck@gmail.com', 'subject', 'title', 'body')
     #return HttpResponse('done')
     body = "here is some line\n\nhere is a <b>new</b> line"
@@ -189,16 +189,16 @@ def customer_info(request, slug):
             del cust_dict['Search']
 
         cust_dict['success'] = True
-        
+
         build = {'results': cust_dict}
 
     except:
         build = {'results': {'success': False, 'error': 'Slug provided does not correspond to existing customer.'}}
-    
+
 
     if request.user.is_authenticated():
         clean = False
-        if 'update' in build['results']: 
+        if 'update' in build['results']:
             del build['results']['update']
     else:
         clean = True
@@ -469,9 +469,9 @@ def purchase_option(request):
                     # send confirmation email on success
                     #if MODE == 'live':
                     if 3>1:
-                        try: 
+                        try:
                             subject = "You've successfully made your Level Skies Lock-in"
-                            title = "Congrats on locking in your airfare. That was a good move."                        
+                            title = "Congrats on locking in your airfare. That was a good move."
                             if (find_search.depart_date2 - find_search.depart_date1).days > 0:
                                 dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
                             else:
@@ -483,7 +483,7 @@ def purchase_option(request):
                                 ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
                             body = """You now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
-                            
+
                             send_template_email(new_contract.customer.email, subject, title, body)
                             """
                             send_mail(subject,
@@ -578,21 +578,21 @@ def add_to_staging(request, action, slug):
             except:
                 pass
         # sends confirmation to customer
-        
+
         try:
             title = "Thanks again for using Level Skies!"
             if action == 'exercise':
                 subject = 'We recieved your ticket request'
-                
+
                 if not (staged_cont.traveler_first_name and staged_cont.traveler_last_name):
                     target = "your"
                 else:
                     target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
-                body = "We are now processing your request and will send you %s ticket from %s to %s shortly.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
-                
+                body = "We are now processing your request and will send you %s ticket from %s to %s within the next 48 hrs.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
+
             else:
                 subject = 'Your Level Skies Lock-in is being refunded'
-                body = "We are processing your request and will send you your refund of $%s shortly.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
+                body = "We are processing your request and will send you your refund of $%s within the next 48 hrs.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
             send_template_email(find_contract.customer.email, subject, title, body)
             """
