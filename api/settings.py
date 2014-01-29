@@ -204,7 +204,9 @@ EMAIL_HOST_USER = 'sysadmin@levelskies.com'
 EMAIL_HOST_PASSWORD = 'buttwatercruises'
 DEFAULT_FROM_EMAIL = 'sysadmin@levelskies.com'
 
-
+# used in sales/utils.py
+FROM_EMAIL_1 = 'sales@levelskies'
+FROM_EMAIL_1_PASSWORD = 'dna&CLONEwars*800'
 
 
 # for debug toolbar

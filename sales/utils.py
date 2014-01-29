@@ -8,11 +8,12 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
 from django.template import Context
 
+from api.settings import FROM_EMAIL_1, FROM_EMAIL_1_PASSWORD
 
 def send_template_email(to_email, subject, title, body):
-    
 
-    """    
+
+    """
     #html_body = render_to_string('email_template/index.html', {'title': title, 'body': body})
     html_body = "lkasjdfasldkj"
     send_mail(subject,
@@ -22,7 +23,7 @@ def send_template_email(to_email, subject, title, body):
     fail_silently=False,
     auth_user='sales@levelskies.com',
     auth_password='_second&mission_')
-    
+
     """
     plaintext = get_template('email_template/plain_text.txt')
     htmly     = get_template('email_template/index.html')
@@ -31,13 +32,12 @@ def send_template_email(to_email, subject, title, body):
     html_content = htmly.render(d)
 
 
-    from_email = 'sales@levelskies.com'
-    from_password = '_second&mission_'
-    connection = get_connection(username=from_email, password=from_password, fail_silently=False)                        
-    msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email], connection=connection) 
+
+    connection = get_connection(username=FROM_EMAIL_1, password=FROM_EMAIL_1_PASSWORD, fail_silently=False)
+    msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email], connection=connection)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
-    
+
 
 
 
