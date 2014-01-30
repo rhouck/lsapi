@@ -78,10 +78,40 @@
           
           <p>Flight Choice:</p>
           
-          
+        
           {% for flight in detail.flight_choice %}
-            
-            {{ flight }}
+            &nbsp;&nbsp;&nbsp;Choice {{ forloop.counter }}:</br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Departing flights ~</br> 
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Airline: {{ flight.departing.airline }}</br> 
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Take off: {{ flight.departing.take_off_time }}</br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Landing: {{ flight.departing.landing_time }}</br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Legs: 
+            {% for segment in flight.departing.detail %}
+              {% for leg in segment %}
+                {{ leg.airline_code }}-{{ leg.flight_number }}
+                {% if not forloop.last %}
+                  ,             
+                {% endif %} 
+              {% endfor %}
+              </br>
+            {% endfor %}
+
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returning flights ~</br> 
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Airline: {{ flight.returning.airline }}</br> 
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Take off: {{ flight.returning.take_off_time }}</br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Landing: {{ flight.returning.landing_time }}</br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Legs: 
+            {% for segment in flight.returning.detail %}
+              {% for leg in segment %}
+                {{ leg.airline_code }}-{{ leg.flight_number }}
+                {% if not forloop.last %}
+                  ,             
+                {% endif %} 
+              {% endfor %}
+              </br>
+            {% endfor %}
+
+            </br>
           {% endfor %}
 
       {% else %}

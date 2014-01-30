@@ -37,6 +37,7 @@ from sales.utils import exercise_option, send_template_email
 
 from api.settings import MODE
 
+import ast
 
 def get_cust_list(request):
 
@@ -614,8 +615,17 @@ def staged_item(request, slug):
 
     build = {}
     build['detail'] = find_stage
-    #build['detail'].flight_choice = json.decode(build['detail'].flight_choice)
 
+    try:
+        formatted_flight_choice = ast.literal_eval(build['detail'].flight_choice)
+        for index, i in enumerate(formatted_flight_choice):
+            d = json.decode(i)
+            formatted_flight_choice[index] = d
+        build['detail'].flight_choice = formatted_flight_choice 
+    except: 
+        pass
+
+        
     if find_stage.exercise:
 
         if inputs:
