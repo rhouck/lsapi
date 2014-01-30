@@ -34,7 +34,7 @@ def send_template_email(to_email, subject, title, body):
 
 
     connection = get_connection(username=FROM_EMAIL_1, password=FROM_EMAIL_1_PASSWORD, fail_silently=False)
-    msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email], connection=connection)
+    msg = EmailMultiAlternatives(subject, text_content, FROM_EMAIL_1, [to_email], connection=connection)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
 

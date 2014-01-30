@@ -201,11 +201,11 @@ EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'sysadmin@levelskies.com'
-EMAIL_HOST_PASSWORD = 'buttwatercruises'
+EMAIL_HOST_PASSWORD = 'dna&CLONEwars*800'
 DEFAULT_FROM_EMAIL = 'sysadmin@levelskies.com'
 
 # used in sales/utils.py
-FROM_EMAIL_1 = 'sales@levelskies'
+FROM_EMAIL_1 = 'sales@levelskies.com'
 FROM_EMAIL_1_PASSWORD = 'dna&CLONEwars*800'
 
 
