@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block content %}
 
 
@@ -33,7 +35,7 @@
               {% if contract.staged %}
                 <a style="color: orange;" href="{% url staged_item contract.search.key %}">Staged</a>
               {% else %}
-                <a href="{% url add_to_staging 'exercise' contract.search.key %}">Exercise</a> / <a href="{% url add_to_staging 'refund' contract.search.key %}">Refund</a>
+                <a class="confirm-submit" data-msg="Are you sure?" href="{% url add_to_staging 'exercise' contract.search.key %}">Exercise</a> / <a class="confirm-submit" data-msg="Are you sure?" href="{% url add_to_staging 'refund' contract.search.key %}">Refund</a>
               {% endif %}
             </div>
           </div>
@@ -86,6 +88,10 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block footer %}
+  <script src="{% static "assets/js/juicer.js" %}"></script>
 {% endblock %}
 
 
