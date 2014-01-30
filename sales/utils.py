@@ -38,7 +38,7 @@ def send_template_email(to_email, subject, title, body):
     msg.attach_alternative(html_content, "text/html")
     msg.send()
 
-
+    # brandon is butt-ugly
 
 
 
