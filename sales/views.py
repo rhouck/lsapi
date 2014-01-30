@@ -583,7 +583,7 @@ def add_to_staging(request, action, slug):
 
             else:
                 subject = 'Your Level Skies Lock-in is being refunded'
-                body = "We are processing your request and will send you your refund of $%s within the next 48 hrs.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
+                body = "We are processing your request. You should receive your refund of $%s within the next two to three business days.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
             send_template_email(find_contract.customer.email, subject, title, body)
             """
