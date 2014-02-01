@@ -349,6 +349,8 @@ def price_edu_combo(request):
                 if open_status.get_status():
                     if (cd['depart_date2'] - cd['depart_date1']).days > 2 or (cd['return_date2'] - cd['return_date1']).days > 2:
                         model_out = {'error': 'Travel date ranges must not be more than two days in length'}
+                    elif (cd['depart_date2'] < cd['depart_date1']) or (cd['return_date2'] < cd['return_date1']):
+                        model_out = {'error': 'Travel date ranges are wrong'}
                     else:
                         if cd['dev_test']:
                             flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', 'any')

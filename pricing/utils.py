@@ -238,6 +238,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     results['fares'] = string_dates(fares)
     #results = {'fares': None, 'flights': None}
 
+
     error = ""
     results['success'] = True
     if not results['fares']:
@@ -255,7 +256,10 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     
     if not results['success']:
       results['error'] = error
-      results['short_error'] = short_error
+      try:
+        results['short_error'] = short_error
+      except:
+        results['short_error'] = error
 
     return results
 
