@@ -761,7 +761,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
                   "destination": str(origin),
                   "date": "%s" % (return_date),
                   "maxStops": num_stops,
-                  #"maxConnectionDuration": 240,
+                  "maxConnectionDuration": 240,
                   "preferredCabin": "COACH",
                   "permittedDepartureTime": {
                     "kind": "qpxexpress#timeOfDayRange",
