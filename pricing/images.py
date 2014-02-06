@@ -1,4 +1,4 @@
-def get_airline_image(name):
+def get_airline_info(name):
 
   #code = code.upper
 
@@ -105,13 +105,13 @@ def get_airline_image(name):
     'WZZ' : {'name': 'Wizz Air', 'short_name':'Wizz Air', 'image': 'wizz-air.jpg'},
   }
 
-  images = [ i['image'] for i in airlines.itervalues() if i['name'].lower() in name.lower() ]
+  matches = [ {'image': i['image'], 'short_name': i['short_name']} for i in airlines.itervalues() if i['name'].lower() in name.lower() ]
 
-  if len(images) == 1:
-    return images[0]
+  if len(matches) == 1:
+    return matches[0]
   else:
     return None
 
 if __name__ == "__main__":
 
-    print get_airline_image('Wizz Air')
+    print get_airline_info('Wizz Air')

@@ -5,7 +5,7 @@ import time
 import random
 
 from api.utils import *
-from images import get_airline_image
+from images import get_airline_info
 from budget import budget_carriers
 
 def select_geography(hub):
@@ -568,7 +568,7 @@ def parse_wan_live(data):
             flight[j[0]]['airline_image'] = None
           elif len(airlines) == 1:
             flight[j[0]]['airline'] = airlines[0]
-            flight[j[0]]['airline_image'] = get_airline_image(flight[j[0]]['airline'])
+            #flight[j[0]]['airline_image'] = get_airline_image(flight[j[0]]['airline'])
           else:
             flight[j[0]]['airline'] = "Multiple"
             flight[j[0]]['airline_image'] = None
@@ -600,7 +600,7 @@ def parse_wan_live(data):
               entry['airline'] = k['operating_airline_name']
             else:
               entry['airline'] = get_airline_name(k['airline_code'], airline_bank)
-            entry['airline_image'] = get_airline_image(entry['airline'])
+            #entry['airline_image'] = get_airline_image(entry['airline'])
             entry['airline_code'] = k['airline_code']
 
             flight[j[0]]['detail'].append(entry)
@@ -874,7 +874,9 @@ def parse_google_live(data):
             flight[j[0]]['airline_image'] = None
           elif len(airlines) == 1:
             flight[j[0]]['airline'] = airlines[0]
-            flight[j[0]]['airline_image'] = get_airline_image(flight[j[0]]['airline'])
+            info = get_airline_info(flight[j[0]]['airline'])
+            flight[j[0]]['airline_image'] = info['image']
+            flight[j[0]]['airline_short_name'] = info['short_name']
           else:
             flight[j[0]]['airline'] = "Multiple"
             flight[j[0]]['airline_image'] = None
@@ -906,7 +908,9 @@ def parse_google_live(data):
 
               code = k['flight']['carrier']
               entry['airline'] = get_airline_name(code, airline_bank)
-              entry['airline_image'] = get_airline_image(entry['airline'])
+              info = get_airline_info(entry['airline'])
+              entry['airline_image'] = info['image']
+              entry['airline_short_name'] = info['short_name'] 
               entry['airline_code'] = code
 
               flight[j[0]]['detail'].append(entry)
