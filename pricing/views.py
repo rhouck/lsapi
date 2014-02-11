@@ -311,6 +311,7 @@ def search_info(request, slug, all=False):
 
 def price_edu_combo(request):
 
+
         """
         if not clean and not request.user.is_authenticated():
             return HttpResponseRedirect(reverse('login'))

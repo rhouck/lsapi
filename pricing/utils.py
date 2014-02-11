@@ -196,6 +196,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               #print "Failed to operate on job"
 
 
+
     resQueue = Queue.Queue()
 
     """set variables"""
@@ -211,22 +212,15 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       #jobs.append(inps)
 
 
-    """iterate over jobs and put each into the queue in sequence"""
-    #for job in jobs:
-    #     print "inserting job into the queue: %s"%(job)
-    #     queue.put(job)
-
     """start some threads, each one will process one job from the queue"""
     for i in range(threads):
          th = threading.Thread(target=processor)
          th.setDaemon(True)
          th.start()
+      
 
     """wait until all jobs are processed before quitting"""
     queue.join()
-
-
-
 
 
     result = []
@@ -299,7 +293,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
     if not data:
         # run search if not already cached
         response = live_search_google(inputs['origin'], inputs['destination'], inputs['depart_date'].date(), inputs['return_date'].date(), inputs['depart_times'], inputs['return_times'], inputs['num_stops'], inputs['airlines'])
-
+        #return response
         if response['success']:
           if response['flights_count']:
             data = response

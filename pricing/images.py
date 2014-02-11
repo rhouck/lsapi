@@ -110,7 +110,7 @@ def get_airline_info(name):
   if len(matches) == 1:
     return matches[0]
   else:
-    return None
+    return {'image': "", 'short_name': ""}
 
 if __name__ == "__main__":
 
