@@ -159,7 +159,7 @@ def display_current_flights(request, slug, convert=False):
                 if convert - must supply two travel dates and one flight search will be provided
                 if not convert - this will automatically return all flights in the date ranges searched, trying cached searches first
     """
-
+    
     inputs = request.GET if request.GET else None
 
     if not request.user.is_authenticated():
@@ -191,10 +191,13 @@ def display_current_flights(request, slug, convert=False):
 
             # run search and format results
             res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=False)
-
+            if not res['success']:
+                raise Exception("Could not return list of current available flights: %s" % (res['error']))
+            
             # converts prices to rebate values and caps the price level of flights available to choose from
             bank = []
             cap = None
+            
             for index, i in enumerate(res['flights']):
 
                 add = False
@@ -259,14 +262,14 @@ def display_current_flights(request, slug, convert=False):
             if not res['success']:
                 res['error'] = error
 
-
+        
     except (Contract.DoesNotExist):
         res = {'success': False, 'error': 'The contract key entered is not valid.'}
     except (Searches.DoesNotExist):
         res = {'success': False, 'error': 'The search key entered is not valid.'}
     except Exception as err:
         res = {'success': False, 'error': str(err)}
-
+    
     return HttpResponse(json.encode(res), content_type="application/json")
 
 
