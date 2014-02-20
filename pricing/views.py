@@ -363,7 +363,8 @@ def price_edu_combo(request):
                             #return HttpResponse(json.encode(flights), content_type="application/json")
 
                         if flights['success']:
-                            prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']], general['search_date'])
+                            #prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']], general['search_date'])
+                            prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, general['search_date'])
                             model_out = {'holding_price': prices['holding_price'], 'locked_fare': prices['locked_fare'], 'expected_risk': prices['expected_risk'],
                                             'exp_date': prices['exp_date'], 'total_flexibility': prices['total_flexibility'], 'time_to_departure': prices['time_to_departure'], 'error': prices['error'] }
                         else:
