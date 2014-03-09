@@ -462,7 +462,7 @@ def purchase_option(request):
                     #if MODE == 'live':
                     if 3>1:
                         try:
-                            subject = "You've successfully made your Level Skies Lock-in"
+                            subject = "You've successfully purchased your Level Skies Flex Fare"
                             title = "Congrats on locking in your airfare. That was a good move."
                             if (find_search.depart_date2 - find_search.depart_date1).days > 0:
                                 dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
@@ -477,15 +477,7 @@ def purchase_option(request):
                             body = """You now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
 
                             send_template_email(new_contract.customer.email, subject, title, body)
-                            """
-                            send_mail(subject,
-                                message,
-                                'sales@levelskies.com',
-                                ['%s' % (new_contract.customer.email)],
-                                fail_silently=False,
-                                auth_user='sales@levelskies.com',
-                                auth_password='_second&mission_')
-                            """
+                            
                         except:
                             pass
 
@@ -497,6 +489,114 @@ def purchase_option(request):
         build['results'] = {'success': False, 'error': form.errors}
 
     return gen_search_display(request, build, clean, method='post')
+
+
+
+def demo_option(request):
+
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    inputs = request.POST if request.POST else None
+    if clean:
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.encode(cred), mimetype="application/json")
+
+
+    form = DemoOptionForm(inputs)
+    build = {'form': form, 'cust_title': "Purchase option"}
+
+    if (inputs) and form.is_valid():
+        cd = form.cleaned_data
+        try:
+
+            find_search = Searches.objects.get(key=cd['search_key'])
+            find_platform = Platform.objects.get(key=cd['platform_key'])
+
+            # either find the existing customer associated with the platform and email addres or create it
+            try:
+                find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+            except:
+                inps = {}
+                inps['key'] = gen_alphanum_key()
+                inps['reg_date'] = current_time_aware().date()
+                inps['platform'] = find_platform
+                inps['email'] = cd['email']
+                find_cust = Customer(**inps)
+                find_cust.save()
+
+            # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
+            # or the purchase occured after too much time had passed, and the quoted price is deemed expired
+            purch_date_time = current_time_aware()
+            search_date_date = find_search.search_date
+            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
+
+            try:
+                existing = Contract.objects.get(search__key=cd['search_key'])
+            except:
+                pass
+            else:
+                raise Exception
+
+            if find_search.error or not find_search.get_status() or expired:
+                raise Exception
+
+        
+        except (Searches.DoesNotExist):
+            build['error_message'] = 'The option id entered is not valid.'
+            build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
+        except (Exception):
+            build['error_message'] = 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'
+            build['results'] = {'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}
+        else:
+
+            # update customer data
+            for i in ('first_name', 'last_name'):
+                try:
+                    setattr(find_cust, i, cd[i])
+                except:
+                    pass
+            find_cust.save()
+
+            new_demo = Demo(customer=find_cust, purch_date=purch_date_time, search=find_search)
+            new_demo.save()
+
+            build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d')}
+
+            # send confirmation email on success                
+            #try:
+            subject = "Thanks for trying out the Level Skies Flex Fare"
+            title = "Here's what you need to know about how the Flex Fare works."
+            if (find_search.depart_date2 - find_search.depart_date1).days > 0:
+                dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
+            else:
+                dep = "on %s" % (find_search.depart_date1.strftime("%B %d, %Y"))
+
+            if (find_search.return_date2 - find_search.return_date1).days > 0:
+                ret = "between %s and %s" % (find_search.return_date1.strftime("%B %d, %Y"), find_search.return_date2.strftime("%B %d, %Y"))
+            else:
+                ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
+
+            body = """Had you actually made the purchase, you would now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you would choose not to use your Flex Fare, you could request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value would automatically be returned to you upon expiration of the Flex Fare if you take no action. We will sned you an email when this Flex Fare would have expired to let you know just how much you could have saved with us.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+
+            send_template_email(new_demo.customer.email, subject, title, body)
+            
+            #except:
+            #    pass
+
+        
+    else:
+        build['results'] = {'success': False, 'error': form.errors}
+
+    return gen_search_display(request, build, clean, method='post')
+
+
+
+
+
 
 # staging views
 def add_to_staging(request, action, slug):

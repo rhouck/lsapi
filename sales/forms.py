@@ -54,6 +54,15 @@ class Purchase_option(forms.Form):
     card_code = forms.CharField(max_length=4, label="security code")
 
 
+class DemoOptionForm(forms.Form):
+    search_key = forms.CharField()
+    platform_key = forms.CharField()
+    email = forms.EmailField()
+    first_name = forms.CharField(required=False)
+    last_name = forms.CharField(required=False)
+
+
+
 
 
 

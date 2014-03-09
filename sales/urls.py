@@ -10,6 +10,7 @@ urlpatterns = patterns('',
     # sales
     url(r'^test/$', login_required(test_trans), name='test_trans'),
     url(r'^purchase/$', purchase_option, name='purchase'),
+    url(r'^demo/$', demo_option, name='demo'),
 
     # staging - admin only
     url(r'^staging/$', login_required(get_staging_list), name='staging_view'),
