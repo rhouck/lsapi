@@ -490,8 +490,6 @@ def purchase_option(request):
 
     return gen_search_display(request, build, clean, method='post')
 
-
-
 def demo_option(request):
 
     if request.user.is_authenticated():
@@ -564,30 +562,29 @@ def demo_option(request):
             new_demo = Demo(customer=find_cust, purch_date=purch_date_time, search=find_search)
             new_demo.save()
 
-            build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d')}
+            build['results'] = {'name': find_cust, 'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d')}
 
             # send confirmation email on success                
-            #try:
-            subject = "Thanks for trying out the Level Skies Flex Fare"
-            title = "Here's what you need to know about how the Flex Fare works."
-            if (find_search.depart_date2 - find_search.depart_date1).days > 0:
-                dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
-            else:
-                dep = "on %s" % (find_search.depart_date1.strftime("%B %d, %Y"))
+            try:
+                subject = "Thanks for trying out the Level Skies Flex Fare"
+                title = "Here's what you need to know about how the Flex Fare works."
+                if (find_search.depart_date2 - find_search.depart_date1).days > 0:
+                    dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
+                else:
+                    dep = "on %s" % (find_search.depart_date1.strftime("%B %d, %Y"))
 
-            if (find_search.return_date2 - find_search.return_date1).days > 0:
-                ret = "between %s and %s" % (find_search.return_date1.strftime("%B %d, %Y"), find_search.return_date2.strftime("%B %d, %Y"))
-            else:
-                ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
+                if (find_search.return_date2 - find_search.return_date1).days > 0:
+                    ret = "between %s and %s" % (find_search.return_date1.strftime("%B %d, %Y"), find_search.return_date2.strftime("%B %d, %Y"))
+                else:
+                    ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-            body = """Had you actually made the purchase, you would now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you would choose not to use your Flex Fare, you could request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value would automatically be returned to you upon expiration of the Flex Fare if you take no action. We will sned you an email when this Flex Fare would have expired to let you know just how much you could have saved with us.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+                body = """Had you purchased a Flex Fare, you would now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you would choose not to use your Flex Fare, you could request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value would automatically be returned to you upon expiration of the Flex Fare if you take no action. We will sned you an email when this Flex Fare would have expired to let you know just how much you could have saved with us.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
 
-            send_template_email(new_demo.customer.email, subject, title, body)
-            
-            #except:
-            #    pass
+                send_template_email(new_demo.customer.email, subject, title, body)
+                
+            except:
+                pass
 
-        
     else:
         build['results'] = {'success': False, 'error': form.errors}
 

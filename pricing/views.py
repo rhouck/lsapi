@@ -311,12 +311,6 @@ def search_info(request, slug, all=False):
 
 def price_edu_combo(request):
 
-
-        """
-        if not clean and not request.user.is_authenticated():
-            return HttpResponseRedirect(reverse('login'))
-        else:
-        """
         if request.user.is_authenticated():
             clean = False
         else:
@@ -430,206 +424,138 @@ def price_edu_combo(request):
             return gen_search_display(request, build, clean, method='post')
 
 
-            """
+def sweep_expired(request):
+    """
+    @summary:   run this daily to find prices on searches that expired within 24 hours
+                this will help with analysis and model building
+                cycle through recently expired options
+    """
+    
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
 
-            def conv_holding_to_lockin(inputs):
+    if (request.POST):
+        if clean:
+            cred = check_creds(request.POST, Platform)
+            if not cred['success']:
+                return HttpResponse(json.encode(cred), content_type="application/json")
 
-                #@summary: convert holidng_period to lockin_per using today's date.
-                #            This assumes that all pricing done through API will be done in real time at current date.
-                #@todo: find a better way to handle the 'depart_date1' input, it currently is not ensuring proper date format
+    # ensure this query is not run more than once/24hrs
 
+    
+    inputs = request.GET if request.GET else None
 
-                start = current_time_aware().date()
+    if not request.user.is_authenticated():
+        cred = check_creds(inputs, Platform)
+        if not cred['success']:
+            return HttpResponse(json.encode(cred), content_type="application/json")
 
+    try:
 
-                #if inputs['holding_per']:
-                #    holding_per = int(inputs['holding_per'])
-                #else:
-                #    holding_per = int(inputs['lockin_per'])
+        search = Searches.objects.get(key=slug)
 
-                holding_per = int(inputs['holding_per'])
-                expiry = start + datetime.timedelta(days = holding_per*7)
-                #departure = datetime.datetime.strptime(inputs['depart_date1'])
-                departure = inputs['depart_date1']
-                lockin_per = int(floor((departure - expiry).days / 7.0))
-                #lockin_per = ((departure - expiry).days / 7.0)
+        if convert:
 
-                return lockin_per
+            form = flights_display(inputs)
 
+            if not form.is_valid():
+                raise Exception("Valid travel dates not provided: depart_date & return_date")
 
+            # raise error if contract is not outstanding or has already been marked for staging process
+            contract = Contract.objects.get(search__key=slug)
+            if not contract.outstanding() or contract.staged():
+                raise Exception("This contract is no longer valid or has already been converted.")
 
-            if (request.GET):
-                form = full_option_info(request.GET)
-                if form.is_valid():
-                    cd = form.cleaned_data
-                    open_status = Open.objects.get(pk=1)
-
-                    if open_status.get_status():
-                        # run gen_price
-                        lockin_per = conv_holding_to_lockin(cd)
-                        inputs = search_inputs(purpose='simulation', source = '', origin=cd['origin_code'], destination=cd['destination_code'], lockin_per=lockin_per, d_date1=cd['depart_date1'], d_date2=cd['depart_date2'], r_date1=cd['return_date1'], r_date2=cd['return_date2'], flight_type=cd['search_type'], dep_time_pref=format_pref_input(cd['depart_times']), ret_time_pref=format_pref_input(cd['return_times']), stop_pref=format_pref_input(cd['nonstop']), geography=select_geography(cd['origin_code']))
-                        example = simulation(inputs)
-                        pricing_results_full = example.return_simulation(expanded=True)
-
-                        if 'output' in pricing_results_full:
-                            pricing_results = pricing_results_full['output']
-                            #pricing_results = {'combos': pricing_results_full['first_week_combos'], 'stats': pricing_results_full['first_week_stats']}
-                        else:
-                            pricing_results = pricing_results_full
-
-
-                        # if prefs changed during the gen_price script, make sure new prefs are used in the search_summary script
-                        if 'changed_prefs' in pricing_results:
-
-                            depart_times = pricing_results['changed_prefs']['depart_times']
-                            return_times = pricing_results['changed_prefs']['return_times']
-                            nonstop = pricing_results['changed_prefs']['nonstop']
-
-                            # reformat 'changed prefs' to match preferences inputs style
+            cd = form.cleaned_data
+            if (search.depart_date1 > cd['depart_date']) or (cd['depart_date'] > search.depart_date2) or (search.return_date1 > cd['return_date']) or (cd['return_date'] > search.return_date2):
+                raise Exception('Selected travel dates not within locked fare range.')
 
 
-                            #del pricing_results['changed_prefs']['airline']
-                            #for k, v in pricing_results['changed_prefs'].iteritems():
-                            #    if not v:
-                            #        pricing_results['changed_prefs'][k] = 0
-                            #    else:
-                            #        pricing_results['changed_prefs'][k] = v[0]
 
+            # run search and format results
+            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=False)
+            if not res['success']:
+                raise Exception("Could not return list of current available flights: %s" % (res['error']))
+            
+            # converts prices to rebate values and caps the price level of flights available to choose from
+            bank = []
+            cap = None
+            
+            for index, i in enumerate(res['flights']):
 
-                            changed_prefs = pricing_results.pop('changed_prefs')
-                            del changed_prefs['airline']
-                            for k, v in changed_prefs.iteritems():
-                                if not v:
-                                    changed_prefs[k] = 0
-                                else:
-                                    changed_prefs[k] = v[0]
+                add = False
 
-                        else:
-                            changed_prefs = None
-                            depart_times = format_pref_input(cd['depart_times'])
-                            return_times = format_pref_input(cd['return_times'])
-                            nonstop = format_pref_input(cd['nonstop'])
-
-
-                        # run search_summary
-                        inputs = search_inputs(purpose='projection', origin=cd['origin_code'], destination=cd['destination_code'], flight_type=cd['search_type'], dep_time_pref=depart_times, ret_time_pref=return_times, stop_pref=nonstop)
-                        example_two = aggregate_search_summaries(inputs)
-                        try:
-                            cust_edu_results = example_two.display_single_search()
-
-                            #randomly select one customer education element, if none available, use a review
-                            bank = []
-                            if cust_edu_results['price_swings']:
-                                bank.append('price_swings')
-                            if cust_edu_results['recent_peak_fare']:
-                                bank.append('recent_peak_fare')
-                            if cust_edu_results['popular_purchase']:
-                                bank.append('popular_purchase')
-                            if len(bank) > 0:
-                                pick = bank[randint(0, (len(bank)-1))]
-                            else:
-                                pick = 'review'
-
-                            #short_cust_ed = {'%s' % (pick): cust_edu_results['%s' % (pick)]}
-                            #cust_edu_results = short_cust_ed
-                            cust_edu_results = cust_edu_results['%s' % (pick)]
-                        except:
-                            cust_edu_results = example_two.pull_rand_review()
+                if not cap:
+                    add = True
+                    if index == 0:
+                        if i['fare'] < search.locked_fare:
+                            cap = search.locked_fare
                     else:
-                        pricing_results = {'holding_price': "", 'locked_fare': "", 'error': {}, 'dates': ""}
-                        cust_edu_results = "Due to high demand, there are currently no Levelskies products available for sale. Please check again soon."
-                        changed_prefs = None
-
-
-                    inputs = dict()
-                    for k, v in cd.iteritems():
-                        if type(v) is datetime.date:
-                            v = str(v)
-                        inputs[k] = v
-                    #inputs['lockin_per'] = lockin_per
-
-
-                    # log search query unless done within api for testing purposes (i.e. not "clean" version)
-                    search_date = current_time_aware()
-                    time_to_departure =(cd['depart_date1'] - search_date.date()).days / 7
-                    numdays_dep = (cd['depart_date2']-cd['depart_date1']).days
-                    try:
-                        numdays_ret = (cd['return_date2']-cd['return_date1']).days
-                    except:
-                        numdays_ret = 0
-                    total_flexibility = numdays_dep + numdays_ret
-                    if clean:
-                        if open_status.get_status() and 0 in pricing_results['error']:
-                            try:
-                                max_avg = avearege_max_projected_stats(pricing_results_full['first_week_stats'], pricing_results_full['first_week_combos'])
-                                first_week_max_fare = max_avg['max_fare']
-                                first_week_max_st_dev = max_avg['max_st_dev']
-                                first_week_avg_fare = max_avg['avg_fare']
-                                first_week_avg_st_dev = max_avg['avg_st_dev']
-
-                                if pricing_results_full['second_week_stats']:
-                                    max_avg = avearege_max_projected_stats(pricing_results_full['second_week_stats'], pricing_results_full['second_week_combos'])
-                                    second_week_max_fare = max_avg['max_fare']
-                                    second_week_max_st_dev = max_avg['max_st_dev']
-                                    second_week_avg_fare = max_avg['avg_fare']
-                                    second_week_avg_st_dev = max_avg['avg_st_dev']
-                                else:
-                                    second_week_max_fare = second_week_max_st_dev = second_week_avg_fare = second_week_avg_st_dev = None
-
-                                exp_date = search_date.date() + datetime.timedelta(weeks = cd['holding_per'])
-                                search_params = Searches(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=inputs['depart_date1'], depart_date2=inputs['depart_date2'], return_date1=inputs['return_date1'], return_date2=inputs['return_date2'], search_type=inputs['search_type'], depart_times=inputs['depart_times'], return_times=inputs['return_times'], nonstop=inputs['nonstop'], search_date=search_date,
-                                                               holding_price=pricing_results_full['output']['holding_price'], locked_fare=pricing_results_full['output']['locked_fare'], buffer=pricing_results_full['buffer'], correl_coef=pricing_results_full['correl_coef'], cycles=pricing_results_full['cycles'], expected_risk=pricing_results_full['expected_risk'], lockin_per=pricing_results_full['lockin_per'], markup=pricing_results_full['markup'], round_to=pricing_results_full['round_to'], wtp=pricing_results_full['wtp'], wtpx=pricing_results_full['wtpx'], max_trip_length=pricing_results_full['max_trip_length'], exp_date=exp_date,
-                                                               first_week_avg_proj_fare = first_week_avg_fare, first_week_max_proj_fare = first_week_max_fare, second_week_avg_proj_fare = second_week_avg_fare, second_week_max_proj_fare = second_week_max_fare,
-                                                               first_week_avg_proj_st_dev = first_week_avg_st_dev, first_week_max_proj_st_dev = first_week_max_st_dev, second_week_avg_proj_st_dev = second_week_avg_st_dev, second_week_max_proj_st_dev = second_week_max_st_dev,
-                                                               open_status = open_status.get_status(), total_flexibility=total_flexibility, time_to_departure=time_to_departure, geography=pricing_results_full['geography'], key=gen_alphanum_key())
-                                search_params.save()
-                                search_key = search_params.key
-
-
-                            except:
-                                search_key = None
-
-                        else:
-                            geography = select_geography(cd['origin_code'])
-                            try:
-                                try:
-                                    error = ', '.join(['%s: %s' % (key, value) for (key, value) in pricing_results['error'].items()])
-                                except:
-                                    error = None
-
-                                search_params = Search_history(origin_code=cd['origin_code'], destination_code=cd['destination_code'], holding_per=cd['holding_per'], depart_date1=inputs['depart_date1'], depart_date2=inputs['depart_date2'], return_date1=inputs['return_date1'], return_date2=inputs['return_date2'], search_type=inputs['search_type'], depart_times=inputs['depart_times'], return_times=inputs['return_times'], nonstop=inputs['nonstop'], search_date=search_date,
-                                                               open_status = open_status.get_status(), error = error, total_flexibility=total_flexibility, time_to_departure=time_to_departure, geography=geography)
-                                search_params.save()
-                            except:
-                                pass
-                            search_key = None
-                    else:
-                        search_key = None
-
-                    # deposit format conversion
-                    pricing_results = refund_format_conversion(pricing_results)
-
-                    #pricing_results['refund_value'] = pricing_results['locked_fare']
-                    #if pricing_results['holding_price'] and pricing_results['locked_fare']:
-                    #    pricing_results['deposit_value'] = pricing_results['holding_price'] + pricing_results['locked_fare']
-                    #else:
-                    #    pricing_results['deposit_value'] = ''
-                    #del pricing_results['holding_price']
-                    #del pricing_results['locked_fare']
-
-
-                    combined_results = [{'pricing_results': pricing_results, 'context': cust_edu_results, 'inputs': inputs, 'key': search_key}]
-                    if changed_prefs:
-                        combined_results[0]['changed_prefs'] = changed_prefs
+                        if i['fare'] > search.locked_fare:
+                            cap = i['fare']
                 else:
-                    combined_results = None
-            else:
-                form = full_option_info()
-                combined_results = None
-            build = {'form': form, 'results': combined_results}
-            return view(request, build, clean)
-            """
-            #return gen_price_edu_combo
+                    if i['fare'] <= cap + 5:
+                        add = True
 
+                if add:
+
+                    if i['fare'] < search.locked_fare:
+                        #res['flights'][index]['rebate'] = search.locked_fare - i['fare']
+                        res['flights'][index]['rebate'] = None
+                    else:
+                        res['flights'][index]['rebate'] = None
+                    del res['flights'][index]['fare']
+
+                    bank.append(res['flights'][index])
+
+            res['flights'] = bank
+
+
+        else:
+
+            # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
+            # or the purchase occured after too much time had passed, and the quoted price is deemed expired
+            purch_date_time = current_time_aware()
+            search_date_date = search.search_date
+            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
+
+            if search.error or not search.get_status() or expired:
+                raise Exception("The search is expired, had an error, or was made while sales were shut off")
+
+            # run search and format data
+            res = {'success': True}
+            error = None
+
+            dep_range = (search.depart_date2 - search.depart_date1).days
+            ret_range = (search.return_date2 - search.return_date1).days
+
+            # build empty list of fares for each flight date combination
+            for i in range(dep_range + 1):
+              depart_date = search.depart_date1 + datetime.timedelta(days=i)
+              for k in range(ret_range + 1):
+
+                return_date = search.return_date1 + datetime.timedelta(days=k)
+                one_res = run_flight_search(search.origin_code, search.destination_code, depart_date, return_date, search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=True)
+
+                res['%s-%s' % (depart_date, return_date)] = one_res
+
+                if not one_res['success']:
+                    res['success'] = False
+                    error += one_res['error']
+            if not res['success']:
+                res['error'] = error
+
+        
+    except (Contract.DoesNotExist):
+        res = {'success': False, 'error': 'The contract key entered is not valid.'}
+    except (Searches.DoesNotExist):
+        res = {'success': False, 'error': 'The search key entered is not valid.'}
+    except Exception as err:
+        res = {'success': False, 'error': str(err)}
+    
+    return HttpResponse(json.encode(res), content_type="application/json")
+            
 
 
