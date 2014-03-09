@@ -474,7 +474,7 @@ def purchase_option(request):
                             else:
                                 ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-                            body = """You now have until %s to use your locked fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Lock-in, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Lock-in if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+                            body = """You now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you choose not to use your Flex Fare, you can request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value will automatically be returned to you upon expiration of the Flex Fare if you take no action.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
 
                             send_template_email(new_contract.customer.email, subject, title, body)
                             
