@@ -62,3 +62,6 @@ class Searches(models.Model):
 
     def deposit_value(self):
         return self.locked_fare + self.holding_price
+
+class ExpiredSearchPriceCheck(models.Model):
+    run_date = models.DateTimeField('date / time run')
