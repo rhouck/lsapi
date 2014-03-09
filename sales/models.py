@@ -127,3 +127,23 @@ class Staging(models.Model):
     def __unicode__(self):
         uni_name = '%s' % (self.contract)
         return uni_name
+
+
+class Demo(models.Model):
+    customer = models.ForeignKey(Customer)
+    purch_date = models.DateTimeField('date / time purchased')
+    search = models.OneToOneField('pricing.Searches') # , primary_key=True
+
+    def outstanding(self):
+        return self.search.exp_date >= current_time_aware()
+    outstanding.admin_order_field = 'search__exp_date'
+    outstanding.boolean = True
+    outstanding.short_description = 'Open and not expired'
+
+    def expired(self):
+        return self.search.exp_date < current_time_aware()
+
+    def __unicode__(self):
+        uni_name = '%s - %s - %s' % (self.customer, self.customer.platform, self.purch_date.strftime('%b %d, %Y'))
+        return uni_name
+
