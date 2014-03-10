@@ -49,10 +49,12 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
       if isinstance(inp, list):
         for ind, i in enumerate(inp):
           for k, v in i.iteritems():
-            inp[ind][k] = str(v)
+            if isinstance(v, (datetime.date, datetime.datetime)):
+              inp[ind][k] = str(v)
       else:
         for k, v in inp.iteritems():
-          inp[k] = str(v)
+          if isinstance(v, (date,datetime)):
+            inp[k] = str(v)
       return inp
 
 
@@ -86,6 +88,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               res = run_flight_search(job['origin'], job['destination'], job['fare']['depart_date'], job['fare']['return_date'], job['depart_times'], job['return_times'], job['num_stops'], job['airlines'], job['search_key'], cached=cached)
               if res['success']:
                 job['fare']['fare'] = res['min_fare']
+                job['fare']['flight'] = res['min_flight']
                 job['fare']['method'] = res['method']
               else:
                 job['fare']['error'] = res['error']
@@ -814,11 +817,22 @@ def parse_google_live(data):
                 flight[j[0]]['layover_times'].append(k["connectionDuration"])
 
         bank.append(flight)
-
+    """
     fare_bank = [i['fare'] for i in bank]
     if fare_bank:
       min_fare = min(fare_bank)
     else:
       min_fare = None
+    """
+    min_fare = None
+    min_flight = None
+    if bank:  
+      for i in bank:
+        if not min_fare:
+          min_fare = i['fare']
+          min_flight = i
+        elif i['fare'] < min_fare:
+          min_fare = i['fare']
+          min_flight = i
 
-    return {'success': True, 'flights': bank, 'min_fare': min_fare, 'airlines': airline_bank}
+    return {'success': True, 'flights': bank, 'min_fare': min_fare, 'min_flight': min_flight, 'airlines': airline_bank}

@@ -14,7 +14,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
 from pricing.models import Searches, ExpiredSearchPriceCheck
-from sales.models import Platform, Contract
+from sales.models import Platform, Contract, Demo
 from analysis.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key, conv_to_js_date
 try:
@@ -354,7 +354,7 @@ def price_edu_combo(request):
                     else:
                         
                         flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], cd['airlines'], search_key=combined['key'])
-                        #return HttpResponse(json.encode(flights), content_type="application/json")
+                        return HttpResponse(json.encode(flights), content_type="application/json")
 
                         if flights['success']:
                             #prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']], general['search_date'])
@@ -447,7 +447,7 @@ def sweep_expired(request):
     current_time = current_time_aware()
     run_dates = ExpiredSearchPriceCheck.objects
 
-    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(days=1):
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) < datetime.timedelta(days=1):
         latest_price_check = ExpiredSearchPriceCheck(run_date=current_time)
         latest_price_check.save()
 
@@ -455,24 +455,32 @@ def sweep_expired(request):
         yesterday = current_time - datetime.timedelta(days=1)
         recent_expired = Searches.objects.filter(exp_date__range=[yesterday, current_time])
         
-        
+        # check expired demos
+        exp_demo_query = Demo.objects.filter(search__exp_date__range=[yesterday, current_time])
+        demo_keys = [str(i.search.key) for i in exp_demo_query]
+
         # run flight search query on each recently expired option
         expired_searches = []
-        email_string = ""
+        sales_email_string = ""
+        temp = []
         for i in recent_expired:
+
             flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, cached=True)
             expired_searches.append({'search': i.key, 'success': flights['success']})
-            email_string += "%s: %s\n" % (i.key, flights['success'])
+            sales_email_string += "%s: %s\n" % (i.key, flights['success'])
         
+            if i.key in demo_keys:
+                temp.append(flights)
+
         duration = current_time_aware() - current_time
         
-        results = {'success': True,  'time_run': current_time, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
+        results = {'success': True,  'time_run': current_time, 'expired_demos': temp, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
 
         # send email to sysadmin summarizing expired searches
         if MODE == 'live':    
             try:
                 send_mail('Expired searches price check',
-                    'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key: Success status\n%s' % (results['count'], results['duration'], email_string),
+                    'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key: Success status\n%s' % (results['count'], results['duration'], sales_email_string),
                     'sysadmin@levelskies.com',
                     ['sysadmin@levelskies.com'],
                     fail_silently=False)
