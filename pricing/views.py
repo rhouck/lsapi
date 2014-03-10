@@ -484,4 +484,3 @@ def sweep_expired(request):
         
     return gen_search_display(request, {'results': results}, clean)
 
-

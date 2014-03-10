@@ -11,6 +11,7 @@ urlpatterns = patterns('',
     url(r'^test/$', login_required(test_trans), name='test_trans'),
     url(r'^purchase/$', purchase_option, name='purchase'),
     url(r'^demo/$', demo_option, name='demo'),
+    url(r'^demo/sweep/$', sweep_demos, name='sweep_demos'),
 
     # staging - admin only
     url(r'^staging/$', login_required(get_staging_list), name='staging_view'),

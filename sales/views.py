@@ -827,4 +827,78 @@ def staging_sweep(request):
     else:
         message = "Staged %s contracts" % (len(cont_list))
 
+        if MODE == 'live':    
+            try:
+                send_mail('Staging sweep',
+                    message,
+                    'sysadmin@levelskies.com',
+                    ['sales@levelskies.com'],
+                    fail_silently=False)
+            except:
+                pass
+
     return render_to_response('sales/sweep.html', {'items': cont_list, 'message': message}, context_instance=RequestContext(request))
+
+
+def sweep_demos(request):
+    """
+    @summary:   run this daily to alert demo options of dollar savings
+    """
+    
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    if (request.POST):
+        if clean:
+            cred = check_creds(request.POST, Platform)
+            if not cred['success']:
+                return HttpResponse(json.encode(cred), content_type="application/json")
+
+    
+    # ensure this query is not run more than once/24hrs
+    current_time = current_time_aware()
+    run_dates = ExpiredSearchPriceCheck.objects
+
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(days=1):
+        latest_price_check = ExpiredSearchPriceCheck(run_date=current_time)
+        latest_price_check.save()
+
+        # pull searches expiring in last 24 hours
+        yesterday = current_time - datetime.timedelta(days=1)
+        recent_expired = Searches.objects.filter(exp_date__range=[yesterday, current_time])
+        
+        
+        # run flight search query on each recently expired option
+        expired_searches = []
+        email_string = ""
+        for i in recent_expired:
+            flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, cached=True)
+            expired_searches.append({'search': i.key, 'success': flights['success']})
+            email_string += "%s: %s\n" % (i.key, flights['success'])
+        
+        duration = current_time_aware() - current_time
+        
+        results = {'success': True,  'time_run': current_time, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
+
+        # send email to sysadmin summarizing expired searches
+        if MODE == 'live':    
+            try:
+                send_mail('Expired searches price check',
+                    'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key: Success status\n%s' % (results['count'], results['duration'], email_string),
+                    'sysadmin@levelskies.com',
+                    ['sysadmin@levelskies.com'],
+                    fail_silently=False)
+            except:
+                pass
+
+    else:
+        results = {'success': False, 'error': 'Expired search price check ran within last 24 hours.'}
+        
+    return gen_search_display(request, {'results': results}, clean)
+
+
+
+
+
