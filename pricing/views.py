@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response, get_object_or_404
 
 from forms import *
-from pricing.models import Searches
+from pricing.models import Searches, ExpiredSearchPriceCheck
 from sales.models import Platform, Contract
 from analysis.models import Open
 from api.views import current_time_aware, gen_search_display, gen_alphanum_key, conv_to_js_date
@@ -350,11 +350,9 @@ def price_edu_combo(request):
                     elif (cd['depart_date2'] < cd['depart_date1']) or (cd['return_date2'] < cd['return_date1']):
                         model_out = {'error': 'Travel date ranges are wrong'}
                     else:
-                        if cd['dev_test']:
-                            flights = pull_fares_range('SFO', 'JFK', (datetime.date(2014,4,1), datetime.date(2014,4,1)), (datetime.date(2014,5,1), datetime.date(2014,5,1)), 'any', 'any', 'any', 'any')
-                        else:
-                            flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], cd['airlines'], search_key=combined['key'])
-                            #return HttpResponse(json.encode(flights), content_type="application/json")
+                        
+                        flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], cd['airlines'], search_key=combined['key'])
+                        #return HttpResponse(json.encode(flights), content_type="application/json")
 
                         if flights['success']:
                             #prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']], general['search_date'])
@@ -442,9 +440,39 @@ def sweep_expired(request):
             if not cred['success']:
                 return HttpResponse(json.encode(cred), content_type="application/json")
 
-    # ensure this query is not run more than once/24hrs
-
     
+    # ensure this query is not run more than once/24hrs
+    current_time = current_time_aware()
+    run_dates = ExpiredSearchPriceCheck.objects
+
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) < datetime.timedelta(days=1):
+        #latest_price_check = ExpiredSearchPriceCheck(run_date=current_time)
+        #latest_price_check.save()
+
+        # pull searches expiring in last 24 hours
+        yesterday = current_time - datetime.timedelta(days=1)
+        recent_expired = Searches.objects.filter(exp_date__range=[yesterday, current_time])
+        
+        
+        stuff = []
+        for i in recent_expired:
+            flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, search_key=i.key)
+            stuff.append(flights)
+            
+        duration = current_time_aware() - current_time
+        results = {'current': current_time, 'yesterday': yesterday, 'stuff': stuff, 'duration': duration}
+
+
+        
+
+
+        #results = {'success': True, 'message': 'Ran new expired search price check'}
+    else:
+        results = {'success': False, 'message': 'Expired search price check ran within last 24 hours.'}
+        
+    return gen_search_display(request, {'results': results}, clean)
+
+def garbage(request):
     inputs = request.GET if request.GET else None
 
     if not request.user.is_authenticated():

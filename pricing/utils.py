@@ -32,7 +32,7 @@ def refund_format_conversion(pricing_results):
     del pricing_results['locked_fare']
     return pricing_results
 
-def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, search_key=None):
+def pull_fares_range(origin, destination, depart_dates, return_dates, depart_times, return_times, num_stops, airlines, search_key=None, cached=False):
 
     """
     @summary:
@@ -72,108 +72,9 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
         return_date = return_dates[0] + datetime.timedelta(days=k)
         fares.append({'depart_date': depart_date, 'return_date': return_date, 'fare': None, 'method': None})
 
-    """
-    # cached fare
-    res = cached_search(origin, destination, depart_dates, return_dates)
-    if res['fares']:
-      for i in res['fares']:
-        where = copy.deepcopy(i)
-        del where['fare']
-        ind = find_sub_index_dict(fares, where, loop=False)
-        if ind:
-          fares[ind[0]]['fare'] = i['fare']
-          fares[ind[0]]['method'] = 'api_cached'
-    """
-
-    """
-    # check mongo for existing flight searches
-    for i in range(dep_range + 1):
-      depart_date = depart_dates[0] + datetime.timedelta(days=i)
-      for k in range(ret_range + 1):
-        return_date = return_dates[0] + datetime.timedelta(days=k)
-
-        # check if cached fare exists in level skies db, if so, overide api_cached fare
-        ind = find_sub_index_dict(fares, {'depart_date': depart_date, 'return_date': return_date}, loop=False)
-        if ind:
-          #if not fares[ind[0]]['fare'] or fares[ind[0]]['fare'] > max_live_fare:
-          res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cached=True)
-
-          if res['success']:
-            fares[ind[0]]['fare'] = res['min_fare']
-            fares[ind[0]]['method'] = res['method']
-            if res['min_fare'] > max_live_fare:
-              max_live_fare = res['min_fare']
-    """
-
-    """
-    # run live flight searches where no fare exists data exists or api_cached fare is higher than max_live_fare
-    for i in range(dep_range + 1):
-      depart_date = depart_dates[0] + datetime.timedelta(days=i)
-      for k in range(ret_range + 1):
-        return_date = return_dates[0] + datetime.timedelta(days=k)
-
-        ind = find_sub_index_dict(fares, {'depart_date': depart_date, 'return_date': return_date}, loop=False)
-        if ind:
-          if not fares[ind[0]]['fare'] or (fares[ind[0]]['fare'] > max_live_fare and fares[ind[0]]['method'] == 'api_cached'):
-            res = run_flight_search(origin, destination, depart_date, return_date, depart_times, return_times, num_stops, airlines, cached=False)
-            if res['success']:
-              fares[ind[0]]['fare'] = res['min_fare']
-              fares[ind[0]]['method'] = res['method']
-              if res['min_fare'] > max_live_fare:
-                max_live_fare = res['min_fare']
-            else:
-              fares[ind[0]]['error'] = res['error']
-    """
-
-    """
-    class searchThread(threading.Thread):
-
-        def __init__(self, threadID, fare, q):
-            threading.Thread.__init__(self)
-            self.threadID = threadID
-            self.q = q
-            self.fare = fare
-
-        def run(self):
-            process_data(self.threadID, self.fare, self.q, origin, destination, depart_times, return_times, num_stops, airlines, search_key)
-
-
-
-    def process_data(threadName, fare, q, origin, destination, depart_times, return_times, num_stops, airlines, search_key):
-
-        res = run_flight_search(origin, destination, fare['depart_date'], fare['return_date'], depart_times, return_times, num_stops, airlines, search_key, cached=False)
-        if res['success']:
-          fare['fare'] = res['min_fare']
-          fare['method'] = res['method']
-        else:
-          fare['error'] = res['error']
-        q.put(fare)
-
-
-    #queueLock = threading.Lock()
-    resQueue = Queue.Queue()
-
-    threads = []
-    threadID = 1
-
-    # Create new threads
-    for t in fares:
-        thread = searchThread(threadID, t, resQueue)
-        thread.start()
-        threads.append(thread)
-        threadID += 1
-
-
-    # Wait for all threads to complete
-    for t in threads:
-        t.join()
-
-    """
-
-
-
+    
     """this function will process the items in the queue, in serial"""
-    def processor():
+    def processor(cached):
         #if queue.empty() == True:
         #    print "the Queue is empty!"
         #    sys.exit(1)
@@ -182,7 +83,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               job = queue.get()
               #print "I'm operating on job item: %s"%(job)
 
-              res = run_flight_search(job['origin'], job['destination'], job['fare']['depart_date'], job['fare']['return_date'], job['depart_times'], job['return_times'], job['num_stops'], job['airlines'], job['search_key'], cached=False)
+              res = run_flight_search(job['origin'], job['destination'], job['fare']['depart_date'], job['fare']['return_date'], job['depart_times'], job['return_times'], job['num_stops'], job['airlines'], job['search_key'], cached=cached)
               if res['success']:
                 job['fare']['fare'] = res['min_fare']
                 job['fare']['method'] = res['method']
@@ -214,7 +115,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
 
     """start some threads, each one will process one job from the queue"""
     for i in range(threads):
-         th = threading.Thread(target=processor)
+         th = threading.Thread(target=processor, args=(cached,))
          th.setDaemon(True)
          th.start()
       
