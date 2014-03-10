@@ -355,7 +355,7 @@ def price_edu_combo(request):
                     else:
                         
                         flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], cd['airlines'], search_key=combined['key'])
-                        return HttpResponse(json.encode(flights), content_type="application/json")
+                        #return HttpResponse(json.encode(flights), content_type="application/json")
 
                         if flights['success']:
                             #prices = calc_price(cd['origin_code'], cd['destination_code'], flights['fares'], cd['holding_per']*7, [cd['depart_date1'],cd['depart_date2']], [cd['return_date1'],cd['return_date2']], general['search_date'])
