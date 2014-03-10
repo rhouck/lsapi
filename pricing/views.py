@@ -500,25 +500,25 @@ def sweep_expired(request):
         results = {'success': True,  'time_run': current_time, 'expired_demos': expired_demos, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
 
         # send email to sysadmin summarizing expired searches
-        if MODE == 'live':    
-            try:
-                searches_email_string = ""
-                for i in expired_searches:
-                    searches_email_string += "%s : %s\n" % (i['search'], i['success'])
+        #if MODE == 'live':    
+        try:
+            searches_email_string = ""
+            for i in expired_searches:
+                searches_email_string += "%s : %s\n" % (i['search'], i['success'])
 
-                demos_email_string = ""
-                for i in expired_demos:
-                    demos_email_string += "%s : %s\n" % (i['search'], i['savings'])
-                
-                email_body = 'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key : Success status\n%s\n\n' % (results['count'], results['duration'], searches_email_string)
-                email_body += 'Completed %s expired demos.\n\nSearch Key : Savings\n%s' % (len(expired_demos), demos_email_string)
-                send_mail('Expired searches price check',
-                    email_body,
-                    'sysadmin@levelskies.com',
-                    ['sysadmin@levelskies.com'],
-                    fail_silently=False)
-            except:
-                pass
+            demos_email_string = ""
+            for i in expired_demos:
+                demos_email_string += "%s : %s\n" % (i['search'], i['savings'])
+            
+            email_body = 'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key : Success status\n%s\n\n' % (results['count'], results['duration'], searches_email_string)
+            email_body += 'Completed %s expired demos.\n\nSearch Key : Savings\n%s' % (len(expired_demos), demos_email_string)
+            send_mail('Expired searches price check',
+                email_body,
+                'sysadmin@levelskies.com',
+                ['sysadmin@levelskies.com'],
+                fail_silently=False)
+        except:
+            pass
 
     else:
         results = {'success': False, 'error': 'Expired search price check ran within last 24 hours.'}
