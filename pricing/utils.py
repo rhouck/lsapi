@@ -53,7 +53,7 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
               inp[ind][k] = str(v)
       else:
         for k, v in inp.iteritems():
-          if isinstance(v, (date,datetime)):
+          if isinstance(v, (datetime.date, datetime.datetime)):
             inp[k] = str(v)
       return inp
 
