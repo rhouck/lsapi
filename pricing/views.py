@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 import time
 import datetime
 import sys
@@ -445,30 +446,38 @@ def sweep_expired(request):
     current_time = current_time_aware()
     run_dates = ExpiredSearchPriceCheck.objects
 
-    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) < datetime.timedelta(days=1):
-        #latest_price_check = ExpiredSearchPriceCheck(run_date=current_time)
-        #latest_price_check.save()
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(days=1):
+        latest_price_check = ExpiredSearchPriceCheck(run_date=current_time)
+        latest_price_check.save()
 
         # pull searches expiring in last 24 hours
         yesterday = current_time - datetime.timedelta(days=1)
         recent_expired = Searches.objects.filter(exp_date__range=[yesterday, current_time])
         
         
-        stuff = []
+        expired_searches = []
+        email_string = ""
         for i in recent_expired:
-            flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, search_key=i.key, cached=True)
-            stuff.append(flights)
-            
-        duration = current_time_aware() - current_time
-        results = {'current': current_time, 'yesterday': yesterday, 'stuff': stuff, 'duration': duration}
-
-
+            flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, cached=True)
+            expired_searches.append({'search': i.key, 'success': flights['success']})
+            email_string += "%s: %s\n" % (i.key, flights['success'])
         
+        duration = current_time_aware() - current_time
+        
+        results = {'success': True,  'current': current_time, 'yesterday': yesterday, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
 
+        if MODE == 'live':    
+            try:
+                send_mail('Expired searches price check',
+                    'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key: Success status\n%s' % (results['count'], results['duration'], email_string),
+                    'sysadmin@levelskies.com',
+                    ['sysadmin@levelskies.com'],
+                    fail_silently=False)
+            except:
+                pass
 
-        #results = {'success': True, 'message': 'Ran new expired search price check'}
     else:
-        results = {'success': False, 'message': 'Expired search price check ran within last 24 hours.'}
+        results = {'success': False, 'error': 'Expired search price check ran within last 24 hours.'}
         
     return gen_search_display(request, {'results': results}, clean)
 
