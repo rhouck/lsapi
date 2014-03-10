@@ -45,6 +45,7 @@ from temp import return_search_res
 
 import random
 
+from sales.utils import send_template_email
 
 
 def test_google(request):
@@ -447,7 +448,7 @@ def sweep_expired(request):
     current_time = current_time_aware()
     run_dates = ExpiredSearchPriceCheck.objects
 
-    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) < datetime.timedelta(days=1):
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(days=1):
         latest_price_check = ExpiredSearchPriceCheck(run_date=current_time)
         latest_price_check.save()
 
@@ -460,40 +461,59 @@ def sweep_expired(request):
         demo_keys = [str(i.search.key) for i in exp_demo_query]
 
         # run flight search query on each recently expired option
+        
         expired_searches = []
-        sales_email_string = ""
-        temp = []
+        expired_demos = []
         for i in recent_expired:
 
             flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, cached=True)
             expired_searches.append({'search': i.key, 'success': flights['success']})
-            sales_email_string += "%s: %s\n" % (i.key, flights['success'])
-            
+              
             # check if search relates to an expired demo contract, if so, check if customer would have saved money
             if i.key in demo_keys and flights['success']:
                 savings_string = ""
                 for j in flights['fares']:
                     savings = math.floor(float(j['fare']) - i.deposit_value())
-                    #if savings >= 10:
-                    
-                    #dep_airline = j['flight']['departing']['airline_short_name'] if j['flight']['departing']['airline_short_name'] else j['flight']['departing']['airline_name']
-                    dep_flights = " / ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['departing']['detail']])
-                    #ret_airline = j['flight']['returning']['airline_short_name'] if j['flight']['returning']['airline_short_name'] else j['flight']['returning']['airline_name']
-                    ret_flights = " / ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['returning']['detail']])
+                    # don't alert customer of savings unless greater than X dollars
+                    if savings >= 10:
+                        dep_flights = " | ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['departing']['detail']])
+                        ret_flights = " | ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['returning']['detail']])
+                        dep_datetime = parse(j['flight']['departing']['take_off_time']).strftime("%B %d, %Y at %I:%M%p")
+                        ret_datetime = parse(j['flight']['returning']['take_off_time']).strftime("%B %d, %Y at %I:%M%p")
+                   
+                        savings_string += "$%s departing %s on %s \nand returning %s on %s\n\n" % (savings, dep_datetime, dep_flights, ret_datetime, ret_flights)
+                # send customer email describing potential savings if savings were possible
+                if savings_string:
+                    try:
+                        title = "Here's what you could have saved by buying a Flex Fare"
+                        body = "Thanks for checking out Level Skies and for taking a closer look at the Flex Fare. You previously signed up for a trial run of the Flex Fare and now we're hear to show you what could have happened had you actually made the purchase. Prices on the flights you were looking at went up, as they tend to do! Here are the potential savings that would have been available to you:\n\n"
+                        body += savings_string + "\n\nWe hope you check in with us again soon becasue we'd love to save you some real cash!\n\nThe Level Skies Team"
+                        email_address = exp_demo_query.get(search__key=i.key).customer.email
+                        send_template_email(email_address, 'Flex Fare Trial', title, body)
+                    except:
+                        pass
 
-                    savings_string += "$%s on %s departing at %s on %s and returning on %s %s\n" % (savings, dep_flights, str(j['flight']['departing']['take_off_time']), j['depart_date'], ret_flights, str(j['flight']['returning']['take_off_time']), j['return_date'])
-                    
-                temp.append(savings_string)
+                expired_demos.append({'search': i.key, 'savings': True if savings_string else False})
 
         duration = current_time_aware() - current_time
         
-        results = {'success': True,  'time_run': current_time, 'expired_demos': temp, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
+        results = {'success': True,  'time_run': current_time, 'expired_demos': expired_demos, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
 
         # send email to sysadmin summarizing expired searches
         if MODE == 'live':    
             try:
+                searches_email_string = ""
+                for i in expired_searches:
+                    searches_email_string += "%s : %s\n" % (i['search'], i['success'])
+
+                demos_email_string = ""
+                for i in expired_demos:
+                    demos_email_string += "%s : %s\n" % (i['search'], i['savings'])
+                
+                email_body = 'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key : Success status\n%s\n\n' % (results['count'], results['duration'], searches_email_string)
+                email_body += 'Completed %s expired demos.\n\nSearch Key : Savings\n%s' % (len(expired_demos), demos_email_string)
                 send_mail('Expired searches price check',
-                    'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key: Success status\n%s' % (results['count'], results['duration'], sales_email_string),
+                    email_body,
                     'sysadmin@levelskies.com',
                     ['sysadmin@levelskies.com'],
                     fail_silently=False)
