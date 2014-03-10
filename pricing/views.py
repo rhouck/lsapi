@@ -456,7 +456,7 @@ def sweep_expired(request):
         
         stuff = []
         for i in recent_expired:
-            flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, search_key=i.key)
+            flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, search_key=i.key, cached=True)
             stuff.append(flights)
             
         duration = current_time_aware() - current_time
