@@ -466,7 +466,7 @@ def sweep_expired(request):
         
         duration = current_time_aware() - current_time
         
-        results = {'success': True,  'current': current_time, 'yesterday': yesterday, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
+        results = {'success': True,  'time_run': current_time, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
 
         # send email to sysadmin summarizing expired searches
         if MODE == 'live':    
@@ -483,3 +483,5 @@ def sweep_expired(request):
         results = {'success': False, 'error': 'Expired search price check ran within last 24 hours.'}
         
     return gen_search_display(request, {'results': results}, clean)
+
+
