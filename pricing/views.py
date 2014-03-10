@@ -468,9 +468,22 @@ def sweep_expired(request):
             flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, cached=True)
             expired_searches.append({'search': i.key, 'success': flights['success']})
             sales_email_string += "%s: %s\n" % (i.key, flights['success'])
-        
-            if i.key in demo_keys:
-                temp.append(flights)
+            
+            # check if search relates to an expired demo contract, if so, check if customer would have saved money
+            if i.key in demo_keys and flights['success']:
+                savings_string = ""
+                for j in flights['fares']:
+                    savings = math.floor(float(j['fare']) - i.deposit_value())
+                    #if savings >= 10:
+                    
+                    #dep_airline = j['flight']['departing']['airline_short_name'] if j['flight']['departing']['airline_short_name'] else j['flight']['departing']['airline_name']
+                    dep_flights = " / ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['departing']['detail']])
+                    #ret_airline = j['flight']['returning']['airline_short_name'] if j['flight']['returning']['airline_short_name'] else j['flight']['returning']['airline_name']
+                    ret_flights = " / ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['returning']['detail']])
+
+                    savings_string += "$%s on %s departing at %s on %s and returning on %s %s\n" % (savings, dep_flights, str(j['flight']['departing']['take_off_time']), j['depart_date'], ret_flights, str(j['flight']['returning']['take_off_time']), j['return_date'])
+                    
+                temp.append(savings_string)
 
         duration = current_time_aware() - current_time
         

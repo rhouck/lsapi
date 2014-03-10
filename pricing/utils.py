@@ -777,6 +777,7 @@ def parse_google_live(data):
             flight[j[0]]['airline_short_name'] = info['short_name']
           else:
             flight[j[0]]['airline'] = "Multiple"
+            flight[j[0]]['airline_short_name'] = "Multiple"
             flight[j[0]]['airline_image'] = None
 
           # detail section
