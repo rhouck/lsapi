@@ -198,7 +198,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
         if response['success']:
           if response['flights_count']:
             data = response
-          search_res = mongo.flight_search.live.insert({'date_created': current_date, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
+          search_res = mongo.flight_search.live.insert({'date_created': current_date, 'datetime_created': current_time, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
           method = "live"
         else:
           error = response['error']
