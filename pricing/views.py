@@ -36,6 +36,7 @@ from search_summary import *
 from simp_price import *
 
 from api.utils import *
+from api.settings import MODE
 from pricing.utils import *
 
 from dateutil.parser import parse
@@ -455,6 +456,7 @@ def sweep_expired(request):
         recent_expired = Searches.objects.filter(exp_date__range=[yesterday, current_time])
         
         
+        # run flight search query on each recently expired option
         expired_searches = []
         email_string = ""
         for i in recent_expired:
@@ -466,6 +468,7 @@ def sweep_expired(request):
         
         results = {'success': True,  'current': current_time, 'yesterday': yesterday, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
 
+        # send email to sysadmin summarizing expired searches
         if MODE == 'live':    
             try:
                 send_mail('Expired searches price check',
@@ -480,119 +483,3 @@ def sweep_expired(request):
         results = {'success': False, 'error': 'Expired search price check ran within last 24 hours.'}
         
     return gen_search_display(request, {'results': results}, clean)
-
-def garbage(request):
-    inputs = request.GET if request.GET else None
-
-    if not request.user.is_authenticated():
-        cred = check_creds(inputs, Platform)
-        if not cred['success']:
-            return HttpResponse(json.encode(cred), content_type="application/json")
-
-    try:
-
-        search = Searches.objects.get(key=slug)
-
-        if convert:
-
-            form = flights_display(inputs)
-
-            if not form.is_valid():
-                raise Exception("Valid travel dates not provided: depart_date & return_date")
-
-            # raise error if contract is not outstanding or has already been marked for staging process
-            contract = Contract.objects.get(search__key=slug)
-            if not contract.outstanding() or contract.staged():
-                raise Exception("This contract is no longer valid or has already been converted.")
-
-            cd = form.cleaned_data
-            if (search.depart_date1 > cd['depart_date']) or (cd['depart_date'] > search.depart_date2) or (search.return_date1 > cd['return_date']) or (cd['return_date'] > search.return_date2):
-                raise Exception('Selected travel dates not within locked fare range.')
-
-
-
-            # run search and format results
-            res = run_flight_search(search.origin_code, search.destination_code, cd['depart_date'], cd['return_date'], search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=False)
-            if not res['success']:
-                raise Exception("Could not return list of current available flights: %s" % (res['error']))
-            
-            # converts prices to rebate values and caps the price level of flights available to choose from
-            bank = []
-            cap = None
-            
-            for index, i in enumerate(res['flights']):
-
-                add = False
-
-                if not cap:
-                    add = True
-                    if index == 0:
-                        if i['fare'] < search.locked_fare:
-                            cap = search.locked_fare
-                    else:
-                        if i['fare'] > search.locked_fare:
-                            cap = i['fare']
-                else:
-                    if i['fare'] <= cap + 5:
-                        add = True
-
-                if add:
-
-                    if i['fare'] < search.locked_fare:
-                        #res['flights'][index]['rebate'] = search.locked_fare - i['fare']
-                        res['flights'][index]['rebate'] = None
-                    else:
-                        res['flights'][index]['rebate'] = None
-                    del res['flights'][index]['fare']
-
-                    bank.append(res['flights'][index])
-
-            res['flights'] = bank
-
-
-        else:
-
-            # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
-            # or the purchase occured after too much time had passed, and the quoted price is deemed expired
-            purch_date_time = current_time_aware()
-            search_date_date = search.search_date
-            expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
-
-            if search.error or not search.get_status() or expired:
-                raise Exception("The search is expired, had an error, or was made while sales were shut off")
-
-            # run search and format data
-            res = {'success': True}
-            error = None
-
-            dep_range = (search.depart_date2 - search.depart_date1).days
-            ret_range = (search.return_date2 - search.return_date1).days
-
-            # build empty list of fares for each flight date combination
-            for i in range(dep_range + 1):
-              depart_date = search.depart_date1 + datetime.timedelta(days=i)
-              for k in range(ret_range + 1):
-
-                return_date = search.return_date1 + datetime.timedelta(days=k)
-                one_res = run_flight_search(search.origin_code, search.destination_code, depart_date, return_date, search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=True)
-
-                res['%s-%s' % (depart_date, return_date)] = one_res
-
-                if not one_res['success']:
-                    res['success'] = False
-                    error += one_res['error']
-            if not res['success']:
-                res['error'] = error
-
-        
-    except (Contract.DoesNotExist):
-        res = {'success': False, 'error': 'The contract key entered is not valid.'}
-    except (Searches.DoesNotExist):
-        res = {'success': False, 'error': 'The search key entered is not valid.'}
-    except Exception as err:
-        res = {'success': False, 'error': str(err)}
-    
-    return HttpResponse(json.encode(res), content_type="application/json")
-            
-
-
