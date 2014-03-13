@@ -562,7 +562,7 @@ def demo_option(request):
             new_demo = Demo(customer=find_cust, purch_date=purch_date_time, search=find_search)
             new_demo.save()
 
-            build['results'] = {'name': find_cust, 'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d')}
+            build['results'] = {'name': str(find_cust), 'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d')}
 
             # send confirmation email on success                
             try:
