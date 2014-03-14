@@ -817,7 +817,18 @@ def parse_google_live(data):
             if "connectionDuration" in k:
                 flight[j[0]]['layover_times'].append(k["connectionDuration"])
 
-        bank.append(flight)
+
+        # filter out delta flights
+        if flight['departing']['airline_short_name'] == "Delta" or flight['returning']['airline_short_name'] == "Delta":
+          pass
+        else:
+          bank.append(flight)
+
+
+    if not bank:
+      return {'success': False, 'error': 'Did not find flights matching search parameters after parsing. Consider relaxing search preferences.'}
+
+    
     """
     fare_bank = [i['fare'] for i in bank]
     if fare_bank:
@@ -825,6 +836,7 @@ def parse_google_live(data):
     else:
       min_fare = None
     """
+    
     min_fare = None
     min_flight = None
     if bank:  
@@ -837,3 +849,4 @@ def parse_google_live(data):
           min_flight = i
 
     return {'success': True, 'flights': bank, 'min_fare': min_fare, 'min_flight': min_flight, 'airlines': airline_bank}
+    

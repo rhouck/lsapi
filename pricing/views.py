@@ -244,7 +244,7 @@ def display_current_flights(request, slug, convert=False):
 
             # run search and format data
             res = {'success': True}
-            error = None
+            error = ""
 
             dep_range = (search.depart_date2 - search.depart_date1).days
             ret_range = (search.return_date2 - search.return_date1).days
@@ -256,12 +256,12 @@ def display_current_flights(request, slug, convert=False):
 
                 return_date = search.return_date1 + datetime.timedelta(days=k)
                 one_res = run_flight_search(search.origin_code, search.destination_code, depart_date, return_date, search.depart_times, search.return_times, search.convenience, search.airlines, slug, cached=True)
-
+                
                 res['%s-%s' % (depart_date, return_date)] = one_res
 
                 if not one_res['success']:
                     res['success'] = False
-                    error += one_res['error']
+                    error += '%s-%s: %s ' % (depart_date, return_date, one_res['error'])
             if not res['success']:
                 res['error'] = error
 
