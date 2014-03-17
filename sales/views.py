@@ -578,7 +578,7 @@ def demo_option(request):
                 else:
                     ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-                body = """Had you purchased a Flex Fare, you would now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you would choose not to use your Flex Fare, you could request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value would automatically be returned to you upon expiration of the Flex Fare if you take no action. We will sned you an email when this Flex Fare would have expired to let you know just how much you could have saved with us.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+                body = """Had you purchased a Flex Fare, you would now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nIf you would choose not to use your Flex Fare, you could request a refund of $%s any time from your profile on levelskies.com. Of course, this refund value would automatically be returned to you upon expiration of the Flex Fare if you take no action. We will send you an email when this Flex Fare would have expired to let you know just how much you could have saved with us.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
 
                 send_template_email(new_demo.customer.email, subject, title, body)
                 
