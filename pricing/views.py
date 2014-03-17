@@ -497,7 +497,7 @@ def sweep_expired(request):
 
         duration = current_time_aware() - current_time
         
-        results = {'success': True,  'time_run': current_time, 'expired_demos': expired_demos, 'expired_searches': expired_searches, 'duration': duration, 'count': recent_expired.count()}
+        results = {'success': True,  'time_run': str(current_time), 'expired_demos': expired_demos, 'expired_searches': expired_searches, 'duration': str(duration), 'count': recent_expired.count()}
 
         # send email to sysadmin summarizing expired searches
         #if MODE == 'live':    
