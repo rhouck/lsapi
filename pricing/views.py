@@ -448,7 +448,7 @@ def sweep_expired(request):
     current_time = current_time_aware()
     run_dates = ExpiredSearchPriceCheck.objects
 
-    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(days=1):
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(hours=23):
         latest_price_check = ExpiredSearchPriceCheck(run_date=current_time)
         latest_price_check.save()
 
