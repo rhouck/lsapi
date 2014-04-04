@@ -16,9 +16,54 @@ from analysis.models import *
 from pricing.models import *
 from sales.models import *
 from api.utils import current_time_aware, conv_to_js_date, format_pref_input
+from api.views import gen_search_display
 
 from projection import *
+import random
 
+
+@login_required()
+def perf(request):
+    
+    inputs = request.POST if request.POST else None
+    form = PerformanceForm(inputs)
+    build = {'form': form}
+
+    if (inputs) and form.is_valid():
+        cd = form.cleaned_data
+
+        exp_list = Searches.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']))
+        results = list(exp_list)
+
+        new_perfs = []
+        for i in exp_list:
+            if not Performance.objects.filter(search=i).exists():
+                
+                # temporary fare generator
+
+                dep_flex = (i.depart_date2-i.depart_date1).days + 1
+                ret_flex = (i.return_date2-i.return_date1).days + 1
+                permutations = dep_flex * ret_flex
+
+                fares = []
+                for k in range(permutations):
+                    fares.append({
+                        'fare': int(i.locked_fare + i.expected_risk*random.uniform(-2,2)),
+                        'return_date': "2014-06-07",
+                        'depart_date': "2014-05-09",
+                    })
+
+                new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
+                new_perf.save()
+                new_perfs.append(new_perf)
+                         
+        build['results'] = {'in_range': results, 'new_additions': new_perfs}
+        
+    else:
+        build['results'] = {'success': False}
+        
+    return gen_search_display(request, build, False, method='post')
+    
 
 
 @login_required()
@@ -528,6 +573,7 @@ def simulation_sales(request):
     else:
         return render_to_response('analysis/sim_charts.html', {'form': form})
 
+    
 
 @login_required()
 def overlay(request, departure_trend):

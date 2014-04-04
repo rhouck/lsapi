@@ -16,6 +16,8 @@ urlpatterns = patterns('',
     url(r'^dashboard/$', exposure, name='dashboard'),
     url(r'^status/$', replicated_db_status, name='rep_data_status'),
 
+    url(r'^perf/$', perf, name='perf'),
+
 
 )
 

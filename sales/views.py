@@ -262,8 +262,6 @@ def find_cust_id(request):
             build['results'] = {'success': False, 'message': 'The customer is not registered in the system.'}
             here = "didnt work"
 
-    #check = {'inputs': inputs, 'form_val': form.is_valid()}
-    #return HttpResponse(json.encode(check), mimetype="application/json")
     return gen_search_display(request, build, clean)
 
 def customer_signup(request):

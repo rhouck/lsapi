@@ -45,3 +45,9 @@ class Dashboard_current(forms.Form):
     #force_stop = forms.BooleanField(label='Force stop option sales', required=False, initial=False)
     cash_change = forms.FloatField(label='Change in cash balance', required=False)
     #change_status = forms.BooleanField(label='Open Status', required=False, initial=False)
+
+
+
+class PerformanceForm(forms.Form):
+    beg_date = forms.DateField(label='Beginning Date')
+    end_date = forms.DateField(label='Ending Date')

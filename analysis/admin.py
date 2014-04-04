@@ -1,4 +1,4 @@
-from analysis.models import Cash_reserve, Additional_capacity, Open
+from analysis.models import Cash_reserve, Additional_capacity, Open, Performance
 from django.contrib import admin
 
 
@@ -34,4 +34,8 @@ class Additional_capacityAdmin(admin.ModelAdmin):
     #    return False
 admin.site.register(Additional_capacity, Additional_capacityAdmin)
 
+
+class PerformanceAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(Performance, PerformanceAdmin)
 
