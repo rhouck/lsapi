@@ -14,6 +14,7 @@ from django.db.models import Sum
 
 from analysis.models import *
 from pricing.models import *
+from pricing.views import pull_fares_range
 from sales.models import *
 from api.utils import current_time_aware, conv_to_js_date, format_pref_input
 from api.views import gen_search_display
@@ -24,6 +25,19 @@ import random
 import pickle
 
 import numpy as np
+
+try:
+    import czjson as json
+    json.encode = json.dumps
+    json.decode = json.loads
+except ImportError:
+    try:
+        import cjson as json
+    except ImportError:
+        import json
+        json.encode = json.dumps
+        json.decode = json.loads
+
 
 @login_required()
 def perf(request):
@@ -45,7 +59,7 @@ def perf(request):
             new_perfs = []
             for i in exp_list:
                 if not Performance.objects.filter(search=i).exists():
-                    
+                    """
                     # temporary fare generator
                     dep_flex = (i.depart_date2-i.depart_date1).days + 1
                     ret_flex = (i.return_date2-i.return_date1).days + 1
@@ -57,15 +71,22 @@ def perf(request):
                             'return_date': "2014-06-07",
                             'depart_date': "2014-05-09",
                         })
+                    """
                     # check fares at expiration
+                    flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, search_date=i.exp_date)
 
-
-                    # pickle fare data
-                    fares = pickle.dumps(fares)
-                    new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
-                    new_perf.save()
-                    new_perfs.append(new_perf)
-            
+                    if flights['success']:
+                        # delete unneccessary data
+                        for f in flights['fares']:
+                            del f['flight']
+                        #return HttpResponse(json.encode(flights['fares']), content_type="application/json")
+                        
+                        # pickle fare data
+                        fares = pickle.dumps(flights['fares'])
+                        new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
+                        new_perf.save()
+                        new_perfs.append(new_perf)
+        
             raw['new_additions'] = len(new_perfs)                   
 
        
