@@ -21,48 +21,156 @@ from api.views import gen_search_display
 from projection import *
 import random
 
+import pickle
+
+import numpy as np
 
 @login_required()
 def perf(request):
     
-    inputs = request.POST if request.POST else None
+    inputs = request.GET if request.GET else None
     form = PerformanceForm(inputs)
-    build = {'form': form}
+    
 
+    raw = {}
+    raw['charts'] = {}
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
 
-        exp_list = Searches.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']))
-        results = list(exp_list)
+        # build perforance model entries if don't exist
+        if cd['check_new']:
+            exp_list = Searches.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']))
+            results = list(exp_list)
 
-        new_perfs = []
-        for i in exp_list:
-            if not Performance.objects.filter(search=i).exists():
-                
-                # temporary fare generator
+            new_perfs = []
+            for i in exp_list:
+                if not Performance.objects.filter(search=i).exists():
+                    
+                    # temporary fare generator
+                    dep_flex = (i.depart_date2-i.depart_date1).days + 1
+                    ret_flex = (i.return_date2-i.return_date1).days + 1
+                    permutations = dep_flex * ret_flex
+                    fares = []
+                    for k in range(permutations):
+                        fares.append({
+                            'fare': int(i.locked_fare + i.expected_risk*random.uniform(-2,2)),
+                            'return_date': "2014-06-07",
+                            'depart_date': "2014-05-09",
+                        })
+                    # check fares at expiration
 
-                dep_flex = (i.depart_date2-i.depart_date1).days + 1
-                ret_flex = (i.return_date2-i.return_date1).days + 1
-                permutations = dep_flex * ret_flex
 
-                fares = []
-                for k in range(permutations):
-                    fares.append({
-                        'fare': int(i.locked_fare + i.expected_risk*random.uniform(-2,2)),
-                        'return_date': "2014-06-07",
-                        'depart_date': "2014-05-09",
-                    })
+                    # pickle fare data
+                    fares = pickle.dumps(fares)
+                    new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
+                    new_perf.save()
+                    new_perfs.append(new_perf)
+            
+            raw['new_additions'] = len(new_perfs)                   
 
-                new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
-                new_perf.save()
-                new_perfs.append(new_perf)
-                         
-        build['results'] = {'in_range': results, 'new_additions': new_perfs}
+       
+
+        # anlayze performance
+        if cd['date_type']:
+            perf_list = Performance.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date'])).order_by('-exp_date')
+        else:
+            perf_list = Performance.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date'])).order_by('-search_date')
         
-    else:
-        build['results'] = {'success': False}
+        if perf_list:
         
-    return gen_search_display(request, build, False, method='post')
+            scatter = []
+            for index, i in enumerate(perf_list):
+                fares = pickle.loads(i.end_prices)
+                temp = []
+                for k in fares:
+                    temp.append(k['fare'])
+                if cd['fare_type']:
+                    temp = max(temp)
+                else:
+                    temp = random.choice(temp)
+                      
+
+                # calc performance
+                if cd['perf_metric']:
+                    metric = i.search.holding_price
+                else:
+                    metric = i.search.expected_risk
+
+                if temp > i.search.locked_fare and random.random() >= cd['non_use_ratio']/float(100):
+                    temp = metric - (temp - i.search.locked_fare)
+                else:
+                    temp = metric
+
+
+                # calc date
+                if cd['date_type']:
+                    date = conv_to_js_date(i.exp_date) + index
+                else:
+                    date = conv_to_js_date(i.search_date) + index
+
+                scatter.append([date, temp, metric, i.search.locked_fare, (metric/i.search.locked_fare)])
+
+            raw['charts']['scatter'] = scatter
+            
+            scatter = np.array(scatter)
+
+            raw['overall'] = {}
+            raw['overall']['avg_earnings'] = round(np.mean(scatter[:,1]),1)
+            raw['overall']['price_abs'] = round(np.mean(scatter[:,2]),1)
+            raw['overall']['price_rel'] = round(np.mean(scatter[:,4]),2)
+            raw['overall']['total_earnings'] = round(np.sum(scatter[:,1]),1)
+            raw['overall']['count'] = np.shape(scatter)[0]
+
+
+
+
+            # group performance for average trends
+            bins = 1
+            if np.shape(scatter)[0] > 20:
+                bins = 5
+            if np.shape(scatter)[0] > 50:
+                bins = 10
+            
+            grouped = np.array_split(scatter, bins)
+
+            
+            binned = []
+            for i in grouped:
+
+                date = round(np.mean(i[:,0]))
+                avg_earnings = round(np.mean(i[:,1]),1)
+                price_abs = round(np.mean(i[:,2]),1)
+                price_rel = round(np.mean(i[:,4]),2)
+                total_earnings = round(np.sum(i[:,1]),1)
+                count = np.shape(i)[0]
+           
+
+                binned.append([date, avg_earnings, price_abs, price_rel, total_earnings, count])
+            
+            binned = np.array(binned)
+            binned = binned[::-1]
+            
+            raw['charts']['binned'] = binned[:,:2].tolist()
+
+            accum_cash = 0
+            bin_list = []
+            for i in binned:
+                temp = {}
+                temp['date'] = i[0]
+                temp['avg_earnings'] = i[1]
+                temp['price_abs'] = i[2]
+                temp['price_rel'] = i[3]
+                temp['total_earnings'] = i[4]
+                temp['count'] = int(i[5])
+                accum_cash += i[4]
+                temp['accum_cash'] = accum_cash
+                bin_list.append(temp)
+            raw['binned'] = bin_list
+        
+        else:
+            raw['message'] = "No data returned" 
+
+    return render_to_response('analysis/performance.html', {'form': form, 'results': raw})
     
 
 

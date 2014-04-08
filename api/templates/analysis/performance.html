@@ -1,0 +1,169 @@
+{% extends 'charts.html' %}
+
+
+{% block title %}Pricing Model Performance{% endblock %}
+
+{% block content %}
+
+
+  {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
+
+    {% if form.errors %}
+      <p style="color: red;">
+        Please correct the error{{ form.errors|pluralize }} below.
+      </p>
+    {% endif %}
+
+    <form action="" method="get">
+      {% csrf_token %}
+      <table>
+      {{ form.as_table }}
+      </table>
+      <input type="submit" name="Search">
+    </form>
+
+  
+  <div class="row">
+    
+    <div class="col-md-11">&nbsp;</div>
+    
+    {% if results.new_additions %}
+      <div class="col-md-11">New Items: {{ results.new_additions }}</div>
+    {% endif %}
+
+    {% if results.message %}
+      <div class="col-md-11">Message: {{ results.message }}</div>
+    {% endif %}
+    
+    <div class="col-md-11">&nbsp;</div>
+ 
+     
+  </div>
+  
+  <div class="row">
+    <div class="col-md-11">
+      <table class="table table-striped">
+        
+        <tr>
+          <td>Period</td>
+          {% for i in results.binned %}
+            <td>{{ forloop.counter }}</td>
+          {% endfor %}    
+          <td>Overall</td>
+        </tr>
+
+        <tr>
+          <td>Date</td>
+          {% for i in results.binned %}
+          <td>
+            <script>
+              var date = new Date({{ i.date }});
+              document.write(date.toLocaleDateString("en-US"));
+            </script>
+          </td>
+          {% endfor %}    
+          <td> -- </td>
+        </tr>
+
+        <tr>
+          <td>Average Earnings</td>
+          {% for i in results.binned %}
+            <td>{{ i.avg_earnings }}</td>
+          {% endfor %}    
+          <td>{{ results.overall.avg_earnings }}</td>
+        </tr>
+
+        <tr>
+          <td>Absolute Price</td>
+          {% for i in results.binned %}
+            <td>{{ i.price_abs }}</td>
+          {% endfor %}    
+          <td>{{ results.overall.price_abs }}</td>
+        </tr>
+
+
+        <tr>
+          <td>Relative Price</td>
+          {% for i in results.binned %}
+            <td>{{ i.price_rel }}</td>
+          {% endfor %}    
+          <td>{{ results.overall.price_rel }}</td>
+        </tr>
+
+        <tr>
+          <td>Count</td>
+          {% for i in results.binned %}
+            <td>{{ i.count }}</td>
+          {% endfor %}    
+          <td>{{ results.overall.count }}</td>
+        </tr>
+
+        <tr>
+          <td>Total Earnigns</td>
+          {% for i in results.binned %}
+            <td>{{ i.total_earnings }}</td>
+          {% endfor %}    
+          <td>{{ results.overall.total_earnings }}</td>
+        </tr>
+
+        <tr>
+          <td>Accumulated Cash</td>
+          {% for i in results.binned %}
+            <td>{{ i.accum_cash }}</td>
+          {% endfor %}    
+          <td> -- </td>
+        </tr>
+      
+      </table>
+    </div>
+  </div>  
+  
+
+  <div class="row">
+      <div class="col-md-11" id='scat' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+  </div>
+{% endblock %}
+
+
+{% block charts %}
+
+    <script>
+    // performance scatter plot data
+    var scat_data = {{ results.charts.scatter }};
+    var binned_data = {{ results.charts.binned }};
+
+      // Create the chart
+      $('#scat').highcharts('StockChart', {
+          rangeSelector : {
+            selected : 2
+          },
+
+          title : {
+            text : 'Performance'
+          },
+          subtitle : {
+            text : 'Hypothetical income on searched locked fares at expiration'
+          },
+          credits: {
+              enabled: false
+          },
+          series : [{
+            data : scat_data,
+            lineWidth : 0,
+            marker : {
+              enabled : true,
+              radius : 2
+            },
+            tooltip: {
+              valueDecimals: 2
+            }
+          },
+          {
+            name: 'Grouped Avg',
+            type: 'spline',
+            data: binned_data,
+          }]
+        });
+    </script>
+
+{% endblock %}

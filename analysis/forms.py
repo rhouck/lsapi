@@ -51,3 +51,8 @@ class Dashboard_current(forms.Form):
 class PerformanceForm(forms.Form):
     beg_date = forms.DateField(label='Beginning Date')
     end_date = forms.DateField(label='Ending Date')
+    check_new = forms.BooleanField(required=False, initial=False)
+    fare_type = forms.BooleanField(label='Max / Random End Fare', required=False, initial=True)
+    date_type = forms.BooleanField(label='Sort by Expired / Search Date', required=False, initial=True)
+    perf_metric = forms.BooleanField(label='Option Value / Expected Risk', required=False, initial=True)
+    non_use_ratio = forms.IntegerField(label='Percentage Non-Use', initial=0, max_value=99)
