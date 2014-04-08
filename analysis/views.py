@@ -41,6 +41,7 @@ except ImportError:
 
 @login_required()
 def perf(request):
+
     
     inputs = request.GET if request.GET else None
     form = PerformanceForm(inputs)
@@ -53,9 +54,25 @@ def perf(request):
 
         # build perforance model entries if don't exist
         if cd['check_new']:
-            exp_list = Searches.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']))
-            results = list(exp_list)
+            
+            exp_list = Searches.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']), error=None)
 
+            if cd['airline_prefs']:
+                values = ['any', 'all']
+                exp_list = exp_list.filter(airlines__in=values)
+            if cd['nonstop_prefs']:
+                values = ['any', 'multiple-stops']
+                exp_list = exp_list.filter(convenience__in=values)
+            if cd['time_prefs']:
+                values = ['any', 'anytime']
+                exp_list = exp_list.filter(depart_times__in=values, return_times__in=values)
+            if cd['flex_prefs']:
+                exp_list = exp_list.filter(total_flexibility=0)
+            if cd['dec_time']:
+                exp_list = exp_list.filter(holding_per=cd['dec_time'])
+              
+            #counters = [str(exp_list.query), exp_list.count()]
+            
             new_perfs = []
             for i in exp_list:
                 if not Performance.objects.filter(search=i).exists():
@@ -71,6 +88,12 @@ def perf(request):
                             'return_date': "2014-06-07",
                             'depart_date': "2014-05-09",
                         })
+                    
+                    # pickle fare data
+                    fares = pickle.dumps(fares)
+                    new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
+                    new_perf.save()
+                    new_perfs.append(new_perf)   
                     """
                     # check fares at expiration
                     flights = pull_fares_range(i.origin_code, i.destination_code, (i.depart_date1, i.depart_date2), (i.return_date1, i.return_date2), i.depart_times, i.return_times, i.convenience, i.airlines, search_date=i.exp_date)
@@ -86,17 +109,33 @@ def perf(request):
                         new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
                         new_perf.save()
                         new_perfs.append(new_perf)
-        
+                    
             raw['new_additions'] = len(new_perfs)                   
 
        
 
         # anlayze performance
+        perf_list = Performance.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']))
+        if cd['airline_prefs']:
+            values = ['any', 'all']
+            perf_list = perf_list.filter(search__airlines__in=values)
+        if cd['nonstop_prefs']:
+            values = ['any', 'multiple-stops']
+            perf_list = perf_list.filter(search__convenience__in=values)
+        if cd['time_prefs']:
+            values = ['any', 'anytime']
+            perf_list = perf_list.filter(search__depart_times__in=values, search__return_times__in=values)
+        if cd['flex_prefs']:
+            perf_list = perf_list.filter(search__total_flexibility=0)
+        if cd['dec_time']:
+            perf_list = perf_list.filter(search__holding_per=cd['dec_time'])
+
         if cd['date_type']:
-            perf_list = Performance.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date'])).order_by('-exp_date')
+            perf_list = perf_list.order_by('-exp_date')
         else:
-            perf_list = Performance.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date'])).order_by('-search_date')
-        
+            perf_list = perf_list.order_by('-search_date')
+
+
         if perf_list:
         
             scatter = []
@@ -119,8 +158,10 @@ def perf(request):
 
                 if temp > i.search.locked_fare and random.random() >= cd['non_use_ratio']/float(100):
                     temp = metric - (temp - i.search.locked_fare)
+                    exercised = 1
                 else:
                     temp = metric
+                    exercised = 0
 
 
                 # calc date
@@ -129,11 +170,17 @@ def perf(request):
                 else:
                     date = conv_to_js_date(i.search_date) + index
 
-                scatter.append([date, temp, metric, i.search.locked_fare, (metric/i.search.locked_fare)])
+                scatter.append([date, temp, metric, i.search.locked_fare, (metric/i.search.locked_fare), exercised])
 
-            raw['charts']['scatter'] = scatter
-            
+
             scatter = np.array(scatter)
+            # sort by date again
+            ind = np.lexsort((scatter[:,0],))
+            scatter = scatter[ind]
+
+           
+            raw['charts']['scatter'] = scatter[:,:2].tolist()
+            
 
             raw['overall'] = {}
             raw['overall']['avg_earnings'] = round(np.mean(scatter[:,1]),1)
@@ -141,9 +188,7 @@ def perf(request):
             raw['overall']['price_rel'] = round(np.mean(scatter[:,4]),2)
             raw['overall']['total_earnings'] = round(np.sum(scatter[:,1]),1)
             raw['overall']['count'] = np.shape(scatter)[0]
-
-
-
+            raw['overall']['ratio_exercised'] = round(float(np.sum(scatter[:,5]))/raw['overall']['count'],2)
 
             # group performance for average trends
             bins = 1
@@ -164,14 +209,16 @@ def perf(request):
                 price_rel = round(np.mean(i[:,4]),2)
                 total_earnings = round(np.sum(i[:,1]),1)
                 count = np.shape(i)[0]
+                ratio_exercised = round(float(np.sum(i[:,5]))/count,2)
            
 
-                binned.append([date, avg_earnings, price_abs, price_rel, total_earnings, count])
+                binned.append([date, avg_earnings, price_abs, price_rel, total_earnings, count, ratio_exercised])
             
             binned = np.array(binned)
-            binned = binned[::-1]
-            
+            #binned = binned[::-1]
+            #return HttpResponse(json.encode(binned.tolist()), content_type="application/json")
             raw['charts']['binned'] = binned[:,:2].tolist()
+
 
             accum_cash = 0
             bin_list = []
@@ -183,6 +230,7 @@ def perf(request):
                 temp['price_rel'] = i[3]
                 temp['total_earnings'] = i[4]
                 temp['count'] = int(i[5])
+                temp['ratio_exercised'] = i[6]
                 accum_cash += i[4]
                 temp['accum_cash'] = accum_cash
                 bin_list.append(temp)
@@ -190,7 +238,7 @@ def perf(request):
         
         else:
             raw['message'] = "No data returned" 
-
+    
     return render_to_response('analysis/performance.html', {'form': form, 'results': raw})
     
 

@@ -35,7 +35,8 @@
                   {% endif %}
                   <td><div class="fieldWrapper">
                       {{ field.errors }}
-                      {{ field.label_tag }} {{ field }}
+                      <div class="pull-left">{{ field.label_tag }}</div>
+                      <div class="pull-right">{{ field }}</div> 
                   </div></td>
                 {% endfor %}
                 </tr>
@@ -54,7 +55,7 @@
       {% endif %}
 
       {% if results.message %}
-        <div class="col-md-11">Message: {{ results.message }}</div>
+        <div class="col-md-11">{{ results.message }}</div>
       {% endif %}
       
       <div class="col-md-11">&nbsp;</div>
@@ -119,6 +120,14 @@
               <td>{{ i.count }}</td>
             {% endfor %}    
             <td>{{ results.overall.count }}</td>
+          </tr>
+
+          <tr>
+            <td>Ratio Exercised</td>
+            {% for i in results.binned %}
+              <td>{{ i.ratio_exercised }}</td>
+            {% endfor %}    
+            <td>{{ results.overall.ratio_exercised }}</td>
           </tr>
 
           <tr>

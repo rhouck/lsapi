@@ -50,15 +50,15 @@ class Dashboard_current(forms.Form):
 
 class PerformanceForm(forms.Form):
     beg_date = forms.DateField(label='Beginning Date')
-    check_new = forms.BooleanField(required=False, initial=False)
-    end_date = forms.DateField(label='Ending Date')
     date_type = forms.BooleanField(label='Sort by Expired / Search Date', required=False, initial=True)
+    end_date = forms.DateField(label='Ending Date')
+    flex_prefs = forms.BooleanField(label='No date flexibility only', required=False, initial=True)
     perf_metric = forms.BooleanField(label='Option Value / Expected Risk', required=False, initial=True)
     airline_prefs = forms.BooleanField(label='Any airline only', required=False, initial=True)
     fare_type = forms.BooleanField(label='Max / Random End Fare', required=False, initial=True)
     nonstop_prefs = forms.BooleanField(label='Any stops only', required=False, initial=True)
     non_use_ratio = forms.IntegerField(label='Percentage Non-Use', initial=0, max_value=99)
     time_prefs = forms.BooleanField(label='Any time only', required=False, initial=True)
-    
-    
+    check_new = forms.BooleanField(required=False, initial=False)
+    dec_time = forms.IntegerField(label='Decision Time', required=False, min_value=1, max_value=4)
 
