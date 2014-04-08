@@ -53,7 +53,7 @@ def perf(request):
         cd = form.cleaned_data
 
         # build perforance model entries if don't exist
-        if cd['check_new']:
+        if cd['max_new']:
             
             exp_list = Searches.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']), error=None)
 
@@ -71,11 +71,23 @@ def perf(request):
             if cd['dec_time']:
                 exp_list = exp_list.filter(holding_per=cd['dec_time'])
               
-            #counters = [str(exp_list.query), exp_list.count()]
             
+            # filter out searches already tied to a Performance object    
+            existing_perfs = Performance.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date'])).values("search__key")
+            exp_list = exp_list.exclude(key__in=existing_perfs)
+            
+
+            # determine probability of adding new Performance object, to randomize Performance object creation and keep within limits of newly created objects
+            count = exp_list.count()
+            if exp_list.count() < cd['max_new']:
+                prob = 1
+            else:
+                prob =  cd['max_new'] / float(count)  
+
             new_perfs = []
             for i in exp_list:
-                if not Performance.objects.filter(search=i).exists():
+                #if not Performance.objects.filter(search=i).exists():
+                if random.random() <= prob:
                     """
                     # temporary fare generator
                     dep_flex = (i.depart_date2-i.depart_date1).days + 1
@@ -110,6 +122,7 @@ def perf(request):
                         new_perf.save()
                         new_perfs.append(new_perf)
                     
+                
             raw['new_additions'] = len(new_perfs)                   
 
        

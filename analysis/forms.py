@@ -59,6 +59,6 @@ class PerformanceForm(forms.Form):
     nonstop_prefs = forms.BooleanField(label='Any stops only', required=False, initial=True)
     non_use_ratio = forms.IntegerField(label='Percentage Non-Use', initial=0, max_value=99)
     time_prefs = forms.BooleanField(label='Any time only', required=False, initial=True)
-    check_new = forms.BooleanField(required=False, initial=False)
+    max_new = forms.IntegerField(label='Max Newly Created Records', required=False, initial=None)
     dec_time = forms.IntegerField(label='Decision Time', required=False, min_value=1, max_value=4)
 
