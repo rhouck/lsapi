@@ -77,64 +77,65 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
     
     """this function will process the items in the queue, in serial"""
     def processor(cached):
-        #if queue.empty() == True:
-        #    print "the Queue is empty!"
-        #    sys.exit(1)
         while True:
-          try:
-              job = queue.get()
-              #print "I'm operating on job item: %s"%(job)
+          
+          # get job
+          job = queue.get()
+          if job is None:
+            break
+          
+          # do work
+          res = run_flight_search(job['origin'], job['destination'], job['fare']['depart_date'], job['fare']['return_date'], job['depart_times'], job['return_times'], job['num_stops'], job['airlines'], search_key=job['search_key'], search_date=job['search_date'], cached=cached)
+          if res['success']:
+            job['fare']['fare'] = res['min_fare']
+            job['fare']['flight'] = res['min_flight']
+            job['fare']['method'] = res['method']
+          else:
+            job['fare']['error'] = res['error']
+          resQueue.put(job['fare'])
+          
+          # task done
+          queue.task_done()
+          
 
-              res = run_flight_search(job['origin'], job['destination'], job['fare']['depart_date'], job['fare']['return_date'], job['depart_times'], job['return_times'], job['num_stops'], job['airlines'], search_key=job['search_key'], search_date=job['search_date'], cached=cached)
-              if res['success']:
-                job['fare']['fare'] = res['min_fare']
-                job['fare']['flight'] = res['min_flight']
-                job['fare']['method'] = res['method']
-              else:
-                job['fare']['error'] = res['error']
 
-              resQueue.put(job['fare'])
-              queue.task_done()
-          except:
-              pass
-              #print "Failed to operate on job"
+    
 
-
-
+  
+    """a list of job items. you would want this to be more advanced, like reading from a file or database"""
+    queue = Queue.Queue()
     resQueue = Queue.Queue()
 
-    """set variables"""
-    queue = Queue.Queue()
-    threads = len(fares) if len(fares) < 10 else 10 
-
-    """a list of job items. you would want this to be more advanced, like reading from a file or database"""
-    #jobs = []
     for fare in fares:
       inps = {'fare': fare, 'origin': origin, 'destination': destination, 'depart_times': depart_times, 'return_times': return_times, 'num_stops': num_stops, 'airlines': airlines, 'search_key': search_key, 'search_date': search_date}
-      #print "inserting job into the queue: %s"%(inps)
       queue.put(inps)
-      #jobs.append(inps)
+      
 
 
     """start some threads, each one will process one job from the queue"""
-    for i in range(threads):
-         th = threading.Thread(target=processor, args=(cached,))
-         th.setDaemon(True)
-         th.start()
-      
+    thread_count = len(fares) if len(fares) < 10 else 10 
+    threads = []
+    for i in range(thread_count):
+      th = threading.Thread(target=processor, args=(cached,))
+      #th.setDaemon(True)
+      th.start()
+      threads.append(th)
+
+
 
     """wait until all jobs are processed before quitting"""
     queue.join()
-
+    for i in range(thread_count):
+        queue.put(None)
+    for t in threads: 
+      t.join()
 
     result = []
     while not resQueue.empty():
         result.append(resQueue.get())
-    fares = result
+    results['fares'] = string_dates(result)
+    
 
-
-    results['fares'] = string_dates(fares)
-    #results = {'fares': None, 'flights': None}
 
 
     error = ""
