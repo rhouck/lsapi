@@ -46,6 +46,7 @@ def perf(request):
     inputs = request.GET if request.GET else None
     form = PerformanceForm(inputs)
     
+    
 
     raw = {}
     raw['charts'] = {}
@@ -78,8 +79,9 @@ def perf(request):
             
 
             # determine probability of adding new Performance object, to randomize Performance object creation and keep within limits of newly created objects
+            
             count = exp_list.count()
-            if exp_list.count() < cd['max_new']:
+            if exp_list.count() <= cd['max_new']:
                 prob = 1
             else:
                 prob =  cd['max_new'] / float(count)  
