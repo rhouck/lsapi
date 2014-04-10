@@ -158,6 +158,33 @@
     <div class="row">
         <div class="col-md-11" id='scat' style="min-width: 310px; height: 400px; margin: 0 auto"></div>
     </div>
+
+    {% if results.search_dets %}
+      <div class="row">
+          <div class="col-md-2">&nbsp;</div>
+      </div>
+      
+      <div class="row">
+          <div class="col-md-2">Success:</div>
+          <div class="col-md-9">Error:</div>
+      </div>
+      
+    
+      {% for i in results.search_dets.new_perf_attempt %}
+        
+        <div class="row">
+          <div class="col-md-2">{{ i.success }}</div>
+          <div class="col-md-9">{{ i.error }}</div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-2">&nbsp;</div>
+        </div>
+     
+      {% endfor %}
+    {% endif %}
+
+
   {% endif %}
 {% endblock %}
 
