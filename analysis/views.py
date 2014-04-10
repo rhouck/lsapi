@@ -50,12 +50,15 @@ def perf(request):
 
     raw = {}
     raw['charts'] = {}
+    
     if (inputs) and form.is_valid():
         cd = form.cleaned_data
 
         # build perforance model entries if don't exist
         if cd['max_new']:
             
+            raw['search_dets'] = {}
+
             exp_list = Searches.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date']), error=None)
 
             if cd['airline_prefs']:
@@ -71,12 +74,15 @@ def perf(request):
                 exp_list = exp_list.filter(total_flexibility=0)
             if cd['dec_time']:
                 exp_list = exp_list.filter(holding_per=cd['dec_time'])
-              
+            raw['search_dets']['full_exps'] = exp_list.count()  
             
+
             # filter out searches already tied to a Performance object    
             existing_perfs = Performance.objects.filter(exp_date__range=(cd['beg_date'], cd['end_date'])).values("search__key")
-            exp_list = exp_list.exclude(key__in=existing_perfs)
+            raw['search_dets']['full_perfs'] = existing_perfs.count()
             
+            exp_list = exp_list.exclude(key__in=existing_perfs)
+            raw['search_dets']['filt_exps'] = exp_list.count()
 
             # determine probability of adding new Performance object, to randomize Performance object creation and keep within limits of newly created objects
             
@@ -86,11 +92,12 @@ def perf(request):
             else:
                 prob =  cd['max_new'] / float(count)  
 
+            raw['search_dets']['attempts_count'] = 0
             new_perfs = []
             for i in exp_list:
                 #if not Performance.objects.filter(search=i).exists():
                 if random.random() <= prob:
-                    """
+                    raw['search_dets']['attempts_count'] += 1
                     # temporary fare generator
                     dep_flex = (i.depart_date2-i.depart_date1).days + 1
                     ret_flex = (i.return_date2-i.return_date1).days + 1
@@ -123,9 +130,10 @@ def perf(request):
                         new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
                         new_perf.save()
                         new_perfs.append(new_perf)
-                    
+                    """
                 
-            raw['new_additions'] = len(new_perfs)                   
+            raw['search_dets']['new_perfs']= len(new_perfs)
+                                
 
        
 

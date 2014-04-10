@@ -50,8 +50,12 @@
       
       <div class="col-md-11">&nbsp;</div>
       
-      {% if results.new_additions %}
-        <div class="col-md-11">New Items: {{ results.new_additions }}</div>
+      {% if results.search_dets %}
+        <div class="col-md-2">Expired Searchs: {{ results.search_dets.full_exps }}</div>
+        <div class="col-md-2">Performance Records: {{ results.search_dets.full_perfs }}</div>
+        <div class="col-md-2">Filtered Expired: {{ results.search_dets.filt_exps }}</div>
+        <div class="col-md-2">Attempted New Recs: {{ results.search_dets.attempts_count }}</div>
+        <div class="col-md-2">New Records: {{ results.search_dets.new_perfs }}</div>
       {% endif %}
 
       {% if results.message %}
