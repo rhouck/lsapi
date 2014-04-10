@@ -98,6 +98,8 @@ def perf(request):
                 #if not Performance.objects.filter(search=i).exists():
                 if random.random() <= prob:
                     raw['search_dets']['attempts_count'] += 1
+                    
+                    """
                     # temporary fare generator
                     dep_flex = (i.depart_date2-i.depart_date1).days + 1
                     ret_flex = (i.return_date2-i.return_date1).days + 1
@@ -130,7 +132,7 @@ def perf(request):
                         new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
                         new_perf.save()
                         new_perfs.append(new_perf)
-                    """
+                    
                 
             raw['search_dets']['new_perfs']= len(new_perfs)
                                 
