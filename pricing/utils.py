@@ -188,6 +188,11 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
       # this is used for calculating algorithm performance with hypothetical contracts
       inputs['search_date'] = datetime.datetime(search_date.year, search_date.month, search_date.day,0,0)
       res = mongo.flight_search.live.find({'date_created': inputs['search_date'], 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
+      if not res.count():
+        # increment search date by one if no resutls
+        search_date = search_date + datetime.timedelta(days=1)
+        inputs['search_date'] = datetime.datetime(search_date.year, search_date.month, search_date.day,0,0)
+        res = mongo.flight_search.live.find({'date_created': inputs['search_date'], 'inputs.origin': inputs['origin'], 'inputs.destination': inputs['destination'], 'inputs.depart_date': inputs['depart_date'], 'inputs.return_date': inputs['return_date'], 'inputs.depart_times': inputs['depart_times'], 'inputs.return_times': inputs['return_times'], 'inputs.num_stops': inputs['num_stops'], 'inputs.airlines': inputs['airlines']}, {'_id': 0 }).sort('date_created',-1).limit(1)
       if res.count():
           # return search results if already cached
           data = res[0]
