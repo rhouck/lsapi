@@ -79,6 +79,7 @@ class Contract(models.Model):
     cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
     cc_exp_year = models.IntegerField(max_length=4, blank=True, null=True)
 
+    alerts = models.BooleanField('receive alerts', blank=True)
 
     def outstanding(self):
         return self.search.exp_date >= current_time_aware() and not self.ex_date
@@ -134,6 +135,8 @@ class Demo(models.Model):
     purch_date = models.DateTimeField('date / time purchased')
     search = models.OneToOneField('pricing.Searches') # , primary_key=True
 
+    alerts = models.BooleanField('receive alerts', blank=True)
+
     def outstanding(self):
         return self.search.exp_date >= current_time_aware()
     outstanding.admin_order_field = 'search__exp_date'
@@ -147,3 +150,7 @@ class Demo(models.Model):
         uni_name = '%s - %s - %s' % (self.customer, self.customer.platform, self.purch_date.strftime('%b %d, %Y'))
         return uni_name
 
+class Alerts(models.Model):
+    search = models.OneToOneField('pricing.Searches')
+    fares = models.TextField(blank=True, null=True)
+    update_date = models.DateField('date last updated', null=True)

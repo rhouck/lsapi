@@ -1,4 +1,4 @@
-from sales.models import Platform, Customer, Contract, Staging, Demo
+from sales.models import Platform, Customer, Contract, Staging, Demo, Alerts
 
 from django.contrib import admin
 
@@ -97,3 +97,8 @@ class StagingAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 admin.site.register(Staging, StagingAdmin)
+
+
+class AlertsAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(Alerts, AlertsAdmin)
