@@ -880,8 +880,8 @@ def alerts(request):
             prev_update = obj.update_date if obj.update_date else None
 
             # ensure not sent more than once daily
-            #if not prev_update or prev_update < today:
-            if 3>2:
+            if not prev_update or prev_update < today:
+                
                 temp = {'key': k.search.key}
 
                 # check updated flights
