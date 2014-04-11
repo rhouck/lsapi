@@ -46,17 +46,33 @@
                   
                           <!--Sidebar content   -->
                           {% block nav %}
-                            {% if user.is_staff %}
-      										    <a href="{% url dashboard %}">Dashboard</a></br>
+                            
+      										    
       										    <a href="{% url admin:index %}">Admin</a></br>
       												<!-- <a href="{% url rep_data_status %}">Check Replicated Data</a></br> -->
       												<a href="{% url logout %}">Logout</a></br>
       										    </br>
-      										    Pricing ></br>
+      							          Analysis ></br>
+                              <a href="{% url dashboard %}">Dashboard</a></br>
+                              <a href="{% url performance %}">Performance</a></br>
+                              <!--
+                              <a href="{% url hist_date %}">Hist fare - date</a></br>
+                              <a href="{% url hist_trend_abs %}">Hist trends - abs</a></br>
+                              <a href="{% url hist_trend_rel %}">Hist trends - rel</a></br>
+                              <a href="{% url proj_date %}">Proj - date</a></br>
+                              <a href="{% url proj_depart %}">Proj - departure window</a></br>
+                              <a href="{% url proj_accuracy_abs %}">Proj accuracy - abs</a></br>
+                              <a href="{% url proj_accuracy_rel %}">Proj accuracy - rel</a></br>
+                              <a href="{% url sim_analysis %}">Sim Performance</a></br>
+                              -->
+                              </br>
+
+                    			    Pricing ></br>
       										    <a href="{% url price_single %}">Search</a></br>
                               <a href="{% url fare_changes %}">Explore</a></br>
       										    </br>
-      										    Sales ></br>
+      							
+                    			    Sales ></br>
                               <a href="{% url purchase %}">Purchase</a></br>
                               <a href="{% url demo %}">Demo</a></br>
       										    <a href="{% url find_cust_id %}">Get Customer ID</a></br>
@@ -64,23 +80,13 @@
       										    <a href="{% url customer_list %}">Customers</a></br>
       										    <a href="{% url platform_list %}">Platforms</a></br>
       												<a href="{% url staging_view %}">Staging</a></br>
-                              <a href="{% url staging_sweep %}">Sweep</a></br>
                               </br>
-                              <!--
-      										    Analysis ></br>
-      										    <a href="{% url hist_date %}">Hist fare - date</a></br>
-      										    <a href="{% url hist_trend_abs %}">Hist trends - abs</a></br>
-      										    <a href="{% url hist_trend_rel %}">Hist trends - rel</a></br>
-      										    <a href="{% url proj_date %}">Proj - date</a></br>
-      										    <a href="{% url proj_depart %}">Proj - departure window</a></br>
-      										    <a href="{% url proj_accuracy_abs %}">Proj accuracy - abs</a></br>
-      										    <a href="{% url proj_accuracy_rel %}">Proj accuracy - rel</a></br>
-      										    <a href="{% url sim_analysis %}">Sim Performance</a></br>
-      										    -->
-                            {% else %}
-                              <a href="{% url fare_changes %}">Explore</a></br>
-                              <a href="{% url logout %}">Logout</a></br>
-                            {% endif %}
+      							
+                              Periodic ></br>
+                              <a href="{% url staging_sweep %}">Staging Sweep</a></br>
+                              <a href="{% url sweep_expired %}">Expired Search Sweep</a></br>
+                              <a href="{% url alerts_sweep %}">Fare Alert Sweep</a></br>
+                              
                           {% endblock %}
                         </div>
                       </div>
