@@ -307,7 +307,7 @@ def search_info(request, slug, all=False):
     del search_dict['error']
 
     # convert to refund system
-    search_dict = refund_format_conversion(search_dict)
+    #search_dict = refund_format_conversion(search_dict)
 
     search_dict['success'] = True
     return HttpResponse(json.encode(search_dict), content_type="application/json")
@@ -377,7 +377,8 @@ def price_edu_combo(request):
 
                 # add current flight list if no errors and 'show_flights' is true
                 if not model_out['error']:
-                    model_out = refund_format_conversion(model_out)
+                    pass
+                    #model_out = refund_format_conversion(model_out)
                 combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
 
                 # convert all dates into js time-stamp
