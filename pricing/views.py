@@ -29,6 +29,7 @@ except ImportError:
         json.encode = json.dumps
         json.decode = json.loads
 
+
 from functions import *
 from gen_price import *
 from mult_search import *

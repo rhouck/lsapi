@@ -31,5 +31,8 @@ urlpatterns = patterns('',
     # 'routes' app urls
     url(r'^routes/', include('routes.urls')),
 
+    # 'contest' app urls
+    url(r'^promos/', include('promos.urls')),
+
 )
 
