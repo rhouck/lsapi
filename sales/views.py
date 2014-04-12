@@ -47,6 +47,8 @@ from dateutil.parser import parse
 
 import numpy as np
 
+from promos.models import Promo
+
 
 def get_cust_list(request):
 
@@ -362,43 +364,49 @@ def purchase_option(request):
             purch_date_time = current_time_aware()
             search_date_date = find_search.search_date
             expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
-
+            if expired:
+               raise Exception("The quoted price is expired. Please run a new search.") 
+            
             try:
                 existing = Contract.objects.get(search__key=cd['search_key'])
             except:
                 pass
             else:
-                raise Exception
+                raise Exception("A contract realted to this search has already been purchased. Please run a new search.")
 
-            if find_search.error or not find_search.get_status() or expired:
-                raise Exception
 
-        #except (Customer.DoesNotExist):
-        #    build['error_message'] = 'The customer key is not valid.'
-        #    build['results'] = {'success': False, 'error': 'The customer key is not valid.'}
+            if find_search.error or not find_search.get_status():
+                raise Exception("Cannot purchase contract on invalid search. Please run a new search.")
+
+            # check promo code if given
+            if cd['promo']:
+                promo = Promo.objects.get(customer=find_cust, code=cd['promo'])
+                if promo.contract:
+                   raise Exception("Promotional code already used.")
+            else:
+                promo = None
+
         except (Searches.DoesNotExist):
-            build['error_message'] = 'The option id entered is not valid.'
-            build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
-        except (Exception):
-            build['error_message'] = 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'
-            build['results'] = {'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}
+            build['error_message'] = 'The search id entered is not valid.'
+            build['results'] = {'success': False, 'error': 'The search id entered is not valid.'}
+        except (Promo.DoesNotExist):
+            build['error_message'] = 'Not a valid promotional code.'
+            build['results'] = {'success': False, 'error': 'Not a valid promotional code.'}
+        except (Exception) as err:
+            build['error_message'] = '%s' % err
+            build['results'] = {'success': False, 'error': '%s' % err}
+        
         else:
 
             # update customer data
-            """
-            for key, value in cd.items():
-                if key not in ("key", "platform", "reg_date"):
-                    try:
-                        setattr(find_cust, key, value)
-                    except:
-                        pass
-            """
             setattr(find_cust, 'phone', cd['billing_phone'])
             find_cust.save()
 
-
             # run credit card
-            amount = find_search.locked_fare + find_search.holding_price
+            amount = find_search.holding_price
+            if promo:
+                amount = amount - abs(promo.value) if amount > abs(promo.value) else 1
+
             # can we include middle name here?
             card_info = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'number': cd['card_number'], 'month': cd['card_month'], 'year': cd['card_year'], 'code': cd['card_code']}
             cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
@@ -441,6 +449,9 @@ def purchase_option(request):
 
                     new_contract.save()
 
+                    if promo:
+                        promo.contract = new_contract
+                        promo.save()
 
                     full_search_info = new_contract.search.__dict__
                     search_info = {}
@@ -452,7 +463,15 @@ def purchase_option(request):
                                 search_info[k] = v
 
                     confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-                    build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status'], 'search_info': search_info, 'receive_alerts': cd['alerts']}
+                    build['results'] = {'success': True, 
+                                        'search_key': cd['search_key'], 
+                                        'cust_key': find_cust.key, 
+                                        'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 
+                                        'confirmation': confirmation_url, 
+                                        'gateway_status': response['status'], 
+                                        'search_info': search_info, 
+                                        'receive_alerts': cd['alerts'],
+                                        'amount_charged': amount,}
 
                     # augment cash reserve with option price and update option inventory capacity
                     try:

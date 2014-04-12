@@ -55,6 +55,8 @@ class Purchase_option(forms.Form):
 
     alerts = forms.BooleanField(required=False, initial=False)
 
+    promo = forms.CharField(label='promotional code', max_length=16, required=False)    
+
 class DemoOptionForm(forms.Form):
     search_key = forms.CharField()
     platform_key = forms.CharField()
