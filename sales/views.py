@@ -390,7 +390,7 @@ def purchase_option(request):
 
 
             # run credit card
-            amount = find_search.locked_fare + find_search.holding_price
+            amount = find_search.holding_price
             # can we include middle name here?
             card_info = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'number': cd['card_number'], 'month': cd['card_month'], 'year': cd['card_year'], 'code': cd['card_code']}
             cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
