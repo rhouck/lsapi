@@ -1,4 +1,4 @@
-from sales.models import Platform, Customer, Contract, Staging, Demo, Alerts
+from sales.models import Platform, Customer, Contract, Staging, Demo, Alerts, AlertsCheck
 
 from django.contrib import admin
 
@@ -102,3 +102,7 @@ admin.site.register(Staging, StagingAdmin)
 class AlertsAdmin(admin.ModelAdmin):
     pass
 admin.site.register(Alerts, AlertsAdmin)
+
+class AlertsCheckAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(AlertsCheck, AlertsCheckAdmin)
