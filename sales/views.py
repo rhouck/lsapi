@@ -876,7 +876,12 @@ def alerts(request):
             
             obj, created = Alerts.objects.get_or_create(search=k.search)
             
-            prev_fares = pickle.loads(obj.fares) if obj.fares else []
+            #return HttpResponse(json.encode(pickle.loads(obj.fares)), content_type="application/json")
+            
+            #prev_fares = json.encode(pickle.loads(obj.fares)) if obj.fares else []
+            #test = obj.fares
+            #prev_fares = pickle.loads(obj.fares) if obj.fares else []
+            prev_fares = ast.literal_eval(obj.fares) if obj.fares else []
             prev_update = obj.update_date if obj.update_date else None
 
             # ensure not sent more than once daily
@@ -891,14 +896,15 @@ def alerts(request):
                     # delete unneccessary data
                     for f in flights['fares']:
                         del f['flight']
-                    #return HttpResponse(json.encode(flights['fares']), content_type="application/json")
+                    #
 
                     # pickle fare data
                     fares = flights['fares']
                 else:
                     fares = None
-                
-                obj.fares = pickle.dumps(fares) if fares else None
+                  
+                #obj.fares = str(pickle.dumps(fares)) if fares else None
+                obj.fares = str(fares) if fares else None
                 obj.update_date = today
                 obj.save()
 

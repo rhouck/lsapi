@@ -38,6 +38,7 @@ except ImportError:
         json.encode = json.dumps
         json.decode = json.loads
 
+import ast
 
 @login_required()
 def perf(request):
@@ -131,7 +132,8 @@ def perf(request):
                         #return HttpResponse(json.encode(flights['fares']), content_type="application/json")
                         
                         # pickle fare data
-                        fares = pickle.dumps(flights['fares'])
+                        #fares = pickle.dumps(flights['fares'])
+                        fares = str(flights['fares'])
                         new_perf = Performance(search=i, end_prices=fares, search_date=i.search_date, exp_date=i.exp_date)
                         new_perf.save()
                         new_perfs.append(new_perf)
@@ -170,7 +172,12 @@ def perf(request):
         
             scatter = []
             for index, i in enumerate(perf_list):
-                fares = pickle.loads(i.end_prices)
+                
+                try:
+                    fares = ast.literal_eval(i.end_prices)
+                except:
+                    fares = pickle.loads(i.end_prices)
+                
                 temp = []
                 for k in fares:
                     temp.append(k['fare'])
