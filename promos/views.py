@@ -1,11 +1,15 @@
 # Create your views here.
 
-from promos.models import Contest
+from promos.models import Contest, Submission
+from promos.forms import ContestSubmissionForm
 
 from api.views import gen_search_display
-from api.utils import check_creds, current_time_aware
+from api.utils import check_creds, current_time_aware, gen_alphanum_key
 
 from pricing.utils import run_flight_search
+
+from sales.models import Platform, Customer
+from sales.utils import send_template_email
 
 import random
 import datetime
@@ -92,7 +96,8 @@ def contest(request):
 			depart_date = current_date + datetime.timedelta(days=random.randrange(21,40))
 			return_date = depart_date + datetime.timedelta(days=random.randrange(2,20))
 
-			contest = Contest(created_date=current_time, 
+			contest = Contest(key=gen_alphanum_key(),
+							created_date=current_time, 
 							expire_date=(current_time + datetime.timedelta(days=contest_length)), 
 							origin_code=origin, 
 							destination_code=destination,
@@ -131,3 +136,73 @@ def contest(request):
 		results = {'success': False, 'error': err}
 
 	return gen_search_display(request, {'results': results}, clean)
+
+
+def make_submission(request):
+	
+	if request.user.is_authenticated():
+	    clean = False
+	else:
+	    clean = True
+
+	inputs = request.POST if request.POST else None
+	if clean:
+	    cred = check_creds(request.POST, Platform)
+	    if not cred['success']:
+	        return HttpResponse(json.encode(cred), mimetype="application/json")
+
+
+	form = ContestSubmissionForm(inputs)
+	build = {'form': form}
+
+	if (inputs) and form.is_valid():
+		cd = form.cleaned_data
+		
+		try:
+
+			find_platform = Platform.objects.get(key=cd['platform_key'])
+			find_contest = Contest.objects.get(key=cd['contest_key'])
+
+			# either find the existing customer associated with the platform and email addres or create it
+			try:
+			    find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+			except:
+			    inps = {}
+			    inps['key'] = gen_alphanum_key()
+			    inps['reg_date'] = current_time_aware().date()
+			    inps['platform'] = find_platform
+			    inps['email'] = cd['email']
+			    find_cust = Customer(**inps)
+			    find_cust.save()
+
+			try:
+				sub = Submission.objects.get(customer=find_cust, contest=find_contest)
+			except:
+				sub = Submission(contest=find_contest, customer=find_cust, created_date=current_time_aware(), value=cd['value'])
+				sub.save()
+			else:
+				raise Exception("A submission has already been made to this contest with this email address.")
+
+		except (Contest.DoesNotExist):
+		    build['error_message'] = 'The contest key entered is not valid.'
+		    build['results'] = {'success': False, 'error': 'The contest key entered is not valid.'}
+
+		except (Exception) as err:
+		    build['error_message'] = '%s' % err
+		    build['results'] = {'success': False, 'error': 'Could not record your entry. %s' % err}
+
+		else:
+
+			# send email if subission successful
+			subject = "We got your submission"
+			title = "Now let's see how well you do..."
+			body = "This contest is over soon but we won't know the final price of the flight until departure time. When that happens we'll let you know if you won and earned a discount on your next locked fare. Don't worry, you don't have to wait long and you can enter the next contest as soon as it starts."
+			try:
+				send_template_email(sub.customer.email, subject, title, body)
+			except:
+				pass
+
+			build['results'] = {'success': True}
+
+	return gen_search_display(request, build, clean, method='post')
+
