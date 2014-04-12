@@ -424,7 +424,7 @@ def price_edu_combo(request):
                 build = {'form': form, 'results': combined_results}
                 return gen_search_display(request, build, clean, method='post')
             else:
-                return HttpResponse('not valid form')
+                return HttpResponse('Not valid form.')
         else:
             form = full_option_info()
             combined_results = None

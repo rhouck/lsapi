@@ -58,7 +58,7 @@ def contest(request):
 	else:
 	    clean = True
 
-	clean = False
+	
 	if clean:
 	    cred = check_creds(request.POST, Platform)
 	    if not cred['success']:
@@ -135,7 +135,13 @@ def contest(request):
 	except Exception as err:
 		results = {'success': False, 'error': err}
 
-	return gen_search_display(request, {'results': results}, clean)
+	# format date types for json 
+	for k, v in results.iteritems():
+		if isinstance(v, (datetime.date, datetime.datetime)):
+			results[k] = str(v)		
+	
+	#return HttpResponse(json.encode(results), content_type="application/json")
+	return gen_search_display(request, {'results': results}, clean, method='post')
 
 
 def make_submission(request):
@@ -203,6 +209,8 @@ def make_submission(request):
 				pass
 
 			build['results'] = {'success': True}
-
+	else:
+		build['results'] = {'success': False, 'error': 'Not valid form.'}
+		
 	return gen_search_display(request, build, clean, method='post')
 
