@@ -4,6 +4,9 @@ from django.contrib import admin
 
 
 class SearchesAdmin(admin.ModelAdmin):
+    
+    #list_display = ('search_date',)
+
     def has_add_permission(self, request):
         return False
     #def has_change_permission(self, request):

@@ -150,7 +150,12 @@ class Demo(models.Model):
         uni_name = '%s - %s - %s' % (self.customer, self.customer.platform, self.purch_date.strftime('%b %d, %Y'))
         return uni_name
 
+class AlertsCheck(models.Model):
+    run_date = models.DateTimeField('date / time run')
+
 class Alerts(models.Model):
     search = models.OneToOneField('pricing.Searches')
     fares = models.TextField(blank=True, null=True)
-    update_date = models.DateField('date last updated', null=True)
+    update_date = models.DateTimeField('date last updated', null=True)
+
+

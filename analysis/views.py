@@ -48,7 +48,6 @@ def perf(request):
     form = PerformanceForm(inputs)
     
     
-
     raw = {}
     raw['charts'] = {}
     

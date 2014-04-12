@@ -20,8 +20,8 @@ except ImportError:
         json.encode = json.dumps
         json.decode = json.loads
 
-from api.views import gen_search_display
-from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
+from api.views import gen_search_display, current_time_aware
+from api.utils import conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
 from sales.models import *
 from forms import *
 
@@ -537,6 +537,7 @@ def demo_option(request):
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
+            #purch_date_time = current_time_aware()
             purch_date_time = current_time_aware()
             search_date_date = find_search.search_date
             expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
@@ -862,112 +863,118 @@ def alerts(request):
             return HttpResponse(json.encode(cred), mimetype="application/json")
 
 
-    today = current_time_aware().date()
-    
-    # delete old alerts
-    Alerts.objects.filter(search__exp_date__lte=today).delete()
+    current_time = current_time_aware()
 
-    contracts = Contract.objects.filter(alerts=True, search__exp_date__gt=today, search__search_date__lt=today, ex_date=None) 
-    demos = Demo.objects.filter(alerts=True, search__exp_date__gt=today, search__search_date__lt=today) 
-    
-    alerted_searches = []
-    for i in (contracts, demos):
-        for k in i:
-            
-            obj, created = Alerts.objects.get_or_create(search=k.search)
-            
-            #return HttpResponse(json.encode(pickle.loads(obj.fares)), content_type="application/json")
-            
-            #prev_fares = json.encode(pickle.loads(obj.fares)) if obj.fares else []
-            #test = obj.fares
-            #prev_fares = pickle.loads(obj.fares) if obj.fares else []
-            prev_fares = ast.literal_eval(obj.fares) if obj.fares else []
-            prev_update = obj.update_date if obj.update_date else None
+    # ensure this query is not run more than once/24hrs
+    run_dates = AlertsCheck.objects
 
-            # ensure not sent more than once daily
-            if not prev_update or prev_update < today:
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(hours=23):
+        latest_price_check = AlertsCheck(run_date=current_time)
+        latest_price_check.save()
+
+
+        # delete old alerts
+        Alerts.objects.filter(search__exp_date__lte=current_time).delete()
+
+        contracts = Contract.objects.filter(alerts=True, search__exp_date__gt=(current_time + datetime.timedelta(hours=18)), search__search_date__lt=(current_time - datetime.timedelta(hours=18)), ex_date=None) 
+        demos = Demo.objects.filter(alerts=True, search__exp_date__gt=(current_time + datetime.timedelta(hours=18)), search__search_date__lt=(current_time - datetime.timedelta(hours=18))) 
+        
+
+        alerted_searches = []
+        for i in (contracts, demos):
+            for k in i:
                 
-                temp = {'key': k.search.key}
+                obj, created = Alerts.objects.get_or_create(search=k.search)
+                
+                prev_fares = ast.literal_eval(obj.fares) if obj.fares else []
+                prev_update = obj.update_date if obj.update_date else None
 
-                # check updated flights
-                flights = pull_fares_range(k.search.origin_code, k.search.destination_code, (k.search.depart_date1, k.search.depart_date2), (k.search.return_date1, k.search.return_date2), k.search.depart_times, k.search.return_times, k.search.convenience, k.search.airlines, cached=True)
-
-                if flights['success']:
-                    # delete unneccessary data
-                    for f in flights['fares']:
-                        del f['flight']
-                    #
-
-                    # pickle fare data
-                    fares = flights['fares']
-                else:
-                    fares = None
-                  
-                #obj.fares = str(pickle.dumps(fares)) if fares else None
-                obj.fares = str(fares) if fares else None
-                obj.update_date = today
-                obj.save()
-
-                 
-                # line up previously checked fares with current
-                rows = []
-                any_changes = False
-                for fare in fares:
-                    change = ""
-                    if prev_fares:  
-                        for p in prev_fares:
-                            if p['depart_date'] == fare['depart_date'] and p['return_date'] == fare['return_date']:
-                                if fare['fare'] and p['fare']:
-                                    # record change if greater than 10
-                                    change = str(int(fare['fare']-p['fare'])) if abs(fare['fare']-p['fare']) > 10 else ""
-                                    if change:
-                                        any_changes = True
-                                prev_fares.remove(p)
+                # ensure not sent more than once daily
+                if not prev_update or prev_update < current_time:
                     
-                    if fare['fare']:      
-                        rows.append([fare['depart_date'], fare['return_date'], "$%s" % int(fare['fare']), change])
+                    temp = {'key': k.search.key}
 
+                    # check updated flights
+                    flights = pull_fares_range(k.search.origin_code, k.search.destination_code, (k.search.depart_date1, k.search.depart_date2), (k.search.return_date1, k.search.return_date2), k.search.depart_times, k.search.return_times, k.search.convenience, k.search.airlines, cached=True)
 
-                # send email 
-                subject = "Your Level Skies fare update"
-                title = "Here's what's new with the fare%s we're tracking" % ('s' if len(rows)>1 else '')
-                body = "We've been watching those fares for you, just like you asked. Below you'll see today's lowest fares for the dates you selected. We'll also let you know if anything has changed much since we last wrote you."
-                
-                if rows:
-                    try:
-                        if len(rows) > 1:
-                            # sort by dates
-                            rows = np.array(rows)
-                            ind = np.lexsort((rows[:,0],rows[:,1]))
-                            rows = rows[ind]
-                            rows = rows.tolist()
-
-                        if any_changes:
-                            col = "Change since %s" % (prev_update.strftime("%b %d"))
-                        else:
-                            col = ""
-                        table_dat = [["Depart Date","Return Date","Today's Low Fare",col],] + rows
+                    if flights['success']:
+                        # delete unneccessary data
+                        for f in flights['fares']:
+                            del f['flight']
                         
-                        table = "<table>"
-                        for r in table_dat:
-                            table += "<tr>"
-                            for d in r:
-                                table += "<td>%s</td>" % (d)
-                            table += "</tr>"
-                        table +="</table>"
+                        fares = flights['fares']
+                    else:
+                        fares = None
+                      
+                    #obj.fares = str(pickle.dumps(fares)) if fares else None
+                    obj.fares = str(fares) if fares else None
+                    obj.update_date = current_time
+                    obj.save()
+
+                     
+                    # line up previously checked fares with current
+                    rows = []
+                    any_changes = False
+                    for fare in fares:
+                        change = ""
+                        if prev_fares:  
+                            for p in prev_fares:
+                                if p['depart_date'] == fare['depart_date'] and p['return_date'] == fare['return_date']:
+                                    if fare['fare'] and p['fare']:
+                                        # record change if greater than 10
+                                        change = str(int(fare['fare']-p['fare'])) if abs(fare['fare']-p['fare']) > 10 else ""
+                                        if change:
+                                            any_changes = True
+                                    prev_fares.remove(p)
+                        
+                        if fare['fare']:      
+                            rows.append([fare['depart_date'], fare['return_date'], "$%s" % int(fare['fare']), change])
+
+
+                    # send email 
+                    subject = "Your Level Skies fare update"
+                    title = "Here's what's new with the fare%s we're tracking" % ('s' if len(rows)>1 else '')
+                    body = "We've been watching those fares for you, just like you asked. Below you'll see today's lowest fares for the dates you selected. We'll also let you know if anything has changed much since we last wrote you."
                     
-                        send_template_email(k.customer.email, subject, title, body, table)    
-                        #return render_to_response('email_template/index.html', {'title': title, 'body': body, 'table': table}) 
-                        temp['sent'] = True            
-                    except:
+                    if rows:
+                        try:
+                            if len(rows) > 1:
+                                # sort by dates
+                                rows = np.array(rows)
+                                ind = np.lexsort((rows[:,0],rows[:,1]))
+                                rows = rows[ind]
+                                rows = rows.tolist()
+
+                            if any_changes:
+                                col = "Change since %s" % (prev_update.strftime("%b %d"))
+                            else:
+                                col = ""
+                            table_dat = [["Depart Date","Return Date","Today's Low Fare",col],] + rows
+                            
+                            table = "<table>"
+                            for r in table_dat:
+                                table += "<tr>"
+                                for d in r:
+                                    table += "<td>%s</td>" % (d)
+                                table += "</tr>"
+                            table +="</table>"
+                        
+                            send_template_email(k.customer.email, subject, title, body, table)    
+                            #return render_to_response('email_template/index.html', {'title': title, 'body': body, 'table': table}) 
+                            temp['sent'] = True            
+                        except:
+                            temp['sent'] = False
+                    else:
                         temp['sent'] = False
-                else:
-                    temp['sent'] = False
 
-                alerted_searches.append(temp)
-    
+                    alerted_searches.append(temp)
+        
 
-    results = {'valid_alert_searches': alerted_searches}
+        results = {'success': True, 'valid_alert_searches': alerted_searches}
+
+    else:
+        results = {'success': False, 'error': 'Alerts sent within last 24 hours.'}
+
 
     return gen_search_display(request, {'results': results}, clean)
 

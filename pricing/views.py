@@ -331,19 +331,25 @@ def price_edu_combo(request):
                 cd = form.cleaned_data
                 #inp_errors = sim_errors(self.db, cd['origin_code'], cd['destination_code'],self.lockin_per,self.start_date,self.d_date1,self.d_date2,self.r_date1,self.r_date2,self.final_proj_week, self.max_trip_length, self.geography)
 
-                if 'dev_test' in cd and cd['dev_test']:
-                    with open('/home/projects/api.levelskies.com/test-data/flight-pricing-test-data.json') as data:
-                        res = data.read()
-                    return HttpResponse(res, content_type='application/json')
-
 
                 open_status = Open.objects.get(pk=1)
 
-                general = {'search_date': current_time_aware(), 'open_status': open_status.get_status(), 'key': gen_alphanum_key(),}
+                current_time = current_time_aware()
+                
+                general = {'search_date': current_time, 'open_status': open_status.get_status(), 'key': gen_alphanum_key(),}
 
-                model_in = {'origin_code': cd['origin_code'], 'destination_code': cd['destination_code'], 'holding_per': cd['holding_per'],
-                            'depart_date1': str(cd['depart_date1']), 'depart_date2': str(cd['depart_date2']), 'return_date1': str(cd['return_date1']), 'return_date2': str(cd['return_date2']),
-                            'search_type': 'rt', 'depart_times': cd['depart_times'], 'return_times': cd['return_times'], 'convenience': cd['convenience'], 'airlines': cd['airlines']}
+                model_in = {'origin_code': cd['origin_code'], 
+                            'destination_code': cd['destination_code'], 
+                            'holding_per': cd['holding_per'],
+                            'depart_date1': str(cd['depart_date1']), 
+                            'depart_date2': str(cd['depart_date2']), 
+                            'return_date1': str(cd['return_date1']), 
+                            'return_date2': str(cd['return_date2']),
+                            'search_type': 'rt', 
+                            'depart_times': cd['depart_times'], 
+                            'return_times': cd['return_times'], 
+                            'convenience': cd['convenience'], 
+                            'airlines': cd['airlines']}
 
                 combined = dict(general.items() + model_in.items())
 
