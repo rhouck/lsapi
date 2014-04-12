@@ -197,6 +197,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
           # return search results if already cached
           data = res[0]
           method = "cached"
+          datetime_created = str(res[0]['datetime_created'])
     
     else:
       
@@ -210,6 +211,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
             # return search results if already cached
             data = res[0]
             method = "cached"
+            datetime_created = str(res[0]['datetime_created'])
 
       if not data:
           # run search if not already cached
@@ -236,6 +238,9 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
             data = parse_wan_live(data)
             data['method'] = method
 
+            if method == 'cached':
+              data['datetime_created'] = datetime_created
+
         elif data['source'] == 'google':
             if search_date:
               # remove filters for arlines or other info for internal testing
@@ -243,6 +248,10 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
             else:
               data = parse_google_live(data)
             data['method'] = method
+            
+            if method == 'cached':
+              data['datetime_created'] = datetime_created
+
 
         else:
             data = {'success': False, 'error': 'Data was not parsed'}
