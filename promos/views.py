@@ -65,7 +65,7 @@ def contest(request):
 	        return HttpResponse(json.encode(cred), mimetype="application/json")
 
 	contest_length = 2
-	promotion_value = 10
+	promotion_value = 15
 
 	current_time = current_time_aware()
 
@@ -90,10 +90,14 @@ def contest(request):
 				destinations.remove(origin)
 			destination = random.choice(destinations)    	
 
+			# select decision time
+			decision_times = [1,2,]
+			decision_time = random.choice(decision_times)
+
 			# select travel dates
 			current_date = current_time.date()
 
-			depart_date = current_date + datetime.timedelta(days=random.randrange(21,40))
+			depart_date = current_date + datetime.timedelta(days=((decision_time*7)+ random.randrange(14,60)))
 			return_date = depart_date + datetime.timedelta(days=random.randrange(2,20))
 
 			contest = Contest(key=gen_alphanum_key(),
@@ -101,6 +105,7 @@ def contest(request):
 							expire_date=(current_time + datetime.timedelta(days=contest_length)), 
 							origin_code=origin, 
 							destination_code=destination,
+							decision_time=decision_time,
 							depart_date=depart_date,
 							return_date=return_date,
 							value=promotion_value)
