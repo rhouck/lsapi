@@ -79,6 +79,14 @@ class Contract(models.Model):
     cc_exp_month = models.IntegerField(max_length=2, blank=True, null=True)
     cc_exp_year = models.IntegerField(max_length=4, blank=True, null=True)
 
+    # shipping address
+    shipping_address1 = models.CharField(max_length=50, blank=True, null=True)
+    shipping_address2 = models.CharField(max_length=50, blank=True, null=True)
+    shipping_city = models.CharField(max_length=60, blank=True, null=True)
+    shipping_province = models.CharField('billing state / province', max_length=30, blank=True, null=True)
+    shipping_postal_code = models.CharField(max_length=50, blank=True, null=True)
+    shipping_country = models.CharField(max_length=50, blank=True, null=True)
+
     alerts = models.BooleanField('receive alerts', blank=True)
 
     def outstanding(self):

@@ -8,10 +8,12 @@ class Customer_login(forms.Form):
     platform_key = forms.CharField(label='Platform Key')
 
 class Customer_signup(Customer_login):
+    
     first_name = forms.CharField(required=False)
     last_name = forms.CharField(required=False)
     phone = forms.CharField(required=False)
     address1 = forms.CharField(required=False)
+    address2 = forms.CharField(required=False)
     city = forms.CharField(required=False)
     state_province = forms.CharField(label="state / province", required=False)
     postal_code = forms.CharField(required=False)
@@ -52,6 +54,13 @@ class Purchase_option(forms.Form):
     card_month = forms.CharField(max_length=2, label="expiration month")
     card_year = forms.CharField(max_length=4, label="expiration year")
     card_code = forms.CharField(max_length=4, label="security code")
+
+    shipping_address1 = forms.CharField()
+    shipping_address2 = forms.CharField(required=False)
+    shipping_city = forms.CharField()
+    shipping_state_province = forms.CharField(label="state / province")
+    shipping_postal_code = forms.CharField()
+    shipping_country = forms.CharField()
 
     alerts = forms.BooleanField(required=False, initial=False)
 
