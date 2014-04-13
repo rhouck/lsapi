@@ -684,7 +684,7 @@ def add_to_staging(request, action, slug):
         find_contract.save()
 
 
-
+        """
         # sends alert email to sales@levelskies
         if MODE == 'live':
             try:
@@ -713,18 +713,10 @@ def add_to_staging(request, action, slug):
                 body = "We are processing your request. You should receive your refund of $%s within two to three business days.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
 
             send_template_email(find_contract.customer.email, subject, title, body)
-            """
-            send_mail(subject,
-                message,
-                'sales@levelskies.com',
-                ['%s' % (find_contract.customer.email)],
-                fail_silently=False,
-                auth_user='sales@levelskies.com',
-                auth_password='_second&mission_')
-            """
+            
         except:
             pass
-
+        """
         if clean:
             return HttpResponse(json.encode({'success': True}), mimetype="application/json")
         else:
@@ -840,6 +832,9 @@ def staged_item(request, slug):
 
 
 def staging_sweep(request):
+    results = {'success': False, 'error': 'This method is no longer required.'}
+    return gen_search_display(request, {'results': results}, True, method='post')
+    """
     cont_list = []
     full_set = Contract.objects.filter(ex_date=None)
 
@@ -867,7 +862,7 @@ def staging_sweep(request):
                 pass
 
     return render_to_response('sales/sweep.html', {'items': cont_list, 'message': message}, context_instance=RequestContext(request))
-
+    """
 
 def alerts(request):
 

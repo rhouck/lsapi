@@ -722,7 +722,7 @@ def live_search_google(origin, destination, depart_date, return_date, depart_tim
 
         return response
 
-def parse_google_live(data, filters=True):
+def parse_google_live(data, filters=False):
 
     """
     @summary: parsing function for QPX Express api flight search response
