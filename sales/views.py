@@ -445,6 +445,13 @@ def purchase_option(request):
                     new_contract.cc_exp_month = cd['card_month']
                     new_contract.cc_exp_year = cd['card_year']
                     
+                    new_contract.shipping_address1 = cd['shipping_address1']
+                    new_contract.shipping_address2 = cd['shipping_address2']
+                    new_contract.shipping_city = cd['shipping_city']
+                    new_contract.shipping_province = cd['shipping_province']
+                    new_contract.shipping_postal_code = cd['shipping_postal_code']
+                    new_contract.shipping_country = cd['shipping_country']
+
                     new_contract.alerts = cd['alerts']
 
                     new_contract.save()

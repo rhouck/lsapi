@@ -58,7 +58,7 @@ class Purchase_option(forms.Form):
     shipping_address1 = forms.CharField()
     shipping_address2 = forms.CharField(required=False)
     shipping_city = forms.CharField()
-    shipping_state_province = forms.CharField(label="state / province")
+    shipping_province = forms.CharField(label="state / province")
     shipping_postal_code = forms.CharField()
     shipping_country = forms.CharField()
 
