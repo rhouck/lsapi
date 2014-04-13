@@ -754,6 +754,14 @@ def staged_item(request, slug):
         
     if find_stage.exercise:
 
+        current_time = current_time_aware()
+        current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
+
+        build['fares'] = []
+        for i in ((current_date-datetime.timedelta(days=1)), current_date): 
+            fares = pull_fares_range(find_contract.search.origin_code, find_contract.search.destination_code, (find_contract.search.depart_date1, find_contract.search.depart_date2), (find_contract.search.return_date1, find_contract.search.return_date2), find_contract.search.depart_times, find_contract.search.return_times, find_contract.search.convenience, find_contract.search.airlines, cached=True, search_date=i)
+            build['fares'].append({str(i): fares})
+
         if inputs:
             form = ExerStagingForm(inputs)
         else:

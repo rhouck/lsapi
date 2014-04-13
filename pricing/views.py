@@ -198,7 +198,13 @@ def display_current_flights(request, slug, convert=False):
             if not res['success']:
                 raise Exception("Could not return list of current available flights: %s" % (res['error']))
             
+            if res['min_fare'] > search.locked_fare:
+                res['payout'] = res['min_fare'] - search.locked_fare
+            else:
+                res['payout'] = 0
+            """
             # converts prices to rebate values and caps the price level of flights available to choose from
+            
             bank = []
             cap = None
             
@@ -228,9 +234,9 @@ def display_current_flights(request, slug, convert=False):
                     del res['flights'][index]['fare']
 
                     bank.append(res['flights'][index])
-
+            
             res['flights'] = bank
-
+            """
 
         else:
 
