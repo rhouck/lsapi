@@ -197,6 +197,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
           # return search results if already cached
           data = res[0]
           method = "cached"
+          datetime_created = str(res[0]['datetime_created'])
     
     else:
       
@@ -210,6 +211,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
             # return search results if already cached
             data = res[0]
             method = "cached"
+            datetime_created = str(res[0]['datetime_created'])
 
       if not data:
           # run search if not already cached
@@ -220,6 +222,8 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
               data = response
             search_res = mongo.flight_search.live.insert({'date_created': current_date, 'datetime_created': current_time, 'source': response['source'], 'inputs': inputs, 'response': response['response'],})
             method = "live"
+            datetime_created = str(current_time)
+
           else:
             error = response['error']
 
@@ -235,6 +239,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
         if data['source'] == 'wego':
             data = parse_wan_live(data)
             data['method'] = method
+            data['datetime_created'] = datetime_created
 
         elif data['source'] == 'google':
             if search_date:
@@ -243,6 +248,7 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
             else:
               data = parse_google_live(data)
             data['method'] = method
+            data['datetime_created'] = datetime_created
 
         else:
             data = {'success': False, 'error': 'Data was not parsed'}

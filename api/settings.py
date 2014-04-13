@@ -154,6 +154,7 @@ INSTALLED_APPS = (
     'sales',
     'analysis',
     'routes',
+    'promos',
 
 
 )

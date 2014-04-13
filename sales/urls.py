@@ -30,4 +30,6 @@ urlpatterns = patterns('',
     url(r'^platform/$', login_required(get_plat_list), name='platform_list'),
     url(r'^platform/(?P<slug>[-\w]{6})/$', login_required(get_plat_detail), name='platform_detail'),
 
+    url(r'^alerts/$', alerts, name='alerts_sweep'),
+
 )

@@ -155,6 +155,6 @@ class Performance(models.Model):
     end_prices = models.TextField(blank=True, null=True)
     search_date = models.DateField('date searched')
     exp_date = models.DateField('date expired')
-
+    
     def __unicode__(self):
         return str(self.search)

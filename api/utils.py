@@ -64,6 +64,7 @@ def gen_alphanum_key():
 def conv_to_js_date(date):
     return 1000 * time.mktime(date.timetuple())
 
+
 def current_time_aware():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
 

@@ -53,6 +53,9 @@ class Purchase_option(forms.Form):
     card_year = forms.CharField(max_length=4, label="expiration year")
     card_code = forms.CharField(max_length=4, label="security code")
 
+    alerts = forms.BooleanField(required=False, initial=False)
+
+    promo = forms.CharField(label='promotional code', max_length=16, required=False)    
 
 class DemoOptionForm(forms.Form):
     search_key = forms.CharField()
@@ -61,7 +64,7 @@ class DemoOptionForm(forms.Form):
     first_name = forms.CharField(required=False)
     last_name = forms.CharField(required=False)
 
-
+    alerts = forms.BooleanField(required=False, initial=False)
 
 
 

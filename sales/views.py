@@ -20,8 +20,8 @@ except ImportError:
         json.encode = json.dumps
         json.decode = json.loads
 
-from api.views import gen_search_display
-from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
+from api.views import gen_search_display, current_time_aware
+from api.utils import conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
 from sales.models import *
 from forms import *
 
@@ -38,6 +38,16 @@ from sales.utils import exercise_option, send_template_email
 from api.settings import MODE
 
 import ast
+
+from pricing.utils import pull_fares_range
+
+import pickle
+
+from dateutil.parser import parse
+
+import numpy as np
+
+from promos.models import Promo
 
 
 def get_cust_list(request):
@@ -354,43 +364,49 @@ def purchase_option(request):
             purch_date_time = current_time_aware()
             search_date_date = find_search.search_date
             expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
-
+            if expired:
+               raise Exception("The quoted price is expired. Please run a new search.") 
+            
             try:
                 existing = Contract.objects.get(search__key=cd['search_key'])
             except:
                 pass
             else:
-                raise Exception
+                raise Exception("A contract realted to this search has already been purchased. Please run a new search.")
 
-            if find_search.error or not find_search.get_status() or expired:
-                raise Exception
 
-        #except (Customer.DoesNotExist):
-        #    build['error_message'] = 'The customer key is not valid.'
-        #    build['results'] = {'success': False, 'error': 'The customer key is not valid.'}
+            if find_search.error or not find_search.get_status():
+                raise Exception("Cannot purchase contract on invalid search. Please run a new search.")
+
+            # check promo code if given
+            if cd['promo']:
+                promo = Promo.objects.get(customer=find_cust, code=cd['promo'])
+                if promo.contract:
+                   raise Exception("Promotional code already used.")
+            else:
+                promo = None
+
         except (Searches.DoesNotExist):
-            build['error_message'] = 'The option id entered is not valid.'
-            build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
-        except (Exception):
-            build['error_message'] = 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'
-            build['results'] = {'success': False, 'error': 'The quoted price has expired or the related contract has already been purchased. Please run a new search.'}
+            build['error_message'] = 'The search id entered is not valid.'
+            build['results'] = {'success': False, 'error': 'The search id entered is not valid.'}
+        except (Promo.DoesNotExist):
+            build['error_message'] = 'Not a valid promotional code.'
+            build['results'] = {'success': False, 'error': 'Not a valid promotional code.'}
+        except (Exception) as err:
+            build['error_message'] = '%s' % err
+            build['results'] = {'success': False, 'error': '%s' % err}
+        
         else:
 
             # update customer data
-            """
-            for key, value in cd.items():
-                if key not in ("key", "platform", "reg_date"):
-                    try:
-                        setattr(find_cust, key, value)
-                    except:
-                        pass
-            """
             setattr(find_cust, 'phone', cd['billing_phone'])
             find_cust.save()
 
-
             # run credit card
             amount = find_search.holding_price
+            if promo:
+                amount = amount - abs(promo.value) if amount > abs(promo.value) else 1
+
             # can we include middle name here?
             card_info = {'first_name': cd['billing_first_name'], 'last_name': cd['billing_last_name'], 'number': cd['card_number'], 'month': cd['card_month'], 'year': cd['card_year'], 'code': cd['card_code']}
             cust_info = {'email': find_cust.email, 'cust_id': find_cust.key}
@@ -428,8 +444,14 @@ def purchase_option(request):
                     new_contract.cc_last_four = cd['card_number'][-4:]
                     new_contract.cc_exp_month = cd['card_month']
                     new_contract.cc_exp_year = cd['card_year']
+                    
+                    new_contract.alerts = cd['alerts']
+
                     new_contract.save()
 
+                    if promo:
+                        promo.contract = new_contract
+                        promo.save()
 
                     full_search_info = new_contract.search.__dict__
                     search_info = {}
@@ -441,7 +463,15 @@ def purchase_option(request):
                                 search_info[k] = v
 
                     confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
-                    build['results'] = {'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'confirmation': confirmation_url, 'gateway_status': response['status'], 'search_info': search_info}
+                    build['results'] = {'success': True, 
+                                        'search_key': cd['search_key'], 
+                                        'cust_key': find_cust.key, 
+                                        'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 
+                                        'confirmation': confirmation_url, 
+                                        'gateway_status': response['status'], 
+                                        'search_info': search_info, 
+                                        'receive_alerts': cd['alerts'],
+                                        'amount_charged': amount,}
 
                     # augment cash reserve with option price and update option inventory capacity
                     try:
@@ -526,6 +556,7 @@ def demo_option(request):
 
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
+            #purch_date_time = current_time_aware()
             purch_date_time = current_time_aware()
             search_date_date = find_search.search_date
             expired = True if (purch_date_time - search_date_date) > datetime.timedelta(minutes = 60) else False
@@ -557,10 +588,10 @@ def demo_option(request):
                     pass
             find_cust.save()
 
-            new_demo = Demo(customer=find_cust, purch_date=purch_date_time, search=find_search)
+            new_demo = Demo(customer=find_cust, purch_date=purch_date_time, search=find_search, alerts=cd['alerts'])
             new_demo.save()
 
-            build['results'] = {'name': str(find_cust), 'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d')}
+            build['results'] = {'name': str(find_cust), 'success': True, 'search_key': cd['search_key'], 'cust_key': find_cust.key, 'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 'receive_alerts': cd['alerts']}
 
             # send confirmation email on success                
             try:
@@ -837,4 +868,132 @@ def staging_sweep(request):
 
     return render_to_response('sales/sweep.html', {'items': cont_list, 'message': message}, context_instance=RequestContext(request))
 
+
+def alerts(request):
+
+    if request.user.is_authenticated():
+        clean = False
+    else:
+        clean = True
+
+    if clean:
+        cred = check_creds(request.POST, Platform)
+        if not cred['success']:
+            return HttpResponse(json.encode(cred), mimetype="application/json")
+
+
+    current_time = current_time_aware()
+
+    # ensure this query is not run more than once/24hrs
+    run_dates = AlertsCheck.objects
+
+    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(hours=23):
+        latest_price_check = AlertsCheck(run_date=current_time)
+        latest_price_check.save()
+
+
+        # delete old alerts
+        Alerts.objects.filter(search__exp_date__lte=current_time).delete()
+
+        contracts = Contract.objects.filter(alerts=True, search__exp_date__gt=(current_time + datetime.timedelta(hours=18)), search__search_date__lt=(current_time - datetime.timedelta(hours=18)), ex_date=None) 
+        demos = Demo.objects.filter(alerts=True, search__exp_date__gt=(current_time + datetime.timedelta(hours=18)), search__search_date__lt=(current_time - datetime.timedelta(hours=18))) 
+        
+
+        alerted_searches = []
+        for i in (contracts, demos):
+            for k in i:
+                
+                obj, created = Alerts.objects.get_or_create(search=k.search)
+                
+                prev_fares = ast.literal_eval(obj.fares) if obj.fares else []
+                prev_update = obj.update_date if obj.update_date else None
+
+                # ensure not sent more than once daily
+                if not prev_update or prev_update < current_time:
+                    
+                    temp = {'key': k.search.key}
+
+                    # check updated flights
+                    flights = pull_fares_range(k.search.origin_code, k.search.destination_code, (k.search.depart_date1, k.search.depart_date2), (k.search.return_date1, k.search.return_date2), k.search.depart_times, k.search.return_times, k.search.convenience, k.search.airlines, cached=True)
+
+                    if flights['success']:
+                        # delete unneccessary data
+                        for f in flights['fares']:
+                            del f['flight']
+                        
+                        fares = flights['fares']
+                    else:
+                        fares = None
+                      
+                    #obj.fares = str(pickle.dumps(fares)) if fares else None
+                    obj.fares = str(fares) if fares else None
+                    obj.update_date = current_time
+                    obj.save()
+
+                     
+                    # line up previously checked fares with current
+                    rows = []
+                    any_changes = False
+                    for fare in fares:
+                        change = ""
+                        if prev_fares:  
+                            for p in prev_fares:
+                                if p['depart_date'] == fare['depart_date'] and p['return_date'] == fare['return_date']:
+                                    if fare['fare'] and p['fare']:
+                                        # record change if greater than 10
+                                        change = str(int(fare['fare']-p['fare'])) if abs(fare['fare']-p['fare']) > 10 else ""
+                                        if change:
+                                            any_changes = True
+                                    prev_fares.remove(p)
+                        
+                        if fare['fare']:      
+                            rows.append([fare['depart_date'], fare['return_date'], "$%s" % int(fare['fare']), change])
+
+
+                    # send email 
+                    subject = "Your Level Skies fare update"
+                    title = "Here's what's new with the fare%s we're tracking" % ('s' if len(rows)>1 else '')
+                    body = "We've been watching those fares for you, just like you asked. Below you'll see today's lowest fares for the dates you selected. We'll also let you know if anything has changed much since we last wrote you."
+                    
+                    if rows:
+                        try:
+                            if len(rows) > 1:
+                                # sort by dates
+                                rows = np.array(rows)
+                                ind = np.lexsort((rows[:,0],rows[:,1]))
+                                rows = rows[ind]
+                                rows = rows.tolist()
+
+                            if any_changes:
+                                col = "Change since %s" % (prev_update.strftime("%b %d"))
+                            else:
+                                col = ""
+                            table_dat = [["Depart Date","Return Date","Today's Low Fare",col],] + rows
+                            
+                            table = "<table>"
+                            for r in table_dat:
+                                table += "<tr>"
+                                for d in r:
+                                    table += "<td>%s</td>" % (d)
+                                table += "</tr>"
+                            table +="</table>"
+                        
+                            send_template_email(k.customer.email, subject, title, body, table)    
+                            #return render_to_response('email_template/index.html', {'title': title, 'body': body, 'table': table}) 
+                            temp['sent'] = True            
+                        except:
+                            temp['sent'] = False
+                    else:
+                        temp['sent'] = False
+
+                    alerted_searches.append(temp)
+        
+
+        results = {'success': True, 'valid_alert_searches': alerted_searches}
+
+    else:
+        results = {'success': False, 'error': 'Alerts sent within last 24 hours.'}
+
+
+    return gen_search_display(request, {'results': results}, clean)
 

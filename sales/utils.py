@@ -10,24 +10,12 @@ from django.template import Context
 
 from api.settings import FROM_EMAIL_1, FROM_EMAIL_1_PASSWORD
 
-def send_template_email(to_email, subject, title, body):
+def send_template_email(to_email, subject, title, body, table=None):
 
 
-    """
-    #html_body = render_to_string('email_template/index.html', {'title': title, 'body': body})
-    html_body = "lkasjdfasldkj"
-    send_mail(subject,
-    html_body,
-    'sales@levelskies.com',
-    ['%s' % (to_email)],
-    fail_silently=False,
-    auth_user='sales@levelskies.com',
-    auth_password='_second&mission_')
-
-    """
     plaintext = get_template('email_template/plain_text.txt')
     htmly     = get_template('email_template/index.html')
-    d = Context({'title': title, 'body': body})
+    d = Context({'title': title, 'body': body, 'table': table})
     text_content = plaintext.render(d)
     html_content = htmly.render(d)
 
