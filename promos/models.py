@@ -19,6 +19,7 @@ class Contest(models.Model):
 	expire_date = models.DateTimeField('date / time contest ends')
 	origin_code = models.CharField(max_length=20)
 	destination_code = models.CharField(max_length=20)
+	decision_time = models.IntegerField(max_length=2)
 	depart_date = models.DateField()
 	return_date = models.DateField()
 	value = models.FloatField('promotion value')
