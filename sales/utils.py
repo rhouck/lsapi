@@ -58,7 +58,7 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):
                 find_contract.ret_date = inputs['ret_date']
                 find_contract.flight_purchased = inputs['flight_purchased']
                 find_contract.notes = inputs['notes']
-
+                """
                 # set traveler information from staging model to contract model
                 for t in('traveler_first_name','traveler_middle_name','traveler_last_name','traveler_infant','traveler_gender','traveler_birth_date','traveler_passport_country','traveler_seat_pref','traveler_rewards_program','traveler_contact_email',):
                     try:
@@ -73,12 +73,12 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):
                     if not response['success']:
                         build['results'] = {'success': False, 'error': response['status']}
                         return build
-
+                """
             else:
                 # if option is refunded
                 if use_gateway:
                     card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
-                    response = run_authnet_trans(find_contract.search.locked_fare, card_info, trans_id=find_contract.gateway_id)
+                    response = run_authnet_trans(find_contract.search.holding_price, card_info, trans_id=find_contract.gateway_id)
                 else:
                     response = {'success': True}
                 if not response['success']:
@@ -102,6 +102,12 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):
             try:
                 if find_contract.ex_fare > find_contract.search.locked_fare:
                     effect = find_contract.search.locked_fare - find_contract.ex_fare
+                elif not exercise:
+                    effect = -1 * find_contract.search.holding_price
+                else: 
+                    effect = None
+
+                if effect:
                     latest_change = Cash_reserve.objects.latest('action_date')
                     new_balance = latest_change.cash_balance + effect
                     add_cash = Cash_reserve(action_date=current_time_aware(), transaction=find_contract, cash_change=effect, cash_balance=new_balance)
@@ -115,5 +121,5 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True):
 
 
     return build
-    #return gen_search_display(request, build, clean)
+    
 
