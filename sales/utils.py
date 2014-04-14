@@ -78,9 +78,10 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
                 # if option is refunded
                 if use_gateway:
                     
+                    amount = find_contract.search.holding_price
                     if promo:
-                        if find_contract.search.holding_price > promo:
-                            amount = find_contract.search.holding_price - promo
+                        if amount > promo:
+                            amount = amount - promo
                         else:
                             amount = 1
 

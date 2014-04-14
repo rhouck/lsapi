@@ -839,6 +839,26 @@ def staged_item(request, slug):
                         build['error_message'] = response['results']['error']
                     else:
                         find_stage.delete()
+
+                        # send customer email alerting them of payout or not
+                        try:   
+                            inc = cd['fare'] - find_contract.search.locked_fare
+                            payout =  inc if inc > 0 else 0
+                            
+                            if payout:
+                                subject = "Here comes your payout!"
+                                title = "Here comes your payout!"
+                                body = "We've been tracking fares on flights from %s to %s for you and saw that since you locked in your fare with Level Skies the lowest airfare increased by $%s. That's exactly the amount we are sending you right now. Expect a check in the mail in roughly a week's time.\n\nThe Level Skies Team" % (find_contract.search.origin_code, find_contract.search.destination_code, int(payout))
+                            else:
+                                subject = 'We recieved your ticket confirmation'
+                                title = "Thanks for using Level Skies!"
+                                body = "We've been tracking fares on flights from %s to %s for you since you locked in your fare with us. As of today, the lowest airfare for the route and the dates you'll be traveling on hasn't increased beyond the fare you locked in. This time around there's no payout for us to send you but we hope you enjoyed the peace of mind while you waited to book your ticket.\n\nThe Level Skies Team" % (find_contract.search.origin_code, find_contract.search.destination_code)  
+                            send_template_email(find_contract.customer.email, subject, title, body)
+                            
+                        except:
+                            pass
+
+
                         return HttpResponseRedirect(reverse('staging_view'))
             else:
                 build['error_message'] = "Form not valid"
@@ -856,6 +876,27 @@ def staged_item(request, slug):
                     build['error_message'] = response['results']['error']
             else:
                 find_stage.delete()
+                find_contract.refunded = True
+                find_contract.save()
+
+                # send customer email of refund value
+                try:
+
+                    amount = find_contract.search.holding_price    
+                    if build['promo']:
+                        if amount > build['promo']:
+                            amount = amount - build['promo']
+                        else:
+                            amount = 1
+                     
+                    subject = 'We processed your refund'
+                    title = "Thanks for using Level Skies!"
+                    body = "We just canceled your locked fare and refunded your purchase price of $%s. You should receive the refund within two or three business days. We hope to see you again.\n\nThe Level Skies Team" % (int(amount))
+                    send_template_email(find_contract.customer.email, subject, title, body)
+                    
+                except:
+                    pass
+
                 return HttpResponseRedirect(reverse('staging_view'))
 
 

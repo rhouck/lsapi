@@ -51,6 +51,8 @@ class Contract(models.Model):
     notes = models.TextField(blank=True, null=True)
     flight_purchased = models.TextField(blank=True, null=True)
 
+    refunded = models.BooleanField('fully refunded transaction', blank=True)
+
     # traveler information
     traveler_first_name = models.CharField(max_length=200, blank=True, null=True)
     traveler_middle_name = models.CharField(max_length=200, blank=True, null=True)
