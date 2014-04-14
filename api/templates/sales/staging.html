@@ -41,8 +41,12 @@
         <p>Ret: {{ detail.contract.search.return_date1 }} - {{ detail.contract.search.return_date2 }}</p>
       </div>
       <div class="col-md-3">
-        <p>Locked Fare: {{ detail.contract.search.deposit_value }}</p>
-        <p>Refund Value: {{ detail.contract.search.locked_fare }}</p>
+        <p>Locked Fare: {{ detail.contract.search.locked_fare }}</p>
+        <p>Holding Price: {{ detail.contract.search.holding_price }}
+          {% if promo %}
+            / Promo : {{ promo }}
+          {% endif %}
+        </p>
       </div>
       <div class="col-md-3">
         <p>Departure Time: {{ detail.contract.search.depart_times }}</p>
@@ -58,71 +62,90 @@
       <div><p></p></div>
   </div>
 
-  <div class="row">
-    <div class="col-md-3">
-      {% if detail.exercise %}
-        <h4>Exercise</h4>
-      {% else %}
-        <h4>Refund</h4>
-      {% endif %}
+
+  {% if detail.exercise %}
+    <div class="row">
+      <div class="col-md-4">
+        <h4>Tracked Fares</h4>
+      </div>
     </div>
-  </div>
 
+    {% for i in fares %}
+      {% for k, v in i.items %}
+        <div class="row">
+          <div class="col-md-3">
+            <p>Search Date: {{ k }}</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-2">
+            <p>Dep Date</p>
+          </div>
+          <div class="col-md-2">
+            <p>Ret Date</p>
+          </div>
+          <div class="col-md-2">
+            <p>Fare</p>
+          </div>
+          <div class="col-md-2">
+            <p>Method</p>
+          </div>
+          <div class="col-md-4">
+            <p>Created</p>
+          </div>
+        </div>
 
-  <div class="row">
-    <div class="col-md-4">
-      {% if detail.exercise %}
-          <p>Selected Departure: {{ detail.dep_date }}</p>
-          <p>Selected Return:    {{ detail.ret_date }}</p>
-          <p>Notes: {{ detail.notes }}</p>
+          {% for j in v %}
           
-          <p>Flight Choice:</p>
-          
-        
-          {% for flight in detail.flight_choice %}
-            &nbsp;&nbsp;&nbsp;Choice {{ forloop.counter }}:</br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Departing flights ~</br> 
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Airline: {{ flight.departing.airline }}</br> 
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Take off: {{ flight.departing.take_off_time }}</br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Landing: {{ flight.departing.landing_time }}</br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Legs: 
-            {% for segment in flight.departing.detail %}
-              {% for leg in segment %}
-                {{ leg.airline_code }}-{{ leg.flight_number }}
-                {% if not forloop.last %}
-                  ,             
-                {% endif %} 
-              {% endfor %}
-              </br>
-            {% endfor %}
-
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returning flights ~</br> 
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Airline: {{ flight.returning.airline }}</br> 
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Take off: {{ flight.returning.take_off_time }}</br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Landing: {{ flight.returning.landing_time }}</br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Legs: 
-            {% for segment in flight.returning.detail %}
-              {% for leg in segment %}
-                {{ leg.airline_code }}-{{ leg.flight_number }}
-                {% if not forloop.last %}
-                  ,             
-                {% endif %} 
-              {% endfor %}
-              </br>
-            {% endfor %}
-
-            </br>
+            <div class="row">
+              <div class="col-md-2">
+                <p>{{ j.depart_date }}</p>
+              </div>
+              <div class="col-md-2">
+                <p>{{ j.return_date }}</p>
+              </div>
+              <div class="col-md-2">
+                <p>{{ j.fare }}</p>
+              </div>
+              <div class="col-md-2">
+                <p>{{ j.method }}</p>
+              </div>
+              <div class="col-md-4">
+                <p>{{ j.datetime_created }}</p>
+              </div>
+            </div>
+              
           {% endfor %}
 
-      {% else %}
+        
+      {% endfor %}
+    {% endfor %}
+
+  {% else %}
+    <div class="row">
+      <div class="col-md-4">
+        <h4>Refund</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4">
+        
         {% if detail.notes %}
           <p>Notes: {{ detail.notes }}</p>
         {% endif %}
         <p>CC - Last Four Digits: {{ detail.contract.cc_last_four|stringformat:"04d" }}</p>
         <p>Expiration Month: {{ detail.contract.cc_exp_month }}</p>
         <p>Expiration Year:  {{ detail.contract.cc_exp_year }}</p>
-      {% endif %}
+        
+      </div>
     </div>
+  {% endif %} 
+
+  <div class="row">
+      <div><p></p></div>
+  </div>
+
+  <div class="row">
     <div class="col-md-8">
       {% if error_message %}<p style="color: red;">{{ error_message }}</p>{% endif %}
 
@@ -198,7 +221,7 @@
   <script src="{% static "assets/js/juicer.js" %}"></script>
   <script>
     var dispEl = $('#calc_ref')
-    ref_val = {{ detail.contract.search.locked_fare }};
-    $('#id_fare').keyup(function(){dispEl.html(((ref_val > parseInt(this.value)) ? "Refund: " + (ref_val - parseInt(this.value)) : ""));});
+    locked_fare = {{ detail.contract.search.locked_fare }};
+    $('#id_fare').keyup(function(){dispEl.html(((locked_fare < parseInt(this.value)) ? "Payout: " + (parseInt(this.value) - locked_fare) : ""));});
   </script>
 {% endblock %}

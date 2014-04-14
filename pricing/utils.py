@@ -90,6 +90,8 @@ def pull_fares_range(origin, destination, depart_dates, return_dates, depart_tim
             job['fare']['fare'] = res['min_fare']
             job['fare']['flight'] = res['min_flight']
             job['fare']['method'] = res['method']
+            if 'datetime_created' in res:
+              job['fare']['datetime_created'] = res['datetime_created']
           else:
             job['fare']['error'] = res['error']
           resQueue.put(job['fare'])

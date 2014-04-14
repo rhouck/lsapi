@@ -743,6 +743,12 @@ def staged_item(request, slug):
     build['detail'] = find_stage
 
     try:
+        find_promo = Promo.objects.get(contract=find_contract)
+        build['promo'] = find_promo.value
+    except:
+        build['promo'] = None
+
+    try:
         formatted_flight_choice = ast.literal_eval(build['detail'].flight_choice)
         for index, i in enumerate(formatted_flight_choice):
             d = json.decode(i)
@@ -757,11 +763,21 @@ def staged_item(request, slug):
         current_time = current_time_aware()
         current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
 
+        
         build['fares'] = []
-        for i in ((current_date-datetime.timedelta(days=1)), current_date): 
-            fares = pull_fares_range(find_contract.search.origin_code, find_contract.search.destination_code, (find_contract.search.depart_date1, find_contract.search.depart_date2), (find_contract.search.return_date1, find_contract.search.return_date2), find_contract.search.depart_times, find_contract.search.return_times, find_contract.search.convenience, find_contract.search.airlines, cached=True, search_date=i)
-            build['fares'].append({str(i): fares})
+        # sets the search date to the expiration date or before
+        if find_contract.expired():
+            ref_date = find_date.search.exp_date
+        else:
+            ref_date = current_date
 
+        for i in ((ref_date-datetime.timedelta(days=1)), ref_date): 
+            fares = pull_fares_range(find_contract.search.origin_code, find_contract.search.destination_code, (find_contract.search.depart_date1, find_contract.search.depart_date2), (find_contract.search.return_date1, find_contract.search.return_date2), find_contract.search.depart_times, find_contract.search.return_times, find_contract.search.convenience, find_contract.search.airlines, cached=True, search_date=i)
+            if fares['success']:
+                build['fares'].append({str(i): fares['fares']})
+
+        #return HttpResponse(json.encode(build['fares']), mimetype="application/json")
+        
         if inputs:
             form = ExerStagingForm(inputs)
         else:
@@ -834,7 +850,7 @@ def staged_item(request, slug):
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, use_gateway=False)
             else:
                 # response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, notes=cd['notes'])
-                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd)
+                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, promo=build['promo'])
 
             if not response['results']['success']:
                     build['error_message'] = response['results']['error']

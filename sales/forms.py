@@ -66,6 +66,7 @@ class Purchase_option(forms.Form):
 
     promo = forms.CharField(label='promotional code', max_length=16, required=False)    
 
+
 class DemoOptionForm(forms.Form):
     search_key = forms.CharField()
     platform_key = forms.CharField()
@@ -76,14 +77,12 @@ class DemoOptionForm(forms.Form):
     alerts = forms.BooleanField(required=False, initial=False)
 
 
-
-
 class AddToStagingForm(forms.Form):
     flight_choice = forms.CharField(required=False)
     notes = forms.CharField(required=False)
     dep_date = forms.DateField()
     ret_date = forms.DateField()
-
+    """
     traveler_first_name = forms.CharField()
     traveler_middle_name = forms.CharField(required=False)
     traveler_last_name = forms.CharField()
@@ -94,11 +93,15 @@ class AddToStagingForm(forms.Form):
     traveler_seat_pref = forms.CharField(required=False)
     traveler_rewards_program = forms.CharField(required=False)
     traveler_contact_email = forms.EmailField(required=False)
+    """
 
 class ExerStagingForm(forms.Form):
     fare = forms.FloatField()
     dep_date = forms.DateField()
     ret_date = forms.DateField()
+    flight_purchased = forms.CharField(widget=forms.Textarea)
+    notes = forms.CharField(required=False, widget=forms.Textarea)
+    """
     traveler_first_name = forms.CharField()
     traveler_middle_name = forms.CharField(required=False)
     traveler_last_name = forms.CharField()
@@ -109,8 +112,8 @@ class ExerStagingForm(forms.Form):
     traveler_seat_pref = forms.CharField(required=False)
     traveler_rewards_program = forms.CharField(required=False)
     traveler_contact_email = forms.EmailField(required=False)
-    flight_purchased = forms.CharField(widget=forms.Textarea)
-    notes = forms.CharField(required=False, widget=forms.Textarea)
+    """
+    
 
 class RefundStagingForm(forms.Form):
     notes = forms.CharField(required=False, widget=forms.Textarea)
