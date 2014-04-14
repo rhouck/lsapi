@@ -474,8 +474,7 @@ def sweep_expired(request):
         exp_demo_query = Demo.objects.filter(search__exp_date__range=[yesterday, current_time])
         demo_keys = [str(i.search.key) for i in exp_demo_query]
 
-        # run flight search query on each recently expired option
-        
+        # run flight search query on each recently expired option     
         expired_searches = []
         expired_demos = []
         for i in recent_expired:
@@ -509,9 +508,19 @@ def sweep_expired(request):
 
                 expired_demos.append({'search': i.key, 'savings': True if savings_string else False})
 
+        #  check fares on open contracts
+        contracts_query = Contract.objects.filter(search__exp_date__gt=current_time, ex_date=None)
+        
+        open_contracts = []
+        for i in contracts_query:
+
+            flights = pull_fares_range(i.search.origin_code, i.search.destination_code, (i.search.depart_date1, i.search.depart_date2), (i.search.return_date1, i.search.return_date2), i.search.depart_times, i.search.return_times, i.search.convenience, i.search.airlines, cached=True)
+            open_contracts.append({'search': i.search.key, 'success': flights['success']})
+       
+
         duration = current_time_aware() - current_time
         
-        results = {'success': True,  'time_run': str(current_time), 'expired_demos': expired_demos, 'expired_searches': expired_searches, 'duration': str(duration), 'count': recent_expired.count()}
+        results = {'success': True,  'time_run': str(current_time), 'expired_demos': expired_demos, 'expired_searches': expired_searches, 'open_contracts': open_contracts, 'duration': str(duration), 'count': recent_expired.count()}
 
         # send email to sysadmin summarizing expired searches
         #if MODE == 'live':    
@@ -520,11 +529,16 @@ def sweep_expired(request):
             for i in expired_searches:
                 searches_email_string += "%s : %s\n" % (i['search'], i['success'])
 
+            contracts_email_string = ""
+            for i in open_contracts:
+                contracts_email_string += "%s : %s\n" % (i['search'], i['success'])
+
             demos_email_string = ""
             for i in expired_demos:
                 demos_email_string += "%s : %s\n" % (i['search'], i['savings'])
-            
+
             email_body = 'Completed flight search for %s expired searches with duration of %s.\n\nSearch Key : Success status\n%s\n\n' % (results['count'], results['duration'], searches_email_string)
+            email_body += 'Completed %s open contracts.\n\nSearch Key : Success status\n%s\n\n' % (len(open_contracts), contracts_email_string)
             email_body += 'Completed %s expired demos.\n\nSearch Key : Savings\n%s' % (len(expired_demos), demos_email_string)
             send_mail('Expired searches price check',
                 email_body,
