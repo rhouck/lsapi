@@ -486,15 +486,21 @@ def sweep_expired(request):
             if i.key in demo_keys and flights['success']:
                 savings_string = ""
                 for j in flights['fares']:
-                    savings = math.floor(float(j['fare']) - i.deposit_value())
+                    savings = math.floor(float(j['fare']) - i.locked_fare)
                     # don't alert customer of savings unless greater than X dollars
                     if savings >= 10:
+                        """
                         dep_flights = " | ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['departing']['detail']])
                         ret_flights = " | ".join(["%s %s" % (k['airline_short_name'], k['flight_number']) for k in j['flight']['returning']['detail']])
                         dep_datetime = parse(j['flight']['departing']['take_off_time']).strftime("%B %d, %Y at %I:%M%p")
                         ret_datetime = parse(j['flight']['returning']['take_off_time']).strftime("%B %d, %Y at %I:%M%p")
                    
                         savings_string += "$%s departing %s on %s \nand returning %s on %s\n\n" % (savings, dep_datetime, dep_flights, ret_datetime, ret_flights)
+                        """
+                        dep_datetime = parse(j['flight']['departing']['take_off_time']).strftime("%B %d, %Y")
+                        ret_datetime = parse(j['flight']['returning']['take_off_time']).strftime("%B %d, %Y")
+                   
+                        savings_string += "$%s departing %s and returning %s\n\n" % (savings, dep_datetime, ret_datetime)
                 # send customer email describing potential savings if savings were possible
                 if savings_string:
                     try:
