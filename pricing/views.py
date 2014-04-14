@@ -334,6 +334,7 @@ def price_edu_combo(request):
 
 
             form = full_option_info(request.POST)
+            build = {'form': form}
             if form.is_valid():
                 cd = form.cleaned_data
                 #inp_errors = sim_errors(self.db, cd['origin_code'], cd['destination_code'],self.lockin_per,self.start_date,self.d_date1,self.d_date2,self.r_date1,self.r_date2,self.final_proj_week, self.max_trip_length, self.geography)
@@ -429,9 +430,10 @@ def price_edu_combo(request):
                     combined_results.update({'success': False, 'error': err})
 
                 build = {'form': form, 'results': combined_results}
-                return gen_search_display(request, build, clean, method='post')
             else:
-                return HttpResponse('Not valid form.')
+                build['results'] = {'success': False, 'error': form.errors}
+                
+            return gen_search_display(request, build, clean, method='post')
         else:
             form = full_option_info()
             combined_results = None

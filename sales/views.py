@@ -525,6 +525,7 @@ def purchase_option(request):
 
     return gen_search_display(request, build, clean, method='post')
 
+
 def demo_option(request):
 
     if request.user.is_authenticated():

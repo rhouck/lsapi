@@ -3,7 +3,7 @@ from django import forms
 class gen_price_multiple(forms.Form):
     origin_code = forms.CharField(required=False)
     destination_code = forms.CharField(required=False)
-    holding_per = forms.IntegerField()
+    holding_per = forms.IntegerField(min_value=1, max_value=4)
     #lockin_per = forms.IntegerField(required=False)
     depart_date1 = forms.DateField()
     return_date1 = forms.DateField()
@@ -15,6 +15,7 @@ class gen_price_multiple(forms.Form):
 class gen_price_single(gen_price_multiple):
     depart_date2 = forms.DateField()
     return_date2 = forms.DateField()
+    
 
 
 class search_summary_inputs(forms.Form):
@@ -36,7 +37,7 @@ class flight_search_form(forms.Form):
     airlines = forms.CharField()
 
 class full_option_info(flight_search_form):
-    holding_per = forms.IntegerField()
+    holding_per = forms.IntegerField(min_value=1, max_value=4)
     depart_date2 = forms.DateField()
     return_date2 = forms.DateField()
 
