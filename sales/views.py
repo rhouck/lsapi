@@ -856,7 +856,6 @@ def staged_item(request, slug):
                                 new_promo = Promo(customer=find_contract.customer, 
                                                 created_date=current_time,
                                                 value=5,
-                                                contract=find_contract,
                                                 code=gen_alphanum_key())
                                 new_promo.save()
 
