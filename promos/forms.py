@@ -1,5 +1,10 @@
 from django import forms
 
+class PromoDetail(forms.Form):
+    email = forms.EmailField()
+    code = forms.CharField(label='Promo Code')
+    platform_key = forms.CharField(label='Platform Key')
+    
 class ContestSubmissionForm(forms.Form):
     email = forms.EmailField()
     platform_key = forms.CharField(label='Platform Key')

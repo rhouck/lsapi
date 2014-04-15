@@ -1,7 +1,7 @@
 # Create your views here.
 
-from promos.models import Contest, Submission
-from promos.forms import ContestSubmissionForm
+from promos.models import Contest, Submission, Promo
+from promos.forms import ContestSubmissionForm, PromoDetail
 
 from api.views import gen_search_display
 from api.utils import check_creds, current_time_aware, gen_alphanum_key
@@ -26,6 +26,59 @@ except ImportError:
         import json
         json.encode = json.dumps
         json.decode = json.loads
+
+
+def promo_details(request):
+
+	if request.user.is_authenticated():
+	    clean = False
+	else:
+	    clean = True
+
+	inputs = request.POST if request.POST else None	
+	if clean:
+	    cred = check_creds(request.POST, Platform)
+	    if not cred['success']:
+	        return HttpResponse(json.encode(cred), mimetype="application/json")
+
+	form = PromoDetail(inputs)
+	build = {'form': form}
+
+	if (inputs) and form.is_valid():
+		cd = form.cleaned_data
+
+		try:
+
+			find_platform = Platform.objects.get(key=cd['platform_key'])
+			find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+			find_promo = Promo.objects.get(customer=find_cust, code=cd['code'])
+
+			if find_promo.contract:
+				raise Exception("Promotional code already used.")
+
+		except (Customer.DoesNotExist):
+		    build['error_message'] = 'The customer is not registered.'
+		    build['results'] = {'success': False, 'error': 'The customer is not registered.'}
+		except (Promo.DoesNotExist):
+		    build['error_message'] = 'The promo code is not valid.'
+		    build['results'] = {'success': False, 'error': 'The promo code is not valid.'}
+		except (Exception) as err:
+		    build['error_message'] = '%s' % err
+		    build['results'] = {'success': False, 'error': '%s' % err}
+		else:
+
+			results = find_promo.__dict__
+			for i in ('id', 'contract_id', 'customer_id', '_state'):
+				if i in results:
+					del results[i]
+			if 'created_date' in results:
+				results['created_date'] = str(results['created_date'])
+			build['results'] = results
+			build['results']['success'] = True	
+	else:
+		build['results'] = {'success': False, 'error': form.errors}
+		
+	return gen_search_display(request, build, clean, method='post')
 
 
 

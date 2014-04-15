@@ -7,6 +7,8 @@ urlpatterns = patterns('',
 
     url(r'^contest/$', contest, name='contest'),
     url(r'^submission/$', make_submission, name='submission'),
+    url(r'^details/$', promo_details, name='promo_details'),
+
 
 )
 
