@@ -509,7 +509,7 @@ def purchase_option(request):
                             else:
                                 ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-                            body = """You now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nWhen you book your flight just forward the confirmation email to confirmations@levelskies.com and we'll send you your payout if prices on the lowest fares have increased.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret)
+                            body = """You now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nWhen you book your flight just forward the itinerary or confirmation email to sales@levelskies.com and we'll send you your payout if prices on the lowest fares have increased.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret)
 
                             send_template_email(new_contract.customer.email, subject, title, body)
                             
@@ -851,9 +851,18 @@ def staged_item(request, slug):
                                 title = "Here comes your payout!"
                                 body = "We've been tracking fares on flights from %s to %s for you and saw that since you locked in your fare with Level Skies the lowest airfare increased by $%s. That's exactly the amount we are sending you right now. Expect a check in the mail in roughly a week's time.\n\nThe Level Skies Team" % (find_contract.search.origin_code, find_contract.search.destination_code, int(payout))
                             else:
+
+                                # create promotion for customer who received no payout
+                                new_promo = Promo(customer=find_contract.customer, 
+                                                created_date=current_time,
+                                                value=5,
+                                                contract=find_contract,
+                                                code=gen_alphanum_key())
+                                new_promo.save()
+
                                 subject = 'We recieved your ticket confirmation'
                                 title = "Thanks for using Level Skies!"
-                                body = "We've been tracking fares on flights from %s to %s for you since you locked in your fare with us. As of today, the lowest airfare for the route and the dates you'll be traveling on hasn't increased beyond the fare you locked in. This time around there's no payout for us to send you but we hope you enjoyed the peace of mind while you waited to book your ticket.\n\nThe Level Skies Team" % (find_contract.search.origin_code, find_contract.search.destination_code)  
+                                body = "We've been tracking fares on flights from %s to %s for you since you locked in your fare with us. As of today, the lowest airfare for the route and the dates you'll be traveling on hasn't increased beyond the fare you locked in. This time around there's no payout for us to send you but we don't want you to leave empty-handed. Here's a promo code you can use for $%s off your next Flex Fare:\n\n%s\n\nWe hope you enjoyed the peace of mind while you waited to book your ticket.\n\nThe Level Skies Team" % (find_contract.search.origin_code, find_contract.search.destination_code, new_promo.value, new_promo.code)  
                             send_template_email(find_contract.customer.email, subject, title, body)
                             
                         except:
