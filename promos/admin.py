@@ -1,4 +1,4 @@
-from promos.models import Promo, Contest
+from promos.models import Promo, Contest, Submission
 
 from django.contrib import admin
 
@@ -10,3 +10,7 @@ admin.site.register(Promo, PromoAdmin)
 class ContestAdmin(admin.ModelAdmin):
     pass
 admin.site.register(Contest, ContestAdmin)
+
+class SubmissionAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(Submission, SubmissionAdmin)
