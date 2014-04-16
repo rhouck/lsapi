@@ -268,7 +268,7 @@ def make_submission(request):
 
 			build['results'] = {'success': True}
 	else:
-		build['results'] = {'success': False, 'error': 'Not valid form.'}
+		build['results'] = {'success': False, 'error': form.errors}
 		
 	return gen_search_display(request, build, clean, method='post')
 
