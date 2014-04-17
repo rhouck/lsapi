@@ -1,7 +1,7 @@
 # Create your views here.
 
 from promos.models import Contest, Submission, Promo
-from promos.forms import ContestSubmissionForm, PromoDetail
+from promos.forms import ContestSubmissionForm, PromoDetail, CreatePromoForm
 
 from api.views import gen_search_display
 from api.utils import check_creds, current_time_aware, gen_alphanum_key
@@ -26,6 +26,52 @@ except ImportError:
         import json
         json.encode = json.dumps
         json.decode = json.loads
+
+from django.contrib.auth.decorators import login_required
+
+from django.template.defaultfilters import striptags
+
+
+@login_required
+def create_promo(request):
+
+	inputs = request.POST if request.POST else None
+	form = CreatePromoForm(inputs)
+	build = {'form': form}
+
+	if (inputs) and form.is_valid():
+		cd = form.cleaned_data
+		try:
+
+			find_platform = Platform.objects.get(key=cd['platform_key'])
+			find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+			new_promo = Promo(customer=find_cust, value=cd['value'], created_date= current_time_aware(), code=gen_alphanum_key())
+			new_promo.save()
+
+		except (Customer.DoesNotExist):
+		    build['error_message'] = 'The customer is not registered.'
+		    build['results'] = {'success': False, 'error': 'The customer is not registered.'}
+		except (Platform.DoesNotExist):
+		    build['error_message'] = 'The platform key is not valid.'
+		    build['results'] = {'success': False, 'error': 'The platform key is not valid.'}
+		except (Exception) as err:
+		    build['error_message'] = '%s' % err
+		    build['results'] = {'success': False, 'error': '%s' % err}
+		else:
+
+			results = new_promo.__dict__
+			for i in ('id', 'customer_id', '_state'):
+				if i in results:
+					del results[i]
+			if 'created_date' in results:
+				results['created_date'] = str(results['created_date'])
+			build['results'] = results
+			build['results']['success'] = True	
+	else:
+		build['results'] = {'success': False, 'error': form.errors}
+		
+	return gen_search_display(request, build, False, method='post')
+
 
 
 def promo_details(request):
@@ -84,28 +130,7 @@ def promo_details(request):
 
 def contest(request):
 	
-	"""
-	contest experience:
-	user clicks to game, sees terms of game, previous contest results
-		terms:
-			what are the travel dates
-			how much time until contest expires
-			what are current flights
-			how much is promo worth
-
-		user submits email and guess
-		limit to one guess per contest
-
-	views:
-	generate contest
-	accept submissions
-	send winner email
-
-
-	models:
-	contest
-	submissions
-	"""		
+			
 	if request.user.is_authenticated():
 	    clean = False
 	else:
@@ -268,7 +293,50 @@ def make_submission(request):
 
 			build['results'] = {'success': True}
 	else:
-		build['results'] = {'success': False, 'error': form.errors}
+		err_string = ""
+		for error in form.errors.iteritems():
+			err_string += unicode(striptags(error[1]) if striptags else error[1])
+
+		build['results'] = {'success': False, 'error': err_string}
 		
 	return gen_search_display(request, build, clean, method='post')
+
+
+def close_contests(request):
+
+
+	if request.user.is_authenticated():
+	    clean = False
+	else:
+	    clean = True
+
+	inputs = request.POST if request.POST else None
+	if clean:
+	    cred = check_creds(request.POST, Platform)
+	    if not cred['success']:
+	        return HttpResponse(json.encode(cred), mimetype="application/json")
+
+	current_time = current_time_aware()
+
+	contests = Contest.objects.filter(expire_date__lt=current_time, closed=False)
+
+	build = {'results': {'cont_count': contests.count()}}
+	for i in contests:
+
+		subs = Submission.objects.filter(contest=i)
+
+		if subs:
+
+			# build list of current flights
+			res = run_flight_search(i.origin_code, i.destination_code, i.depart_date, i.return_date, 'any', 'any', 'any', 'any', cached=True)	
+			if res['success']:
+				#return HttpResponse(json.encode(res), mimetype="application/json")
+				min_fare = res['min_fare']	
+		
+		entries = []
+		for k in subs:
+			pass
+
+	return gen_search_display(request, build, clean, method='post')
+
 

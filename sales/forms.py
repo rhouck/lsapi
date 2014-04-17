@@ -12,19 +12,22 @@ class Customer_signup(Customer_login):
     first_name = forms.CharField(required=False)
     last_name = forms.CharField(required=False)
     phone = forms.CharField(required=False)
+    """
     address1 = forms.CharField(required=False)
     address2 = forms.CharField(required=False)
     city = forms.CharField(required=False)
     state_province = forms.CharField(label="state / province", required=False)
     postal_code = forms.CharField(required=False)
     country = forms.CharField(required=False)
+    """
     # billing information
+    """
     billing_address1 = forms.CharField(required=False)
     billing_city = forms.CharField(required=False)
     billing_province = forms.CharField(label="state / province", required=False)
     billing_postal_code = forms.CharField(required=False)
     billing_country = forms.CharField(required=False)
-
+    """
 class PaymentForm(Customer_signup):
     #first_name = forms.CharField(max_length=50)
     #last_name = forms.CharField(max_length=50)
