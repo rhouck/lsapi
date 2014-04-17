@@ -24,6 +24,7 @@ class Contest(models.Model):
 	return_date = models.DateField()
 	value = models.FloatField('promotion value')
 	closed = models.BooleanField('Closed and winnner notified', blank=True)
+	end_price = models.FloatField(blank=True, null=True)
 
 
 class Submission(models.Model):
