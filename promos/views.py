@@ -285,7 +285,19 @@ def make_submission(request):
 			# send email if subission successful
 			subject = "We got your submission"
 			title = "Now let's see how well you do..."
-			body = "This contest is over soon but we won't know the final price of the flight until departure time. When that happens we'll let you know if you won and earned a discount on your next locked fare. Don't worry, you don't have to wait long and you can enter the next contest as soon as it starts."
+			
+			if find_contest.decision_time == 1:
+				time = "another week"
+			elif find_contest.decision_time == 2:
+				time = "another two weeks"
+			elif find_contest.decision_time == 3:
+				time = "another three weeks"
+			elif find_contest.decision_time == 4:
+				time = "another four weeks"
+			else:
+				time = "several days"
+			
+			body = "This contest is over soon but we won't know the final price of the flight for %s. When that happens we'll let you know if you won and earned a discount on your next Flex Fare. Don't worry, you don't have to wait long and you can enter the next contest as soon as it starts." % (time)
 			try:
 				send_template_email(sub.customer.email, subject, title, body)
 			except:
