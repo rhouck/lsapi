@@ -143,7 +143,7 @@ def contest(request):
 	        return HttpResponse(json.encode(cred), mimetype="application/json")
 
 	contest_length = 2
-	promotion_value = 15
+	promotion_value = 20
 
 	current_time = current_time_aware()
 
