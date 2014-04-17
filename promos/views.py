@@ -142,7 +142,7 @@ def contest(request):
 	    if not cred['success']:
 	        return HttpResponse(json.encode(cred), mimetype="application/json")
 
-	contest_length = 2
+	contest_length = 1
 	promotion_value = 20
 
 	current_time = current_time_aware()
