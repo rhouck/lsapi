@@ -846,13 +846,13 @@ def staged_item(request, slug):
                 # response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, notes=cd['notes'])
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, promo=build['promo'])
             
-            #response = {'results': {'success': False, 'error': str(response['results']['error'])}}
-            if not response['results']['success']:
-                    build['error_message'] = response['results']['error']
             
+            if not response['results']['success']:
+                #build['error_message'] = response['results']['error']
+                build['error_message'] = "Status: %s" % (response)
             else:
                 
-                build['error_message'] = "Status: %s" % (response['status'])
+                build['error_message'] = "Status: %s" % (response)
                 
                 """
                 find_stage.delete()
