@@ -393,7 +393,8 @@ def price_edu_combo(request):
                 if not model_out['error']:
                     pass
                     #model_out = refund_format_conversion(model_out)
-                combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
+                #combined_results = {'pricing_results': model_out, 'context': 'this flight gets expensive fast', 'inputs': model_in, 'key': search_key,}
+                combined_results = {'pricing_results': model_out, 'inputs': model_in, 'key': search_key,}
 
                 # convert all dates into js time-stamp
                 date_bank = {}

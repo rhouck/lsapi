@@ -469,12 +469,12 @@ def purchase_option(request):
                             except:
                                 search_info[k] = v
 
-                    confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
+                    #confirmation_url = "https://www.google.com/" # '%s/platform/%s/customer/%s' % (socket.gethostname(), find_org.key, find_cust.key)
                     build['results'] = {'success': True, 
                                         'search_key': cd['search_key'], 
                                         'cust_key': find_cust.key, 
                                         'purchase_date': purch_date_time.strftime('%Y-%m-%d'), 
-                                        'confirmation': confirmation_url, 
+                                        #'confirmation': confirmation_url, 
                                         'gateway_status': response['status'], 
                                         'search_info': search_info, 
                                         'receive_alerts': cd['alerts'],
@@ -851,6 +851,10 @@ def staged_item(request, slug):
                     build['error_message'] = response['results']['error']
             
             else:
+                
+                build['error_message'] = "Status: %s" % (response['status'])
+                
+                """
                 find_stage.delete()
                 find_contract.refunded = True
                 find_contract.save()
@@ -874,7 +878,7 @@ def staged_item(request, slug):
                     pass
 
                 return HttpResponseRedirect(reverse('staging_view'))
-            
+                """
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))
 
