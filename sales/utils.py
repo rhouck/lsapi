@@ -44,10 +44,10 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
         build['results'] = {'success': False, 'error': 'The user id and/or transaction id is not valid.'}
 
     else:
-        if find_contract.expired() and exercise:
-            build['error_message'] = 'The contract selected is expired and connot be converted into a ticket.'
-            build['results'] = {'success': False, 'error': 'The contract selected is expired and connot be converted into a ticket.'}
-        elif find_contract.close_staged_date:
+        #if find_contract.expired() and exercise:
+        #    build['error_message'] = 'The contract selected is expired and connot be converted into a ticket.'
+        #    build['results'] = {'success': False, 'error': 'The contract selected is expired and connot be converted into a ticket.'}
+        if find_contract.close_staged_date:
             build['error_message'] = 'The contract has already been closed.'
             build['results'] = {'success': False, 'error': 'The contract has already been closed.'}
         else:

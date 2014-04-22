@@ -645,91 +645,63 @@ def add_to_staging(request, action, slug):
         if not cred['success']:
             return HttpResponse(json.encode(cred), mimetype="application/json")
 
-    find_contract = get_object_or_404(Contract, search__key=slug)
-
     try:
-        find_stage = Staging.objects.get(contract=find_contract)
-        return HttpResponse(json.encode({'success': False, 'error': 'Already staged'}), mimetype="application/json")
+        
+        find_contract = get_object_or_404(Contract, search__key=slug)
 
-    except (Staging.DoesNotExist):
-
-        if action == 'exercise':
-            exercise = True
-        elif action == 'refund':
-            exercise = False
+        staged_items = Staging.objects.filter(contract=find_contract)
+        
+        if staged_items.exists():
+            raise Exception('This contract is currently staged')
         else:
-            raise Http404
 
-        if exercise and not find_contract.outstanding():
-            return HttpResponse(json.encode({'success': False, 'error': 'Contract expired or already closed.'}), mimetype="application/json")
-
-        inputs = request.POST if request.POST else None
-        form = AddToStagingForm(inputs)
-
-        staged_cont = Staging(contract=find_contract, exercise=exercise)
-
-        if clean and exercise:
-            if not form.is_valid():
-                # dont add contract to staging if form is invalid unless done from api interface
-                return HttpResponse(json.encode({'success': False, 'error': form.errors}), mimetype="application/json")
-            else:
-                cd = form.cleaned_data
-                if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
-                    return HttpResponse(json.encode({'success': False, 'error': 'Selected travel dates not within locked fare range'}), mimetype="application/json")
-                #staged_cont = Staging(contract=find_contract, exercise=exercise)
-                #staged_cont(**cd)
-                #staged_cont.save()
-
-                for key, value in cd.items():
-                    try:
-                        setattr(staged_cont, key, value)
-                    except:
-                        pass
-
-        staged_cont.save()
-
-        find_contract.ex_date = current_time_aware()
-        find_contract.save()
-
-
-        """
-        # sends alert email to sales@levelskies
-        if MODE == 'live':
-            try:
-                send_mail('Just added to staging - %s' % (action),
-                    '%s (%s) just elected to %s contract with key: %s.' % (find_contract.customer, find_contract.customer.key, action, find_contract.search.key),
-                    'sysadmin@levelskies.com',
-                    ['sales@levelskies.com'],
-                    fail_silently=False)
-            except:
-                pass
-        # sends confirmation to customer
-
-        try:
-            title = "Thanks again for using Level Skies!"
             if action == 'exercise':
-                subject = 'We recieved your ticket request'
-
-                if not (staged_cont.traveler_first_name and staged_cont.traveler_last_name):
-                    target = "your"
-                else:
-                    target = "%s %s's" % (staged_cont.traveler_first_name, staged_cont.traveler_last_name)
-                body = "We are now processing your request and will send you %s ticket from %s to %s within the next 48 hrs.\n\nThe Level Skies Team" % (target, find_contract.search.origin_code, find_contract.search.destination_code)
-
+                exercise = True
+            elif action == 'refund':
+                exercise = False
             else:
-                subject = 'Your Level Skies Lock-in is being refunded'
-                body = "We are processing your request. You should receive your refund of $%s within two to three business days.\n\nThe Level Skies Team" % (int(find_contract.search.locked_fare))
+                raise Http404
 
-            send_template_email(find_contract.customer.email, subject, title, body)
-            
-        except:
-            pass
-        """
-        if clean:
-            return HttpResponse(json.encode({'success': True}), mimetype="application/json")
-        else:
-            return HttpResponseRedirect(reverse('staged_item', kwargs={'slug': slug}))
+            if find_contract.ex_date or find_contract.close_staged_date:
+                raise Exception('This contract has already been closed')
+                #return HttpResponse(json.encode({'success': False, 'error': 'Contract expired or already closed.'}), mimetype="application/json")
 
+            inputs = request.POST if request.POST else None
+            form = AddToStagingForm(inputs)
+
+            staged_cont = Staging(contract=find_contract, exercise=exercise)
+
+            if clean and exercise:
+                if not form.is_valid():
+                    # dont add contract to staging if form is invalid unless done from api interface
+                    err_string = ""
+                    for error in form.errors.iteritems():
+                        err_string += unicode(striptags(error[1]) if striptags else error[1])
+                    raise Exception(err_string)
+                    
+                else:
+                    cd = form.cleaned_data
+                    if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
+                        raise Exception('Selected travel dates not within locked fare range')
+
+                    for key, value in cd.items():
+                        try:
+                            setattr(staged_cont, key, value)
+                        except:
+                            pass
+
+            staged_cont.save()
+
+            find_contract.ex_date = current_time_aware()
+            find_contract.save()
+
+            if clean:
+                return HttpResponse(json.encode({'success': True}), mimetype="application/json")
+            else:
+                return HttpResponseRedirect(reverse('staged_item', kwargs={'slug': slug}))
+
+    except (Contract.DoesNotExist):
+        return HttpResponse(json.encode({'success': False, 'error': 'Contract key is invalid.'}), mimetype="application/json")
     except Exception as err:
         return HttpResponse(json.encode({'success': False, 'error': '%s' % (err)}), mimetype="application/json")
 
@@ -768,7 +740,7 @@ def staged_item(request, slug):
         build['fares'] = []
         # sets the search date to the expiration date or before
         if find_contract.expired():
-            ref_date = find_date.search.exp_date
+            ref_date = find_contract.search.exp_date
         else:
             ref_date = current_date
 
@@ -806,14 +778,6 @@ def staged_item(request, slug):
 
 
     if inputs:
-
-        """
-        if 'remove' in inputs or 'force_close' in inputs:
-            find_stage.delete()
-            if 'force_close' in inputs:
-                response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, flight_choice=cd['notes'], use_gateway=False)
-            return HttpResponseRedirect(reverse('staging_view'))
-        """
 
         # remove contract
         if 'remove' in inputs:
@@ -874,15 +838,18 @@ def staged_item(request, slug):
 
         # refund the contract
         else:
+            
             if 'force_close' in inputs:
                 #response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, notes=cd['notes'], use_gateway=False)
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, use_gateway=False)
             else:
                 # response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=None, dep_date=None, ret_date=None, notes=cd['notes'])
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, promo=build['promo'])
-
+            
+            #response = {'results': {'success': False, 'error': str(response['results']['error'])}}
             if not response['results']['success']:
                     build['error_message'] = response['results']['error']
+            
             else:
                 find_stage.delete()
                 find_contract.refunded = True
@@ -907,7 +874,7 @@ def staged_item(request, slug):
                     pass
 
                 return HttpResponseRedirect(reverse('staging_view'))
-
+            
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))
 

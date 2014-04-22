@@ -20,29 +20,33 @@
       </div>
       {% if item.exercise %}
         <div class="col-md-5">
-          <div class="row">
-            <div class="col-md-12">
-              <a href={{ item.contract.search.key }}/>{{item.contract.search.key}} - {{item.contract.search.origin_code}}:{{item.contract.search.destination_code}} - {{ item }}</a>
+          <a href={{ item.contract.search.key }}/>
+            <div class="row">
+              <div class="col-md-12">
+                {{item.contract.customer}}
+              </div>
             </div>
-          </div>
-          <div class="row">
-            <div class="col-md-12">
-              Exp: {{item.contract.search.exp_date}} - Opt: {{item.contract.search.holding_price}} - Lock: {{item.contract.search.locked_fare}}
+            <div class="row">
+              <div class="col-md-12">
+                {{item.contract.search}}
+              </div>
             </div>
-          </div>
+          </a>
         </div>
       {% else %}
         <div class="col-md-5 col-md-offset-5">
-          <div class="row">
-            <div class="col-md-12">
-              <a href={{ item.contract.search.key }}/>{{item.contract.search.key}} - {{item.contract.search.origin_code}}:{{item.contract.search.destination_code}} - {{ item }}</a>
+          <a href={{ item.contract.search.key }}/>
+            <div class="row">
+              <div class="col-md-12">
+                {{item.contract.customer}}
+              </div>
             </div>
-          </div>
-          <div class="row">
-            <div class="col-md-12">
-              Exp: {{item.contract.search.exp_date}} - Opt: {{item.contract.search.holding_price}} - Lock: {{item.contract.search.locked_fare}}
+            <div class="row">
+              <div class="col-md-12">
+                {{item.contract.search}}
+              </div>
             </div>
-          </div>
+          </a>
         </div>
       {% endif %}
     </div>

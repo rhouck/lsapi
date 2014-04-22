@@ -26,12 +26,17 @@
         <div class="col-md-5">
           <div class="row">
             <div class="col-md-12">
-              {{contract.search.key}} - {{contract.search.origin_code}}:{{contract.search.destination_code}} - {{contract}}
+              {{contract.customer}}
             </div>
           </div>
           <div class="row">
             <div class="col-md-12">
-              Exp: {{contract.search.exp_date}} - Opt: {{contract.search.holding_price}} - Lock: {{contract.search.locked_fare}}
+              {{contract.search}}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              Exp {{contract.search.exp_date|date}}
               {% if contract.staged %}
                 <a style="color: orange;" href="{% url staged_item contract.search.key %}">Staged</a>
               {% else %}
@@ -39,24 +44,30 @@
               {% endif %}
             </div>
           </div>
+          
         </div>
+      
       {% else %}
 
         <div class="col-md-5 col-md-offset-5">
           <div class="row">
             <div class="col-md-12">
-              {{contract.search.key}} - {{contract.search.origin_code}}:{{contract.search.destination_code}} - {{contract}}
+              {{contract.customer}}
             </div>
           </div>
           <div class="row">
             <div class="col-md-12">
-              Exp: {{contract.search.exp_date}} - Opt: {{contract.search.holding_price}} - Lock: {{contract.search.locked_fare}}
+              {{contract.search}}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              Exp {{contract.search.exp_date|date}}
               {% if contract.staged %}
                 <a style="color: orange;" href="{% url staged_item contract.search.key %}">Staged</a>
-              <!--
               {% elif not contract.ex_date %}
-                  <a style="color: red;" href="{% url add_to_staging 'refund' contract.search.key %}">REFUND</a>
-              -->
+                <a class="confirm-submit" data-msg="Are you sure?" href="{% url add_to_staging 'exercise' contract.search.key %}">Exercise</a> / <a class="confirm-submit" data-msg="Are you sure?" href="{% url add_to_staging 'refund' contract.search.key %}">Refund</a>
+              
               {% endif %}
             </div>
           </div>

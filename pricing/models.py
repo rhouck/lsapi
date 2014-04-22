@@ -58,7 +58,10 @@ class Searches(models.Model):
         return bool(self.open_status)
 
     def __unicode__(self):
-        return "%s - %s - %s:%s" % (self.key, self.search_date, self.origin_code, self.destination_code)
+        
+        hold = int(self.holding_price) if self.holding_price else self.holding_price
+        lock = int(self.locked_fare) if self.locked_fare else self.locked_fare
+        return "%s - %s:%s - %s - %swk - %s/%s" % (self.key, self.origin_code, self.destination_code, self.search_date.strftime("%B %d, %Y"), self.holding_per, hold, lock)
 
     def deposit_value(self):
         return self.locked_fare + self.holding_price

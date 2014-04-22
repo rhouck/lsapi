@@ -6,7 +6,7 @@ from django.http import HttpResponse
 
 class ContractAdmin(admin.ModelAdmin):
 
-    list_display = ('purch_date', 'ex_fare', 'get_exp_date', 'get_holding_price', 'get_locked_fare', 'outstanding', 'staged')
+    list_display = ('customer', 'search', 'get_exp_date', 'ex_fare', 'outstanding', 'staged')
 
     #fieldsets = [
     #            (None, {'fields': ('platform', 'customer', 'purch_date', 'exp_date', 'option_price', 'locked_fare', 'ex_fare')}),
@@ -17,10 +17,10 @@ class ContractAdmin(admin.ModelAdmin):
     #date_hierarchy = 'get_exp_date'
 
     def get_exp_date(self, obj):
-        return (obj.search.exp_date)
-    get_exp_date.short_description = 'expiration date'
-
-
+        return (obj.search.exp_date.strftime("%B %d, %Y"))
+    get_exp_date.short_description = 'Date / time expiration'
+    
+    """
     def get_holding_price(self, obj):
         return (obj.search.holding_price)
     get_holding_price.short_description = 'holding price'
@@ -28,7 +28,7 @@ class ContractAdmin(admin.ModelAdmin):
     def get_locked_fare(self, obj):
         return (obj.search.locked_fare)
     get_locked_fare.short_description = 'locked fare'
-
+    """
     def has_add_permission(self, request):
         return False
     #def has_change_permission(self, request):
@@ -76,7 +76,7 @@ class DemoInline(admin.TabularInline):
 
 
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('platform', 'email', 'last_name', 'first_name')
+    list_display = ('email', 'last_name', 'first_name', 'platform',)
     inlines = [ContractInline]
 admin.site.register(Customer, CustomerAdmin)
 

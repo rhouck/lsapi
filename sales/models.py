@@ -15,6 +15,7 @@ class Platform(models.Model):
 
     def __unicode__(self):
         return self.org_name
+        #return "%s - %s" % (self.org_name, self.web_site)
 
 
 class Customer(models.Model):
@@ -28,10 +29,12 @@ class Customer(models.Model):
 
 
     def __unicode__(self):
+        
+        tag = ""
         if self.first_name and self.last_name:
-            tag = "%s %s" % (self.first_name, self.last_name)
-        else:
-            tag = self.email
+            tag += "%s %s - " % (self.first_name, self.last_name)
+        tag += self.email
+        tag += " - %s" % (self.platform)
         return tag
 
 
@@ -112,7 +115,8 @@ class Contract(models.Model):
 
 
     def __unicode__(self):
-        uni_name = '%s - %s - %s' % (self.customer, self.customer.platform, self.purch_date.strftime('%b %d, %Y'))
+        uni_name = '%s - %s - %s' % (self.search, self.customer, self.search.exp_date.strftime('%b %d, %Y'))
+        #uni_name = '%s - %s - %s' % (self.customer, self.customer.platform, self.purch_date.strftime('%b %d, %Y'))
         return uni_name
 
 
