@@ -800,8 +800,8 @@ def staged_item(request, slug):
                         # response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_purchased=cd['flight_purchased'], notes=cd['notes'])
                         response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd)
 
-                    if not response['results']['success']:
-                        build['error_message'] = response['results']['error']
+                    if not response['success']:
+                        build['error_message'] = response['error']
                     else:
                         find_stage.delete()
 
@@ -847,14 +847,14 @@ def staged_item(request, slug):
                 response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, promo=build['promo'])
             
             
-            if not response['results']['success']:
-                #build['error_message'] = response['results']['error']
-                build['error_message'] = "Status: %s" % (response)
+            if not response['success']:
+                build['error_message'] = response['error']
+                #build['error_message'] = "Status: %s" % (response)
             else:
                 
-                build['error_message'] = "Status: %s" % (response)
+                #build['error_message'] = "Status: %s" % (response)
                 
-                """
+                
                 find_stage.delete()
                 find_contract.refunded = True
                 find_contract.save()
@@ -878,7 +878,7 @@ def staged_item(request, slug):
                     pass
 
                 return HttpResponseRedirect(reverse('staging_view'))
-                """
+                
 
     return render_to_response('sales/staging.html', build, context_instance=RequestContext(request))
 
