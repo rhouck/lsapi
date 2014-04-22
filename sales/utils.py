@@ -87,8 +87,10 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
 
                     card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
                     response = run_authnet_trans(amount, card_info, trans_id=find_contract.gateway_id)
+                    
                 else:
                     response = {'success': True}
+                
                 if not response['success']:
                     build['results'] = {'success': False, 'error': response['status']}
                     return build
@@ -105,6 +107,9 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
             find_contract.close_staged_date = exercise_date_time
             find_contract.save()
             build['results'] = {'success': True, 'search_key': search_key, 'cust_key': cust_key, 'exercise_fare': find_contract.ex_fare, 'exercise_date': exercise_date_time.strftime('%Y-%m-%d')}
+
+            if use_gateway:
+                build['results']['status'] = response['status']
 
             # augment cash reserve with option price
             try:
