@@ -68,7 +68,12 @@ def create_promo(request):
 			build['results'] = results
 			build['results']['success'] = True	
 	else:
-		build['results'] = {'success': False, 'error': form.errors}
+		err_string = ""
+		for error in form.errors.iteritems():
+			err_string += "%s - %s " % (error[0], unicode(striptags(error[1]) if striptags else error[1]))
+
+		build['results'] = {'success': False, 'error': err_string}
+	
 		
 	return gen_search_display(request, build, False, method='post')
 
@@ -122,7 +127,12 @@ def promo_details(request):
 			build['results'] = results
 			build['results']['success'] = True	
 	else:
-		build['results'] = {'success': False, 'error': form.errors}
+		err_string = ""
+		for error in form.errors.iteritems():
+			err_string += "%s - %s " % (error[0], unicode(striptags(error[1]) if striptags else error[1]))
+
+		build['results'] = {'success': False, 'error': err_string}
+		
 		
 	return gen_search_display(request, build, clean, method='post')
 
@@ -307,7 +317,7 @@ def make_submission(request):
 	else:
 		err_string = ""
 		for error in form.errors.iteritems():
-			err_string += unicode(striptags(error[1]) if striptags else error[1])
+			err_string += "%s - %s " % (error[0], unicode(striptags(error[1]) if striptags else error[1]))
 
 		build['results'] = {'success': False, 'error': err_string}
 		

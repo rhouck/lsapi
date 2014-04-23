@@ -1,0 +1,33 @@
+2014-04-23 11:10:19,950 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-23 11:10:19,951 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"Puffaoki1"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-23 11:10:19,951 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
+2014-04-23 11:17:53,372 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-23 11:17:53,373 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"Puffaoki1"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-23 11:17:53,373 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
+2014-04-23 11:18:50,144 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-23 11:18:50,144 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"Puffaoki1"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-23 11:18:50,144 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
+2014-04-23 11:23:53,826 ERROR    1 BDC_1102 Developer key is invalid.
+2014-04-23 11:23:53,826 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '00801FVYIZOYYRQFn9kq', 'password': '"Puffaoki1"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-23 11:23:53,826 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Developer key is invalid.', u'error_code': u'BDC_1102'}}
+2014-04-23 11:25:16,207 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-23 11:25:16,207 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"Puffaoki1"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-23 11:25:16,207 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
+2014-04-23 11:25:34,253 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-23 11:25:34,253 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"Puffaoki1"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-23 11:25:34,253 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
+2014-04-23 11:25:39,073 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-23 11:25:39,073 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"Puffaoki1"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-23 11:25:39,073 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
+2014-04-23 12:07:28,368 ERROR    1 BDC_1146 Missing Bill line items.
+2014-04-23 12:07:28,376 ERROR    SENT TO https://api.bill.com/api/v2/Crud/Create/Bill.json: {'data': '{"obj": {"vendorId": "abc123", "invoiceDate": "2012-10-01T00:00:00+08.00", "entity": "Bill", "amount": 25.0, "invoiceNumber": "BC1234", "dueDate": "2012-11-01T00:00:00+08.00"}}', 'sessionId': u'!aowblxO5TSqNcToiplNMXTrN_JJX1PSyL9Fsr8WXBXfo', 'devKey': '01YCDWZUVDKQXTAOW367'}
+2014-04-23 12:07:28,376 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Missing Bill line items.', u'error_code': u'BDC_1146'}}
+2014-04-23 12:20:23,930 ERROR    1 BDC_1205 No data found for object with id 00901YYOFDJNAHP2xlg9.
+2014-04-23 12:20:23,931 ERROR    SENT TO https://api.bill.com/api/v2/Crud/Read/Vendor.json: {'data': '{"id": "00901YYOFDJNAHP2xlg9"}', 'sessionId': u'!aOpMPNizAYIDvTso1gdMmKuiB0Wm9aq-VGtF6Bdv6qcc', 'devKey': '01YCDWZUVDKQXTAOW367'}
+2014-04-23 12:20:23,931 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'No data found for object with id 00901YYOFDJNAHP2xlg9.', u'error_code': u'BDC_1205'}}
+2014-04-23 12:21:41,553 ERROR    1 BDC_1124 Invalid field datatype: isActive.
+2014-04-23 12:21:41,553 ERROR    SENT TO https://api.bill.com/api/v2/Crud/Update/Vendor.json: {'data': '{"obj": {"updatedTime": "2014-04-23T19:16:39.000+0000", "name": "Test Vendor", "payBy": "0", "entity": "Vendor", "createdTime": "2014-04-23T19:16:17.000+0000", "id": "00901POQWEGDYPO6zxqg", "isActive": 1}}', 'sessionId': u'!aGA_eH_8U-pTP9Y5ZFJFjJO-o5M1me3zRrNiFP6UxWbE', 'devKey': '01YCDWZUVDKQXTAOW367'}
+2014-04-23 12:21:41,553 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid field datatype: isActive.', u'error_code': u'BDC_1124'}}
+2014-04-23 12:23:19,455 ERROR    1 BDC_1124 Invalid field datatype: isActive.
+2014-04-23 12:23:19,455 ERROR    SENT TO https://api.bill.com/api/v2/Crud/Update/Vendor.json: {'data': '{"obj": {"updatedTime": "2014-04-23T19:15:33.000+0000", "name": "Test Vendor", "payBy": "0", "entity": "Vendor", "createdTime": "2014-04-23T19:15:25.000+0000", "id": "00901FKHSUWLBDH6zxqb", "isActive": 2}}', 'sessionId': u'!aiDa7NqhLivOFQfHa8yrqc7v5uQi3cFjSnRN3ASOb-p8', 'devKey': '01YCDWZUVDKQXTAOW367'}
+2014-04-23 12:23:19,456 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid field datatype: isActive.', u'error_code': u'BDC_1124'}}

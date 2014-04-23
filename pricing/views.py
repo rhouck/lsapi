@@ -48,6 +48,9 @@ import random
 
 from sales.utils import send_template_email
 
+from django.template.defaultfilters import striptags
+
+
 
 def test_google(request):
 
@@ -432,7 +435,12 @@ def price_edu_combo(request):
 
                 build = {'form': form, 'results': combined_results}
             else:
-                build['results'] = {'success': False, 'error': form.errors}
+                err_string = ""
+                for error in form.errors.iteritems():
+                    err_string += "%s - %s " % (error[0], unicode(striptags(error[1]) if striptags else error[1]))
+
+                build['results'] = {'success': False, 'error': err_string}
+                
                 
             return gen_search_display(request, build, clean, method='post')
         else:

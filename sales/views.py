@@ -49,6 +49,8 @@ import numpy as np
 
 from promos.models import Promo
 
+from django.template.defaultfilters import striptags
+
 
 def get_cust_list(request):
 
@@ -350,12 +352,17 @@ def purchase_option(request):
             # either find the existing customer associated with the platform and email addres or create it
             try:
                 find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+                find_cust.first_name =cd['billing_first_name']
+                find_cust.last_name = cd['billing_last_name']
+                find_cust.save()
             except:
                 inps = {}
                 inps['key'] = gen_alphanum_key()
                 inps['reg_date'] = current_time_aware().date()
                 inps['platform'] = find_platform
                 inps['email'] = cd['email']
+                inps['first_name'] = cd['billing_first_name']
+                inps['last_name'] = cd['billing_last_name']
                 find_cust = Customer(**inps)
                 find_cust.save()
 
@@ -521,7 +528,13 @@ def purchase_option(request):
                     #build['error_message'] = response['status']
                     build['results'] = {'success': False, 'error': response['status']}
     else:
-        build['results'] = {'success': False, 'error': form.errors}
+        
+        err_string = ""
+        for error in form.errors.iteritems():
+            err_string += "%s - %s " % (error[0], unicode(striptags(error[1]) if striptags else error[1]))
+
+        build['results'] = {'success': False, 'error': err_string}
+
 
     return gen_search_display(request, build, clean, method='post')
 
@@ -623,7 +636,12 @@ def demo_option(request):
                 pass
 
     else:
-        build['results'] = {'success': False, 'error': form.errors}
+        err_string = ""
+        for error in form.errors.iteritems():
+            err_string += "%s - %s " % (error[0], unicode(striptags(error[1]) if striptags else error[1]))
+
+        build['results'] = {'success': False, 'error': err_string}
+        
 
     return gen_search_display(request, build, clean, method='post')
 

@@ -1,0 +1,13 @@
+2014-04-22 19:37:17,621 CRITICAL configuration in /Users/ryanchouck/Desktop/dev/api/billdotcom.cfg is not correct: No section: 'authentication'
+2014-04-22 19:43:02,950 CRITICAL configuration in /Users/ryanchouck/Desktop/dev/api/billdotcom.cfg is not correct: No section: 'authentication'
+2014-04-22 19:44:31,788 CRITICAL configuration in /Users/ryanchouck/Desktop/dev/api/billdotcom.cfg is not correct: No section: 'authentication'
+2014-04-22 19:45:39,280 CRITICAL configuration in /Users/ryanchouck/Desktop/dev/api/billdotcom.cfg is not correct: No section: 'authentication'
+2014-04-22 20:05:58,620 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-22 20:05:58,620 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"_second&mission_"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-22 20:05:58,620 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
+2014-04-22 20:11:40,214 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "0113004081676488".
+2014-04-22 20:11:40,214 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"0113004081676488"', 'password': '"_second&mission_"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-22 20:11:40,214 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "0113004081676488".', u'error_code': u'BDC_1129'}}
+2014-04-22 20:35:12,525 ERROR    1 BDC_1129 Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".
+2014-04-22 20:35:12,526 ERROR    SENT TO https://api.bill.com/api/v2/Login.json: {'userName': '"ryan@levelskies.com"', 'orgId': '"00801FVYIZOYYRQFn9kq"', 'password': '"_second&mission_"', 'devKey': '"01YCDWZUVDKQXTAOW367"'}
+2014-04-22 20:35:12,526 ERROR    RECEIVED {u'response_status': 1, u'response_message': u'Error', u'response_data': {u'error_message': u'Invalid parameter value for parameter,value: orgId, "00801FVYIZOYYRQFn9kq".', u'error_code': u'BDC_1129'}}
