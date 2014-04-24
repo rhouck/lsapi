@@ -10,6 +10,15 @@ from django.template import Context
 
 from api.settings import FROM_EMAIL_1, FROM_EMAIL_1_PASSWORD
 
+
+from billdotcom.session import Session
+from billdotcom.bill import Bill, BillLineItem
+from billdotcom.vendor import Vendor
+
+import datetime
+import random
+
+
 def send_template_email(to_email, subject, title, body, table=None):
 
 
@@ -27,8 +36,98 @@ def send_template_email(to_email, subject, title, body, table=None):
     msg.send()
 
 
+def add_to_billdotcom(customer, contract, amount):
 
-def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, promo=None):
+    try:
+
+        with Session() as s:
+
+            # create or find Vendor
+
+            activity = ""
+
+            mid = "" if not contract.billing_middle_name else "%s " % (contract.billing_middle_name)
+            name = "%s %s%s" % (contract.billing_first_name, mid, contract.billing_last_name)
+            shortName = "%s, %s." % (contract.billing_last_name, contract.billing_first_name[0])
+
+            billdotcom_id = customer.billdotcom_id if customer.billdotcom_id else None
+            
+            if not billdotcom_id:
+
+                a = Vendor(name=name,
+                            shortName=shortName,
+                            nameOnCheck=name,
+                            address1=contract.shipping_address1,
+                            address2=contract.shipping_address2,
+                            addressCity=contract.shipping_city,
+                            addressState=contract.shipping_province,
+                            addressZip=contract.shipping_postal_code,
+                            addressCountry=contract.shipping_country,
+                            email=customer.email,
+                            )
+                a['id'] = s.create(a)
+                billdotcom_id = a['id']
+                vendor = s.read('Vendor', id=billdotcom_id)
+
+                # save update customer model with billdotcom_id
+                customer.billdotcom_id = billdotcom_id
+                customer.save()
+
+                activity += "Created vendor: %s. " % (a['id'])
+            
+            else:
+                
+                vendor = s.read('Vendor', id=billdotcom_id)
+                if vendor:
+                    vendor['name'] =name
+                    vendor['shortName'] =shortName
+                    vendor['nameOnCheck'] =name
+                    vendor['address1'] = contract.shipping_address1
+                    vendor['address2'] = contract.shipping_address2
+                    vendor['addressCity'] = contract.shipping_city
+                    vendor['addressState'] = contract.shipping_province
+                    vendor['addressZip'] = contract.shipping_postal_code
+                    vendor['addressCountry'] = contract.shipping_country
+                    vendor['email'] = customer.email
+                    s.update(vendor)
+                
+                    activity += "Updated vendor : %s. " % (billdotcom_id)
+                else:
+                    raise Exception("billdotcom_id did not return any registered vendors.")
+
+
+            
+            # create new bill object
+            invoice_no = contract.search.key
+            today = current_time_aware().date()
+
+            b = Bill(
+                vendorId = billdotcom_id,
+                invoiceNumber = invoice_no,
+                invoiceDate = today,
+                dueDate = today,
+                #amount = amount
+            )
+            b.add_line_item(BillLineItem(amount=amount, description="Flex Fare airfare protection"))
+            b['id'] = s.create(b)
+            
+            activity += "Creaed bill: %s" % (b['id'])
+            
+            bill = s.read('Bill', id=b['id'])
+            
+            if not bill:
+                raise Exception("Could not create new bill.")
+        
+        return {'success': True, 'activity': activity}
+    
+    except Exception as err:
+        
+        return {'success': False, 'error': err}
+
+
+
+
+def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, promo=None, payout=None):
 
     # fare=None, dep_date=None, ret_date=None, flight_purchased=None, notes=None,
 
@@ -43,9 +142,7 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
         build = {'success': False, 'error': 'The user id and/or transaction id is not valid.'}
 
     else:
-        #if find_contract.expired() and exercise:
-        #    build['error_message'] = 'The contract selected is expired and connot be converted into a ticket.'
-        #    build['results'] = {'success': False, 'error': 'The contract selected is expired and connot be converted into a ticket.'}
+        
         if find_contract.close_staged_date:
             build = {'success': False, 'error': 'The contract has already been closed.'}
         else:
@@ -56,22 +153,14 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
                 find_contract.ret_date = inputs['ret_date']
                 find_contract.flight_purchased = inputs['flight_purchased']
                 find_contract.notes = inputs['notes']
-                """
-                # set traveler information from staging model to contract model
-                for t in('traveler_first_name','traveler_middle_name','traveler_last_name','traveler_infant','traveler_gender','traveler_birth_date','traveler_passport_country','traveler_seat_pref','traveler_rewards_program','traveler_contact_email',):
-                    try:
-                        setattr(find_contract, t, inputs[t])
-                    except:
-                        pass
+                
 
-                # refund partial value if exercised fare below refund value
-                if find_contract.search.locked_fare > inputs['fare'] and use_gateway:
-                    card_info = {'first_name': find_cust.first_name, 'last_name': find_cust.last_name, 'number': str(find_contract.cc_last_four).zfill(4), 'month': find_contract.cc_exp_month, 'year': find_contract.cc_exp_year}
-                    response = run_authnet_trans(find_contract.search.locked_fare - inputs['fare'], card_info, trans_id=find_contract.gateway_id)
+                # add payment to bill.com if low fares have increased
+                if payout:
+                    response = add_to_billdotcom(find_cust, find_contract, payout)
                     if not response['success']:
-                        build['results'] = {'success': False, 'error': response['status']}
+                        build = {'success': False, 'error': response['error']}
                         return build
-                """
             else:
                 # if option is refunded
                 if use_gateway:
@@ -130,7 +219,6 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
                     capacity.save()
             except:
                 pass
-
 
     return build
     

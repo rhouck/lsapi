@@ -811,12 +811,14 @@ def staged_item(request, slug):
                 if (find_contract.search.depart_date1 > cd['dep_date']) or (cd['dep_date'] > find_contract.search.depart_date2) or (find_contract.search.return_date1 > cd['ret_date']) or (cd['ret_date'] > find_contract.search.return_date2):
                     build['error_message'] = 'Selected travel dates not within locked fare range'
                 else:
+                    
+                    inc = cd['fare'] - find_contract.search.locked_fare
+                    payout =  inc if inc > 0 else None
+
                     if 'force_close' in inputs:
-                        #response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_purchased=cd['flight_purchased'], notes=cd['notes'], use_gateway=False)
                         response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, use_gateway=False)
-                    else:
-                        # response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, fare=cd['fare'], dep_date=cd['dep_date'], ret_date=cd['ret_date'], flight_purchased=cd['flight_purchased'], notes=cd['notes'])
-                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd)
+                    else:       
+                        response = exercise_option(find_contract.customer.key, slug, find_stage.exercise, cd, payout=payout)
 
                     if not response['success']:
                         build['error_message'] = response['error']
@@ -825,8 +827,6 @@ def staged_item(request, slug):
 
                         # send customer email alerting them of payout or not
                         try:   
-                            inc = cd['fare'] - find_contract.search.locked_fare
-                            payout =  inc if inc > 0 else 0
                             
                             if payout:
                                 subject = "Here comes your payout!"
