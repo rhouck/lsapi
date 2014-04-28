@@ -19,13 +19,16 @@ class Platform(models.Model):
 
 
 class Customer(models.Model):
+    
     key = models.CharField(max_length=10)
     platform = models.ForeignKey(Platform)
     reg_date = models.DateField('date registered')
     email = models.EmailField(max_length=75)
+    
     phone = models.CharField(max_length=20, blank=True, null=True)
     first_name = models.CharField(max_length=200, blank=True, null=True)
     last_name = models.CharField(max_length=200, blank=True, null=True)
+    
     billdotcom_id = models.CharField(max_length=50, blank=True, null=True)
 
 
@@ -57,6 +60,7 @@ class Contract(models.Model):
 
     refunded = models.BooleanField('fully refunded transaction', blank=True)
 
+    """
     # traveler information
     traveler_first_name = models.CharField(max_length=200, blank=True, null=True)
     traveler_middle_name = models.CharField(max_length=200, blank=True, null=True)
@@ -68,7 +72,8 @@ class Contract(models.Model):
     traveler_seat_pref = models.CharField(max_length=20, blank=True, null=True)
     traveler_rewards_program = models.CharField(max_length=100, blank=True, null=True)
     traveler_contact_email = models.EmailField(max_length=75, blank=True, null=True)
-
+    """
+    
     # billing information
     billing_first_name = models.CharField(max_length=200, blank=True, null=True)
     billing_middle_name = models.CharField(max_length=200, blank=True, null=True)
