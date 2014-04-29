@@ -32,6 +32,16 @@ class Customer(models.Model):
     billdotcom_id = models.CharField(max_length=50, blank=True, null=True)
 
 
+    def count_outstanding_contracts(self):
+        
+        contracts = Contract.objects.filter(customer=self)
+
+        count = 0
+        for i in contracts:
+            if i.outstanding():
+                count += 1
+        return count
+
     def __unicode__(self):
         
         tag = ""
@@ -73,7 +83,7 @@ class Contract(models.Model):
     traveler_rewards_program = models.CharField(max_length=100, blank=True, null=True)
     traveler_contact_email = models.EmailField(max_length=75, blank=True, null=True)
     """
-    
+
     # billing information
     billing_first_name = models.CharField(max_length=200, blank=True, null=True)
     billing_middle_name = models.CharField(max_length=200, blank=True, null=True)

@@ -51,7 +51,6 @@ from promos.models import Promo
 
 from django.template.defaultfilters import striptags
 
-
 def get_cust_list(request):
 
     items = Customer.objects.all()
@@ -349,12 +348,14 @@ def purchase_option(request):
             find_search = Searches.objects.get(key=cd['search_key'])
             find_platform = Platform.objects.get(key=cd['platform_key'])
 
-            # either find the existing customer associated with the platform and email addres or create it
+            # either find the existing customer associated with the platform and email address or create it
             try:
                 find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+                """
                 find_cust.first_name =cd['billing_first_name']
                 find_cust.last_name = cd['billing_last_name']
                 find_cust.save()
+                """
             except:
                 inps = {}
                 inps['key'] = gen_alphanum_key()
@@ -366,6 +367,10 @@ def purchase_option(request):
                 find_cust = Customer(**inps)
                 find_cust.save()
 
+            # limit the number of simulataneously outstanding contracts to 10 per customer
+            if find_cust.count_outstanding_contracts() >= 10:
+               raise Exception("The customer has reached the limit of 10 outstanding contracts. This cusomer cannot currently make additional purchases.")  
+            
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
             purch_date_time = current_time_aware()
