@@ -2,6 +2,8 @@ from django.db import models
 
 from sales.models import Customer
 
+import datetime
+
 
 class Promo(models.Model):
 
@@ -25,6 +27,12 @@ class Contest(models.Model):
 	value = models.FloatField('promotion value')
 	closed = models.BooleanField('Closed and winnner notified', blank=True)
 	end_price = models.FloatField(blank=True, null=True)
+
+	def end_price_date(self):
+		return self.created_date + datetime.timedelta(weeks=self.decision_time)
+
+	def __unicode__(self):
+		return "%s / %s" % (self.created_date.strftime('%b %d, %Y'), self.end_price_date().strftime('%b %d, %Y'))
 
 
 class Submission(models.Model):

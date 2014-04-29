@@ -338,68 +338,71 @@ def close_contests(request):
 	    if not cred['success']:
 	        return HttpResponse(json.encode(cred), mimetype="application/json")
 
+
 	current_time = current_time_aware()
-
-	contests = Contest.objects.filter(expire_date__lt=current_time, closed=False)
-
+	yesterday = current_time - datetime.timedelta(days=1)
 	
+	contests = Contest.objects.filter(closed=False)
+
 	contest_data = []
 	for i in contests:
 
-		contest_meta_data = {'key': i.key}
+		if i.end_price_date() < current_time and i.end_price_date() >= yesterday:
 
-		subs = Submission.objects.filter(contest=i).order_by('created_date')
-		contest_meta_data['subs'] = subs.count()
-		
-		if subs:
+			contest_meta_data = {'key': i.key}
 
-			# build list of current flights
-			res = run_flight_search(i.origin_code, i.destination_code, i.depart_date, i.return_date, 'any', 'any', 'any', 'any', cached=True)	
-			if res['success']:
-				#return HttpResponse(json.encode(res), mimetype="application/json")
-				i.end_price = res['min_fare']
-
-		if not i.end_price:
-			i.closed = True
-			i.save()
-		
-		else:
+			subs = Submission.objects.filter(contest=i).order_by('created_date')
+			contest_meta_data['subs'] = subs.count()
 			
-			try:
-				# find earliest-closest entry
-				closest = None
-				for k in subs:
-					dif = abs(k.value-i.end_price)
-					if not closest:
-						closest = (k, dif)
-					else:
-						if dif < closest[1]:
-							closest = (k, dif)
+			if subs:
 
-				# create promo for this user
-				new_promo = Promo(customer=closest[0].customer, 
-								created_date=current_time,
-								value=i.value,
-								code=gen_alphanum_key())
-				new_promo.save()
+				# build list of current flights
+				res = run_flight_search(i.origin_code, i.destination_code, i.depart_date, i.return_date, 'any', 'any', 'any', 'any', cached=True)	
+				if res['success']:
+					#return HttpResponse(json.encode(res), mimetype="application/json")
+					i.end_price = res['min_fare']
 
-				# send email
-				subject = "You won the fare prediction contest!"
-				title = "Dang, you are good."
-				body = "You may remember entering a fare prediction contest on %s. We told you we'd let you know if your guess was closest to the actual fare and here we are. Also as promised, here's a promo code good for $%s off your next Flex Fare purchase:\n\n%s\n\nThe Level Skies Team" % (closest[0].created_date.strftime("%B %d"), int(i.value), new_promo.code)
-				try:
-					send_template_email(closest[0].customer.email, subject, title, body)
-				except:
-					pass
-
-				# close contest
+			if not i.end_price:
 				i.closed = True
 				i.save()
+			
+			else:
+				
+				try:
+					# find earliest-closest entry
+					closest = None
+					for k in subs:
+						dif = abs(k.value-i.end_price)
+						if not closest:
+							closest = (k, dif)
+						else:
+							if dif < closest[1]:
+								closest = (k, dif)
 
-			except Exception as err:
-				contest_meta_data['error'] = err
-		
-		contest_data.append(contest_meta_data)
+					# create promo for this user
+					new_promo = Promo(customer=closest[0].customer, 
+									created_date=current_time,
+									value=i.value,
+									code=gen_alphanum_key())
+					new_promo.save()
+
+					# send email
+					subject = "You won the fare prediction contest!"
+					title = "Dang, you are good."
+					body = "You may remember entering a fare prediction contest on %s. We told you we'd let you know if your guess was closest to the actual fare and here we are. Also as promised, here's a promo code which let's you buy a Flex Fare for just $1:\n\n%s\n\nThe Level Skies Team" % (closest[0].created_date.strftime("%B %d"), new_promo.code)
+					try:
+						send_template_email(closest[0].customer.email, subject, title, body)
+					except:
+						pass
+
+					# close contest
+					i.closed = True
+					i.save()
+
+				except Exception as err:
+					contest_meta_data['error'] = err
+			
+			contest_data.append(contest_meta_data)
 
 	results = {'success': True, 'contest_data': contest_data}
 
