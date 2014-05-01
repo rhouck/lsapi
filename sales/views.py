@@ -492,6 +492,7 @@ def purchase_option(request):
                                         'receive_alerts': cd['alerts'],
                                         'amount_charged': amount,}
 
+                    """
                     # augment cash reserve with option price and update option inventory capacity
                     try:
                         latest_change = Cash_reserve.objects.latest('action_date')
@@ -504,7 +505,7 @@ def purchase_option(request):
                         capacity.save()
                     except:
                         pass
-
+                    """
                     # send confirmation email on success
                     #if MODE == 'live':
                     if 3>1:

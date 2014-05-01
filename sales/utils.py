@@ -199,6 +199,7 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
             #    build['status'] = response['status']
 
             # augment cash reserve with option price
+            """
             try:
                 if find_contract.ex_fare > find_contract.search.locked_fare:
                     effect = find_contract.search.locked_fare - find_contract.ex_fare
@@ -219,7 +220,7 @@ def exercise_option(cust_key, search_key, exercise, inputs, use_gateway=True, pr
                     capacity.save()
             except:
                 pass
-
+            """
     return build
     
 
