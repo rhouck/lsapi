@@ -1,6 +1,6 @@
 from sales.models import *
 from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
-
+from api.settings import HIGHRISE_CONFIG
 # maybe don't need anymore
 from django.core.mail import send_mail, get_connection
 #from django.template.loader import render_to_string
@@ -31,7 +31,7 @@ def send_template_email(to_email, subject, title, body, table=None):
 
 
     connection = get_connection(username=FROM_EMAIL_1, password=FROM_EMAIL_1_PASSWORD, fail_silently=False)
-    msg = EmailMultiAlternatives(subject, text_content, FROM_EMAIL_1, [to_email], connection=connection)
+    msg = EmailMultiAlternatives(subject, text_content, FROM_EMAIL_1, [to_email], [HIGHRISE_CONFIG['email']], connection=connection)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
 

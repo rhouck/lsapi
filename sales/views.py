@@ -35,7 +35,7 @@ from django.views.generic import DetailView, ListView
 
 from sales.utils import exercise_option, send_template_email
 
-from api.settings import MODE
+from api.settings import MODE, HIGHRISE_CONFIG
 
 import ast
 
@@ -149,6 +149,7 @@ def customer_info(request, slug):
         method = 'get'
         inputs = request.GET if request.GET else None
         request.GET = None
+    
     inputs = copy.deepcopy(inputs)
 
     if not request.user.is_authenticated():
@@ -164,12 +165,18 @@ def customer_info(request, slug):
         if inputs and method == 'post':
             cust = Customer.objects.get(key=slug)
             for key, value in inputs.items():
-                if key not in ("key", "platform", "reg_date"):
+                #cust.first_name = key
+                if key in ("email", "phone", "first_name", "last_name"):
+                    setattr(cust, key, value)
+                    
                     try:
                         setattr(cust, key, value)
                     except:
                         pass
+                    
             cust.save()
+            cust.update_highrise(inputs)
+
             cust = Customer.objects.get(key=slug)
             cust_dict = cust.__dict__
             cust_dict['update'] = True
@@ -184,6 +191,8 @@ def customer_info(request, slug):
         del cust_dict['reg_date']
         del cust_dict['key']
         del cust_dict['id']
+        del cust_dict['billdotcom_id']
+        del cust_dict['highrise_id']
 
 
         if 'csrfmiddlewaretoken' in cust_dict:
@@ -194,15 +203,16 @@ def customer_info(request, slug):
         cust_dict['success'] = True
 
         build = {'results': cust_dict}
-
-    except:
+    except (Searches.DoesNotExist):
         build = {'results': {'success': False, 'error': 'Slug provided does not correspond to existing customer.'}}
+    except Exception as err:
+        build = {'results': {'success': False, 'error': '%s' % (err)}}
 
 
     if request.user.is_authenticated():
         clean = False
-        if 'update' in build['results']:
-            del build['results']['update']
+        #if 'update' in build['results']:
+        #    del build['results']['update']
     else:
         clean = True
 
@@ -275,6 +285,7 @@ def find_cust_id(request):
 
     return gen_search_display(request, build, clean)
 
+
 def customer_signup(request):
 
     if request.user.is_authenticated():
@@ -314,6 +325,7 @@ def customer_signup(request):
                 new_cust = Customer(**field_inps)
                 #new_cust = Customer(first_name=cd['first_name'], last_name=cd['last_name'], email=cd['email'], password=cd['password'], platform=find_org, phone=cd['phone'], address=cd['address'], city=cd['city'], state_prov=cd['state_prov'], zip_code=cd['zip_code'], country=cd['country'], reg_date=current_time_aware().date(), key=cust_key)
                 new_cust.save()
+                new_cust.create_highrise_account()
 
                 build['results'] = dict({'success': True}.items() + new_cust.__dict__.items())
                 del build['results']['_platform_cache']
@@ -366,6 +378,8 @@ def purchase_option(request):
                 inps['last_name'] = cd['billing_last_name']
                 find_cust = Customer(**inps)
                 find_cust.save()
+                find_cust.create_highrise_account()
+
 
             # limit the number of simulataneously outstanding contracts to 10 per customer
             if find_cust.count_outstanding_contracts() >= 10:
@@ -438,6 +452,8 @@ def purchase_option(request):
                 response = run_authnet_trans(amount, card_info, address=address, cust_info=cust_info)
 
                 if response['success']:
+
+                    find_cust.add_highrise_tag('customer')
 
                     new_contract = Contract(customer=find_cust, purch_date=purch_date_time, search=find_search, gateway_id=response['trans_id'])
 
@@ -569,18 +585,33 @@ def demo_option(request):
             find_search = Searches.objects.get(key=cd['search_key'])
             find_platform = Platform.objects.get(key=cd['platform_key'])
 
+            
             # either find the existing customer associated with the platform and email addres or create it
             try:
                 find_cust = Customer.objects.get(email=cd['email'], platform=find_platform)
+                # update customer data
+                for i in ('first_name', 'last_name'):
+                    try:
+                        setattr(find_cust, i, cd[i])
+                    except:
+                        pass
             except:
                 inps = {}
                 inps['key'] = gen_alphanum_key()
                 inps['reg_date'] = current_time_aware().date()
                 inps['platform'] = find_platform
                 inps['email'] = cd['email']
+                
+                for i in ('first_name', 'last_name'):
+                    if cd[i]:
+                        inps[i] = cd[i]
+
                 find_cust = Customer(**inps)
                 find_cust.save()
-
+                find_cust.create_highrise_account()
+                if not find_cust.highrise_id:
+                    raise Exception("didn't connect to highrise")
+            
             # raise error if id selected exists but refers to an search that resulted in an error or took place when no options were available for sale
             # or the purchase occured after too much time had passed, and the quoted price is deemed expired
             #purch_date_time = current_time_aware()
@@ -593,27 +624,21 @@ def demo_option(request):
             except:
                 pass
             else:
-                raise Exception
+                raise Exception('The related demo contract has already been assigned. Please run a new search.')
 
             if find_search.error or not find_search.get_status() or expired:
-                raise Exception
+                raise Exception('The quoted price has expired or there was an error with the search. Please run a new search.')
 
         
         except (Searches.DoesNotExist):
             build['error_message'] = 'The option id entered is not valid.'
             build['results'] = {'success': False, 'error': 'The option id entered is not valid.'}
-        except (Exception):
-            build['error_message'] = 'The quoted price has expired or the related demo contract has already been assigned. Please run a new search.'
-            build['results'] = {'success': False, 'error': 'The quoted price has expired or the related demo contract has already been assigned. Please run a new search.'}
+        except Exception as err:
+            build['error_message'] = "%s" % (err)
+            build['results'] = {'success': False, 'error': "%s" % (err)}
         else:
 
-            # update customer data
-            for i in ('first_name', 'last_name'):
-                try:
-                    setattr(find_cust, i, cd[i])
-                except:
-                    pass
-            find_cust.save()
+            find_cust.add_highrise_tag('demo')
 
             new_demo = Demo(customer=find_cust, purch_date=purch_date_time, search=find_search, alerts=cd['alerts'])
             new_demo.save()
@@ -634,10 +659,10 @@ def demo_option(request):
                 else:
                     ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-                body = """Had you purchased a Flex Fare, you would now have until %s to use your Flex Fare on a flight from %s to %s, leaving %s and returning %s.\n\nWe will send you an email when this Flex Fare would have expired to let you know just how much you could have saved with us.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
+                body = """Had this been a live Flex Fare, you would now have until %s to book a flight from %s to %s, leaving %s and returning %s.\n\nIn this case your protected fare would be $%s. If the lowest fares increase above this amount by the time you book your flight, we would pay you the difference. We will send you an email when this Flex Fare would have expired to let you know just how much you could have saved with us.\n\nThe Level Skies Team""" % (find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret, int(find_search.locked_fare))
 
                 send_template_email(new_demo.customer.email, subject, title, body)
-                
+                    
             except:
                 pass
 

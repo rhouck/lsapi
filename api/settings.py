@@ -38,6 +38,8 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+#APPEND_SLASH=False
+
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -212,6 +214,9 @@ FROM_EMAIL_1_PASSWORD = 'dna&CLONEwars*800'
 
 # for debug toolbar
 #INTERNAL_IPS = ('127.0.0.1',)
+
+#highrise cms API
+HIGHRISE_CONFIG = {'server': 'levelskies', 'auth': 'e8ad8213477f275724c8a90a38bc1f28', 'email': 'dropbox@85120397.levelskies.highrisehq.com'}
 
 # Use site-specific settings
 if MODE == 'live':

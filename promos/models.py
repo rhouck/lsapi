@@ -13,6 +13,16 @@ class Promo(models.Model):
     contract = models.OneToOneField('sales.Contract', blank=True, null=True) 
     code = models.CharField(max_length=16)
 
+    def status(self):
+
+    	if self.contract:
+    		return "Closed"
+    	else:
+    		return "Open"
+
+
+    def __unicode__(self):
+		return "%s - %s - %s - %s" % (self.customer, self.code, self.value, self.status())
 
 class Contest(models.Model):
 
@@ -28,11 +38,18 @@ class Contest(models.Model):
 	closed = models.BooleanField('Closed and winnner notified', blank=True)
 	end_price = models.FloatField(blank=True, null=True)
 
+	def status(self):
+
+		if self.closed:
+			return "Closed"
+		else:
+			return "Open"
+
 	def end_price_date(self):
 		return self.created_date + datetime.timedelta(weeks=self.decision_time)
 
 	def __unicode__(self):
-		return "%s / %s" % (self.created_date.strftime('%b %d, %Y'), self.end_price_date().strftime('%b %d, %Y'))
+		return "%s - %s / %s - %s" % (self.key, self.created_date.strftime('%b %d, %Y'), self.end_price_date().strftime('%b %d, %Y'), self.status())
 
 
 class Submission(models.Model):
@@ -41,5 +58,8 @@ class Submission(models.Model):
 	customer = models.ForeignKey(Customer)
 	created_date = models.DateTimeField('date / time created')
 	value = models.FloatField('promotion value')
+
+	def __unicode__(self):
+		return "%s - %s" % (self.contest.key, self.customer)
 
     

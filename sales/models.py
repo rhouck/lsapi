@@ -1,8 +1,12 @@
 from api.views import current_time_aware
+from api.settings import HIGHRISE_CONFIG, MODE
+
 import datetime
 from django.utils import timezone
 
 from django.db import models
+
+import pyrise
 
 
 class Platform(models.Model):
@@ -30,6 +34,7 @@ class Customer(models.Model):
     last_name = models.CharField(max_length=200, blank=True, null=True)
     
     billdotcom_id = models.CharField(max_length=50, blank=True, null=True)
+    highrise_id = models.CharField(max_length=50, blank=True, null=True)
 
 
     def count_outstanding_contracts(self):
@@ -41,6 +46,77 @@ class Customer(models.Model):
             if i.outstanding():
                 count += 1
         return count
+
+    def create_highrise_account(self):
+
+        if not self.highrise_id: # and MODE == 'live':
+            try:
+                pyrise.Highrise.set_server(HIGHRISE_CONFIG['server'])
+                pyrise.Highrise.auth(HIGHRISE_CONFIG['auth'])
+                cust = pyrise.Person()
+                   
+                cust.contact_data = pyrise.ContactData(email_addresses=[pyrise.EmailAddress(address=self.email, location='Home'),],)
+                
+                cust.first_name = self.first_name if self.first_name else self.email
+                
+                if self.last_name:
+                    cust.last_name = self.last_name
+                if self.phone:
+                    cust.contact_data.phone_numbers = [pyrise.PhoneNumber(number=self.phone, location='Home'),]
+
+                
+                cust.save()
+                cust.add_tag('user')
+                cust.add_tag(str(self.platform))
+
+                self.highrise_id = cust.id
+                self.save()
+            except:
+                pass
+
+    def add_highrise_tag(self, tag):
+
+        if self.highrise_id:
+            try:
+                pyrise.Highrise.set_server(HIGHRISE_CONFIG['server'])
+                pyrise.Highrise.auth(HIGHRISE_CONFIG['auth'])
+                cust = pyrise.Person.get(self.highrise_id)
+                cust.add_tag(tag)
+            except:
+                pass
+
+
+    def update_highrise(self, inputs):
+        
+        if self.highrise_id:
+            pyrise.Highrise.set_server(HIGHRISE_CONFIG['server'])
+            pyrise.Highrise.auth(HIGHRISE_CONFIG['auth'])
+            
+            cust = pyrise.Person.get(self.highrise_id)
+
+            if "email" in inputs:
+                exists = False
+                for i in cust.contact_data.email_addresses:
+                    if i.address == inputs['email']:
+                        exists = True
+                if not exists:
+                    cust.contact_data.email_addresses.append(pyrise.EmailAddress(address=inputs['email'], location='Home'))
+            
+            if "phone" in inputs:
+                exists = False
+                for i in cust.contact_data.phone_numbers:
+                    if i.number == inputs['phone']:
+                        exists = True
+                if not exists:
+                    cust.contact_data.phone_numbers.append(pyrise.PhoneNumber(number=inputs['phone'], location='Home'))
+            
+            if 'first_name' in inputs:
+                cust.first_name = inputs['first_name']
+            if 'last_name' in inputs:
+                cust.last_name = inputs['last_name']
+
+            cust.save()
+
 
     def __unicode__(self):
         

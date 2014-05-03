@@ -273,6 +273,9 @@ def make_submission(request):
 			    inps['email'] = cd['email']
 			    find_cust = Customer(**inps)
 			    find_cust.save()
+			    find_cust.create_highrise_account()
+
+			find_cust.add_highrise_tag('contest')
 
 			try:
 				sub = Submission.objects.get(customer=find_cust, contest=find_contest)
