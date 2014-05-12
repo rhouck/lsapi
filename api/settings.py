@@ -1,7 +1,7 @@
 # Django settings for api project.
 
 import sys
-import os.path
+import os
 from socket import gethostname
 from re import search
 # Django settings for levelskies project.
@@ -214,6 +214,9 @@ FROM_EMAIL_1_PASSWORD = 'dna&CLONEwars*800'
 
 # for debug toolbar
 #INTERNAL_IPS = ('127.0.0.1',)
+
+
+os.environ['BILLDOTCOM_PREFIX'] = BASE_DIR
 
 #highrise cms API
 HIGHRISE_CONFIG = {'server': 'levelskies', 'auth': 'e8ad8213477f275724c8a90a38bc1f28', 'email': 'dropbox@85120397.levelskies.highrisehq.com'}
