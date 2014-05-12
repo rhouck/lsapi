@@ -22,7 +22,7 @@ pymongo==2.6
 pyparsing==2.0.2
 pyrise==0.5.3
 python-cjson==1.0.5
-python-dateutil==1.5
+python-dateutil==2.2
 python-digest==1.7
 python-nvd3==0.11.0
 pytz==2013.7
