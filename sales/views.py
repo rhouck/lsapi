@@ -33,7 +33,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.views.generic import DetailView, ListView
 
-from sales.utils import exercise_option, send_template_email
+from sales.utils import exercise_option, send_template_email, highrise_cust_setup
 
 from api.settings import MODE, HIGHRISE_CONFIG
 
@@ -50,6 +50,14 @@ import numpy as np
 from promos.models import Promo
 
 from django.template.defaultfilters import striptags
+
+
+@login_required()
+def run_highrise_cust_setup(request):
+    message = highrise_cust_setup()
+    build = {'results': {'message': message}}
+    return gen_search_display(request, build, False)
+
 
 def get_cust_list(request):
 

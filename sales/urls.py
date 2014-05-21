@@ -32,4 +32,8 @@ urlpatterns = patterns('',
 
     url(r'^alerts/$', alerts, name='alerts_sweep'),
 
+    url(r'^highrise-cust-setup/$', run_highrise_cust_setup, name='highrise_cust_setup'),
+
+
+
 )

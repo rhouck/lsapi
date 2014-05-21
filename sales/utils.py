@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from sales.models import *
 from api.utils import current_time_aware, conv_to_js_date, gen_alphanum_key, check_creds, run_authnet_trans, test_trans
 from api.settings import HIGHRISE_CONFIG
@@ -10,6 +12,8 @@ from django.template import Context
 
 from api.settings import FROM_EMAIL_1, FROM_EMAIL_1_PASSWORD
 
+from promos.models import Submission
+
 
 from billdotcom.session import Session
 from billdotcom.bill import Bill, BillLineItem
@@ -17,6 +21,46 @@ from billdotcom.vendor import Vendor
 
 import datetime
 import random
+
+
+def highrise_cust_setup():
+
+    # run to build highrise customer ids and add appropriate tags to existing customers in api db
+
+    no_ids = Customer.objects.filter(Q(highrise_id=None) | Q(highrise_id=""))
+
+    new_ids = []
+    customer_tags = []
+    demo_tags = []
+    contest_tags = [] 
+    for ind, i in enumerate(no_ids):
+        
+        # create highrise id
+        i.create_highrise_account()
+        i.save()
+
+        new_ids.append(i.email)    
+        
+        # check if customer has purchased contract
+        contracts = Contract.objects.filter(customer=i)
+        if contracts:
+            i.add_highrise_tag('customer')
+            customer_tags.append(i.email)
+
+        # check if customer has signed up for demo
+        demos = Demo.objects.filter(customer=i)
+        if demos:
+            i.add_highrise_tag('demo')
+            demo_tags.append(i.email)
+
+        # check if customer has submitted contest entry
+        entries = Submission.objects.filter(customer=i)
+        if entries:
+            i.add_highrise_tag('contest')
+            contest_tags.append(i.email)
+    
+
+    return {'new_highrise_ids': new_ids, 'customer_tags': customer_tags, 'demo_tags': demo_tags, 'contest_tags': contest_tags}
 
 
 def send_template_email(to_email, subject, title, body, table=None):
