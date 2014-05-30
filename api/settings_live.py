@@ -6,8 +6,6 @@ STATIC_ROOT = '/home/projects/api.levelskies.com/static/'
 
 DEBUG = TEMPLATE_DEBUG = False
 
-SITE_ID = 1
-
 # cross domain xhr settings
 #XS_SHARING_ALLOWED_ORIGINS = 'http://beta.levelskies.com'
 #XS_SHARING_ALLOWED_METHODS = ['get','post']
