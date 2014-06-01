@@ -801,11 +801,20 @@ def staged_item(request, slug):
         else:
             ref_date = current_date
 
+        """
         for i in ((ref_date-datetime.timedelta(days=1)), ref_date): 
             fares = pull_fares_range(find_contract.search.origin_code, find_contract.search.destination_code, (find_contract.search.depart_date1, find_contract.search.depart_date2), (find_contract.search.return_date1, find_contract.search.return_date2), find_contract.search.depart_times, find_contract.search.return_times, find_contract.search.convenience, find_contract.search.airlines, cached=True, search_date=i)
             if fares['success']:
                 build['fares'].append({str(i): fares['fares']})
-
+        """
+        purch_date = datetime.datetime(find_contract.purch_date.year, find_contract.purch_date.month, find_contract.purch_date.day, 0,0)
+        date_range = (ref_date-purch_date).days + 1  
+        for i in range(date_range):
+            search_date = purch_date + datetime.timedelta(days=i)
+            fares = pull_fares_range(find_contract.search.origin_code, find_contract.search.destination_code, (find_contract.search.depart_date1, find_contract.search.depart_date2), (find_contract.search.return_date1, find_contract.search.return_date2), find_contract.search.depart_times, find_contract.search.return_times, find_contract.search.convenience, find_contract.search.airlines, cached=True, search_date=search_date)
+            if fares['success']:
+                build['fares'].append({str(search_date): fares['fares']})
+        
         #return HttpResponse(json.encode(build['fares']), mimetype="application/json")
         
         if inputs:
