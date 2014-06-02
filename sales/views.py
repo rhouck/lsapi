@@ -801,6 +801,7 @@ def staged_item(request, slug):
             ref_date = datetime.datetime(find_contract.search.exp_date.year, find_contract.search.exp_date.month, find_contract.search.exp_date.day,0,0)
         else:
             ref_date = current_date
+
         
         """
         for i in ((ref_date-datetime.timedelta(days=1)), ref_date): 
