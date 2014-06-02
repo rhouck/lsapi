@@ -798,10 +798,10 @@ def staged_item(request, slug):
         # sets the search date to the expiration date or before
         if find_contract.expired():
             #ref_date = find_contract.search.exp_date
-            ref_date = datetime.datetime(find_contract.search.exp_date, find_contract.search.exp_date, find_contract.search.exp_date,0,0)
+            ref_date = datetime.datetime(find_contract.search.exp_date.year, find_contract.search.exp_date.month, find_contract.search.exp_date.day,0,0)
         else:
             ref_date = current_date
-
+        
         """
         for i in ((ref_date-datetime.timedelta(days=1)), ref_date): 
             fares = pull_fares_range(find_contract.search.origin_code, find_contract.search.destination_code, (find_contract.search.depart_date1, find_contract.search.depart_date2), (find_contract.search.return_date1, find_contract.search.return_date2), find_contract.search.depart_times, find_contract.search.return_times, find_contract.search.convenience, find_contract.search.airlines, cached=True, search_date=i)
