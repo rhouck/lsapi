@@ -797,7 +797,8 @@ def staged_item(request, slug):
         build['fares'] = []
         # sets the search date to the expiration date or before
         if find_contract.expired():
-            ref_date = find_contract.search.exp_date
+            #ref_date = find_contract.search.exp_date
+            ref_date = datetime.datetime(find_contract.search.exp_date, find_contract.search.exp_date, find_contract.search.exp_date,0,0)
         else:
             ref_date = current_date
 
@@ -808,7 +809,7 @@ def staged_item(request, slug):
                 build['fares'].append({str(i): fares['fares']})
         """
         purch_date = datetime.datetime(find_contract.purch_date.year, find_contract.purch_date.month, find_contract.purch_date.day, 0,0)
-        date_range = (ref_date-purch_date).days + 1  
+        date_range = (ref_date-purch_date).days + 2  
         for i in range(date_range):
             search_date = purch_date + datetime.timedelta(days=i)
             fares = pull_fares_range(find_contract.search.origin_code, find_contract.search.destination_code, (find_contract.search.depart_date1, find_contract.search.depart_date2), (find_contract.search.return_date1, find_contract.search.return_date2), find_contract.search.depart_times, find_contract.search.return_times, find_contract.search.convenience, find_contract.search.airlines, cached=True, search_date=search_date)
