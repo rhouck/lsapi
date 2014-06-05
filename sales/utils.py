@@ -1,3 +1,5 @@
+from inlinestyler.utils import inline_css
+
 from django.db.models import Q
 
 from sales.models import *
@@ -65,14 +67,15 @@ def highrise_cust_setup():
 
 def send_template_email(to_email, subject, title, body, table=None):
 
-
+    
+    
     plaintext = get_template('email_template/plain_text.txt')
     htmly     = get_template('email_template/index.html')
     d = Context({'title': title, 'body': body, 'table': table})
     text_content = plaintext.render(d)
     html_content = htmly.render(d)
-
-
+    
+    html_content = inline_css(html_content)
 
     connection = get_connection(username=FROM_EMAIL_1, password=FROM_EMAIL_1_PASSWORD, fail_silently=False)
     msg = EmailMultiAlternatives(subject, text_content, FROM_EMAIL_1, [to_email], [HIGHRISE_CONFIG['email']], connection=connection)

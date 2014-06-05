@@ -535,7 +535,7 @@ def purchase_option(request):
                     if 3>1:
                         try:
                             subject = "You've successfully purchased your Level Skies Flex Fare"
-                            title = "Congrats on locking in your airfare. That was a good move."
+                            title = "Congrats on buying your airfare protection. That was a good move."
                             if (find_search.depart_date2 - find_search.depart_date1).days > 0:
                                 dep = "between %s and %s" % (find_search.depart_date1.strftime("%B %d, %Y"), find_search.depart_date2.strftime("%B %d, %Y"))
                             else:
@@ -546,7 +546,7 @@ def purchase_option(request):
                             else:
                                 ret = "on %s" % (find_search.return_date1.strftime("%B %d, %Y"))
 
-                            body = """You have locked in today's low airfare of $%s. You now have until %s to use your Flex Fare when you book a flight from %s to %s, leaving %s and returning %s.\n\nWhen you book your flight just forward the itinerary or confirmation email to sales@levelskies.com and we'll send you your payout if prices on the lowest fares have increased.\n\nThe Level Skies Team""" % (int(find_search.locked_fare), find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret)
+                            body = """You have bought protection on today's low airfare of $%s. You now have until %s to use your Flex Fare when you book a flight from %s to %s, leaving %s and returning %s.\n\nWhen you book your flight just forward the itinerary or confirmation email to sales@levelskies.com and we'll send you your payout if prices on the lowest fares have increased.\n\nThe Level Skies Team""" % (int(find_search.locked_fare), find_search.exp_date.strftime("%B %d, %Y"), find_search.origin_code, find_search.destination_code, dep, ret)
 
                             send_template_email(new_contract.customer.email, subject, title, body)
                             
@@ -998,20 +998,23 @@ def alerts(request):
 
 
     current_time = current_time_aware()
+    current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
 
     # ensure this query is not run more than once/24hrs
     run_dates = AlertsCheck.objects
 
-    if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(hours=23):
+    #if not run_dates.exists() or (current_time - run_dates.latest('run_date').run_date) >= datetime.timedelta(hours=23):
+    if 3 > 2:
         latest_price_check = AlertsCheck(run_date=current_time)
         latest_price_check.save()
 
 
         # delete old alerts
-        Alerts.objects.filter(search__exp_date__lte=current_time).delete()
+        Alerts.objects.filter(search__exp_date__lte=current_date).delete()
 
-        contracts = Contract.objects.filter(alerts=True, search__exp_date__gt=(current_time + datetime.timedelta(hours=18)), search__search_date__lt=(current_time - datetime.timedelta(hours=18)), ex_date=None) 
-        demos = Demo.objects.filter(alerts=True, search__exp_date__gt=(current_time + datetime.timedelta(hours=18)), search__search_date__lt=(current_time - datetime.timedelta(hours=18))) 
+        #contracts = Contract.objects.filter(alerts=True, search__exp_date__gt=current_date, search__search_date__lt=(current_time - datetime.timedelta(hours=18)), ex_date=None) 
+        contracts = Contract.objects.filter(alerts=True, search__exp_date__gt=current_date, search__search_date__lt=current_time, ex_date=None) 
+        demos = Demo.objects.filter(alerts=True, search__exp_date__gt=current_date, search__search_date__lt=(current_time - datetime.timedelta(hours=18))) 
         
 
         alerted_searches = []
@@ -1021,6 +1024,9 @@ def alerts(request):
                 obj, created = Alerts.objects.get_or_create(search=k.search)
                 
                 prev_fares = ast.literal_eval(obj.fares) if obj.fares else []
+                # if only one fare update was performed and was not stored in list of lists, add wrapper list
+                if prev_fares and not isinstance(prev_fares[0], list):
+                    prev_fares = [prev_fares]
                 prev_update = obj.update_date if obj.update_date else None
 
                 # ensure not sent more than once daily
@@ -1040,8 +1046,8 @@ def alerts(request):
                     else:
                         fares = None
                       
-                    #obj.fares = str(pickle.dumps(fares)) if fares else None
-                    obj.fares = str(fares) if fares else None
+        
+                    obj.fares = str(prev_fares + [fares]) if fares else None
                     obj.update_date = current_time
                     obj.save()
 
@@ -1049,41 +1055,57 @@ def alerts(request):
                     # line up previously checked fares with current
                     rows = []
                     any_changes = False
+                    any_payout = False
                     for fare in fares:
-                        change = ""
                         if prev_fares:  
-                            for p in prev_fares:
+                            for p in prev_fares[-1]:
                                 if p['depart_date'] == fare['depart_date'] and p['return_date'] == fare['return_date']:
                                     if fare['fare'] and p['fare']:
-                                        # record change if greater than 10
-                                        change = str(int(fare['fare']-p['fare'])) if abs(fare['fare']-p['fare']) > 10 else ""
+                                        change = ("$%s" % (fare['fare']-p['fare'])) if abs(fare['fare']-p['fare']) > 1 else 0
                                         if change:
                                             any_changes = True
-                                    prev_fares.remove(p)
+                                    prev_fares[-1].remove(p)
                         
+                        payout = ("$%s" % (fare['fare'] - k.search.locked_fare)) if fare['fare'] - k.search.locked_fare > 1 else 0
+                        if payout:
+                            any_payout = True
                         if fare['fare']:      
-                            rows.append([fare['depart_date'], fare['return_date'], "$%s" % int(fare['fare']), change])
+                            rows.append([fare['depart_date'], fare['return_date'], "$%s" % fare['fare'], change, payout])
 
 
                     # send email 
                     subject = "Your Level Skies fare update"
                     title = "Here's what's new with the fare%s we're tracking" % ('s' if len(rows)>1 else '')
-                    body = "We've been watching those fares for you, just like you asked. Below you'll see today's lowest fares for the dates you selected. We'll also let you know if anything has changed much since we last wrote you."
+                    body = "We've been watching those fares for you, just like you asked. Below you'll see today's lowest fares for the dates you selected. We'll also let you know if anything has changed much since we last wrote you.\n\nJust a reminder, your protected fare is: $%s" % (int(k.search.locked_fare))
                     
                     if rows:
                         try:
+                            table_dat = ["Depart Date","Return Date","Today's Low"]
+                            rows = np.array(rows)
+                            
+                            if any_changes and any_payout:
+                                table_dat.append("%s day change" % ((current_time-prev_update).days))
+                                #table_dat.append("Change since %s" % (prev_update.strftime("%b %d")))
+                                table_dat.append("Current Payout")
+                            elif any_changes and not any_payout:
+                                table_dat.append("%s day change" % ((current_time-prev_update).days))
+                                #table_dat.append("Change since %s" % (prev_update.strftime("%b %d")))
+                                rows = rows[:,:-1]
+                            elif any_payout and not any_changes:
+                                table_dat.append("Current Payout")
+                                rows = rows[:,(0,1,2,4)]
+                            else:
+                                rows = rows[:,:-2]
+
+                            
                             if len(rows) > 1:
                                 # sort by dates
                                 rows = np.array(rows)
                                 ind = np.lexsort((rows[:,0],rows[:,1]))
                                 rows = rows[ind]
-                                rows = rows.tolist()
+                            rows = rows.tolist()
 
-                            if any_changes:
-                                col = "Change since %s" % (prev_update.strftime("%b %d"))
-                            else:
-                                col = ""
-                            table_dat = [["Depart Date","Return Date","Today's Low Fare",col],] + rows
+                            table_dat = [table_dat] + rows
                             
                             table = "<table>"
                             for r in table_dat:
@@ -1092,7 +1114,7 @@ def alerts(request):
                                     table += "<td>%s</td>" % (d)
                                 table += "</tr>"
                             table +="</table>"
-                        
+
                             send_template_email(k.customer.email, subject, title, body, table)    
                             #return render_to_response('email_template/index.html', {'title': title, 'body': body, 'table': table}) 
                             temp['sent'] = True            

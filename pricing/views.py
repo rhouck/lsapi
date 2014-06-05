@@ -346,7 +346,7 @@ def price_edu_combo(request):
                 open_status = Open.objects.get(pk=1)
 
                 current_time = current_time_aware()
-                
+                current_date = current_time.date()
                 general = {'search_date': current_time, 'open_status': open_status.get_status(), 'key': gen_alphanum_key(),}
 
                 model_in = {'origin_code': cd['origin_code'], 
@@ -369,8 +369,9 @@ def price_edu_combo(request):
                         model_out = {'error': 'Travel date ranges must not be more than two days in length'}
                     elif (cd['depart_date2'] < cd['depart_date1']) or (cd['return_date2'] < cd['return_date1']):
                         model_out = {'error': 'Travel date ranges are wrong'}
-                    else:
-                        
+                    elif (cd['depart_date1'] - datetime.timedelta(days=13)) < (current_date + datetime.timedelta(days=(cd['holding_per']*7))):
+                        model_out = {'error': 'Cannot purchase fare protection valid closer than two weeks to departure.'}    
+                    else:           
                         flights = pull_fares_range(cd['origin_code'], cd['destination_code'], (cd['depart_date1'], cd['depart_date2']), (cd['return_date1'], cd['return_date2']), cd['depart_times'], cd['return_times'], cd['convenience'], cd['airlines'], search_key=combined['key'])
                         #return HttpResponse(json.encode(flights), content_type="application/json")
 

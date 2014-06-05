@@ -187,13 +187,19 @@ class Contract(models.Model):
     alerts = models.BooleanField('receive alerts', blank=True)
 
     def outstanding(self):
-        return self.search.exp_date >= current_time_aware() and not self.ex_date
+        current_time = current_time_aware()
+        current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
+        exp_date = datetime.datetime(self.search.exp_date.year, self.search.exp_date.month, self.search.exp_date.day,0,0)
+        return exp_date >= (current_date - datetime.timedelta(days=1)) and not self.ex_date
     outstanding.admin_order_field = 'search__exp_date'
     outstanding.boolean = True
     outstanding.short_description = 'Open and not expired'
 
     def expired(self):
-        return self.search.exp_date < current_time_aware()
+        current_time = current_time_aware()
+        current_date = datetime.datetime(current_time.year, current_time.month, current_time.day,0,0)
+        exp_date = datetime.datetime(self.search.exp_date.year, self.search.exp_date.month, self.search.exp_date.day,0,0)
+        return exp_date < (current_date - datetime.timedelta(days=1))
 
     def staged(self):
         try:
