@@ -1056,6 +1056,7 @@ def alerts(request):
                     rows = []
                     any_changes = False
                     any_payout = False
+                    change = 0 
                     for fare in fares:
                         if prev_fares:  
                             for p in prev_fares[-1]:
