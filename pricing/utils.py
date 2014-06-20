@@ -852,27 +852,28 @@ def parse_google_live(data, filters=False):
         if filters:
 
           # try remove identifying features of delta flights, if error, just skip the flight
-          try:
-            for t in ('departing','returning'):
-              if flight[t]['airline_short_name'] == "Delta":
-                flight[t]['airline'] = "n/a"
-                flight[t]['airline_short_name'] = ""
-                flight[t]['airline_image'] = ""
-                for ind, d in enumerate(flight[t]['detail']):
-                  if d['airline_short_name'] == "Delta":
-                    flight[t]['detail'][ind]['airline'] = "n/a"
-                    flight[t]['detail'][ind]['airline_short_name'] = ""
-                    flight[t]['detail'][ind]['airline_image'] = ""
-                    flight[t]['detail'][ind]['airline_code'] = ""
-                    flight[t]['detail'][ind]['flight_number'] = "n/a"
-            bank.append(flight)
-          except:
-            if flight['departing']['airline_short_name'] == "Delta" or flight['returning']['airline_short_name'] == "Delta":
-              pass
-            else:
+          if flight['departing']['airline_short_name'] == "Delta" or flight['returning']['airline_short_name'] == "Delta":
+          
+            try:
+              for t in ('departing','returning'):
+                if flight[t]['airline_short_name'] == "Delta":
+                  flight[t]['airline'] = "n/a"
+                  flight[t]['airline_short_name'] = ""
+                  flight[t]['airline_image'] = ""
+                  for ind, d in enumerate(flight[t]['detail']):
+                    if d['airline_short_name'] == "Delta":
+                      flight[t]['detail'][ind]['airline'] = "n/a"
+                      flight[t]['detail'][ind]['airline_short_name'] = ""
+                      flight[t]['detail'][ind]['airline_image'] = ""
+                      flight[t]['detail'][ind]['airline_code'] = ""
+                      flight[t]['detail'][ind]['flight_number'] = "n/a"
               bank.append(flight)
+            except:
+              pass
+          
+          else:
+            bank.append(flight)
         
-
         else:
           bank.append(flight)
 
