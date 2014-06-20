@@ -248,7 +248,8 @@ def run_flight_search(origin, destination, depart_date, return_date, depart_time
               # remove filters for arlines or other info for internal testing
               data = parse_google_live(data, filters=False)
             else:
-              data = parse_google_live(data)
+              #data = parse_google_live(data)
+              data = parse_google_live(data, filters=True)
             data['method'] = method
             data['datetime_created'] = datetime_created
 
@@ -847,12 +848,28 @@ def parse_google_live(data, filters=False):
                 flight[j[0]]['layover_times'].append(k["connectionDuration"])
 
 
-        # filter out delta flights
+        # filter displayed flight content
         if filters:
+          # remove identifying features of delta flights
+          """
           if flight['departing']['airline_short_name'] == "Delta" or flight['returning']['airline_short_name'] == "Delta":
             pass
           else:
             bank.append(flight)
+          """
+          for t in ('departing','returning'):
+            if flight[t]['airline_short_name'] == "Delta":
+              flight[t]['airline'] = "n/a"
+              flight[t]['airline_short_name'] = ""
+              flight[t]['airline_image'] = ""
+              for ind, d in enumerate(flight[t]['detail']):
+                if d['airline_short_name'] == "Delta":
+                  flight[t]['detail'][ind]['airline'] = "n/a"
+                  flight[t]['detail'][ind]['airline_short_name'] = ""
+                  flight[t]['detail'][ind]['airline_image'] = ""
+                  flight[t]['detail'][ind]['airline_code'] = ""
+                  flight[t]['detail'][ind]['flight_number'] = "n/a"
+          bank.append(flight)
         else:
           bank.append(flight)
 
