@@ -45,7 +45,7 @@ class ContractInline(admin.TabularInline):
 
 class DemoAdmin(admin.ModelAdmin):
 
-    list_display = ('purch_date', 'get_exp_date', 'get_holding_price', 'get_locked_fare', 'outstanding')
+    list_display = ('customer', 'search', 'purch_date', 'get_exp_date', 'get_holding_price', 'get_locked_fare', 'outstanding')
 
     
     def get_exp_date(self, obj):
